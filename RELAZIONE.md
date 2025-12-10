@@ -6,20 +6,24 @@
 **Data:10/12/2025**  
 
 ---
+---
 
 ## Indice
 <!-- L’indice sarà generato automaticamente nel documento ODT/PDF -->
 
+---
 ---
 
 ## Introduzione
 <!-- Introduzione generale al progetto e agli obiettivi -->
 
 ---
+---
 
 ## Analisi dei Requisiti
 <!-- Descrizione dei requisiti funzionali e non funzionali, attori, dati necessari, vincoli -->
 
+---
 ---
 
 ## Il Database
@@ -46,7 +50,6 @@ erDiagram
     }
 
     RECENSIONE {
-        int id pk
         string Messaggio "nullable"
         int Voto
     }
@@ -56,11 +59,13 @@ erDiagram
         date OraF pk
     }
 
+    %% L'entità che segue è solo a scopo grafico/funzionale
     PARTECIPAZIONE_TEMPO {}
 
     EVENTO {
         int id pk
         string Nome
+        float PrezzoNoMod
         date Data
         time OraI
         time OraF
@@ -77,22 +82,22 @@ erDiagram
     LOCATION {
         int id pk
         string Nome
-        int CAP
-        string civico "nullable"
-        string Indirizzo
-        string Città
-        string Regione
+        %% Indirizzo (
         string Stato
+        string Regione
+        int CAP
+        string Città
+        string civico "nullable"
+        %% )
     }
 
     BIGLIETTO {
-        int matricola pk
+        int id pk
+        bool Validato
         string Nome
         string Cognome
-        enum sesso "M/F"
+        enum sesso
         image qr-code
-        date Emissione
-        bool Validato
     }
 
     TIPO {
@@ -109,15 +114,14 @@ erDiagram
 
     ORDINE {
         int id pk
-        date Data
-        float Totale
-        enum Metodo "PayPal, Gpay, Wallet"
+        enum Metodo
     }
 
     UTENTE {
-        string email pk
+        string id pk
         string Nome
         string Cognome
+        string Email uk
     }
 
     %%  Da e verso EVENTO[
@@ -155,172 +159,144 @@ erDiagram
 
 ---
 <!-- Schema relazionale logico  -->
-### Lo schema relazionale
-<!--TODO: schema logico-->
+### LO SCHEMA RELAZIONALE
 
-#### MANIFESTAZIONE
+---
 
-**MANIFESTAZIONE**(  
+>#### MANIFESTAZIONI
 
-- id **PK**,  
+- id **PK**
 - Nome  
-)
 
----
+>#### MANIFESTAZIONE_EVENTI
 
-#### INTRATTENITORE
+- *idManifestazione* (Manifestazione-->id)
+- *idEvento* (Evento-->id)
+- **PK(idManifestazione, idEvento)**
 
-**INTRATTENITORE**(  
+>#### EVENTI
 
-- id **PK**,  
-- Nome,  
-- Mestiere  
-)
+- id **PK**
+- *idManifestazione* (Manifestazione-->id)
+- *idlocation* (Location-->id)
+- Nome
+- PrezzoNoMod
+- Data
+- OraI
+- OraF
+- Programma
 
----
+>#### INTRATTENITORI
 
-## RECENSIONE
+- id **PK**
+- Nome
+- Mestiere
 
-**RECENSIONE**(  
+>#### TEMPI
 
-- id **PK**,  
-- Messaggio *(NULL)*,  
-- Voto,  
-- EventoID **FK → EVENTO(id)**,  
-- UtenteEmail **FK → UTENTE(email)**  
-)
+- OraI **PK**
+- OraF **PK**
 
----
+>#### ESIBIZIONI
 
-## TEMPO
+- *idIntrattenitore* (Intrattenitore-->id)
+- *idEvento* (Evento-->id)
+- *OraI* (Tempo-->OraI)
+- *OraF* (Tempo-->OraF)
+- **PK(idEvento, idIntrattenitore, OraI, OraF)**  
 
-**TEMPO**(  
+>#### RECENSIONI
 
-- OraI **PK**,  
-- OraF **PK**  
-)
+- *idEvento* (Evento-->id)
+- *idUtente* (Utente-->id)
+- Voto
+- Messaggio ***NULLABLE***
+- **PK(idEvento, IdUtente)**
 
----
+>#### ORGANIZZATORI
 
-## PARTECIPAZIONE_TEMPO  
+- id **PK**
+- Nome
+- Cognome
+- Ruolo
 
-(Relazione tripla EVENTO – INTRATTENITORE – TEMPO)
+>#### ORGANIZZATORI_EVENTO
 
-**PARTECIPAZIONE_TEMPO**(  
+- *idEvento* (Evento-->id)
+- *idOrganizzatore* (Organizzatore-->id)
+- **PK(idEvento, idOrganizzatore)**
 
-- EventoID **FK → EVENTO(id)**,  
-- IntrattenitoreID **FK → INTRATTENITORE(id)**,  
-- OraI **FK → TEMPO(OraI)**,  
-- OraF **FK → TEMPO(OraF)**,  
-- **PK(EventoID, IntrattenitoreID, OraI, OraF)**  
-)
+>#### LOCATIONS
 
----
+- id **PK**
+- Nome
+- Indirizzo
+  - Stato
+  - Regione
+  - CAP
+  - Città
+  - civico ***NULL***
 
-## EVENTO
+>#### SETTORI
 
-**EVENTO**(  
+- id **PK**
+- *idLocation* (Location-->id)
+- Posti
+- MoltiplicatorePrezzo
 
-- id **PK**,  
-- Nome,  
-- Data,  
-- OraI,  
-- OraF,  
-- TipoEvento,  
-- ManifestazioneID **FK → MANIFESTAZIONE(id)**,  
-- LocationID **FK → LOCATION(id)**,  
-- OrganizzatoreID **FK → ORGANIZZATORE(id)**  
-)
+>#### BIGLIETTI
 
----
+- id **PK**
+- *idEvento* (Evento-->id)
+- *idClasse* (Tipo-->id)
+- Check
+- Nome
+- Cognome
+- Sesso
+- QR-code
 
-## ORGANIZZATORE
+>#### SETTORE_BIGLIETTI
 
-**ORGANIZZATORE**(  
+- *idSettore* (Settore-->id)
+- *idBiglietto* (Biglietto-->id)
+- Posto
+  - Fila
+  - Numero
+- **PK(idSettore, idBiglietto)**
 
-- id **PK**,  
-- Nome,  
-- Cognome,  
-- Ruolo  
-)
+>#### ORDINI
 
----
+- id **PK**
+- Metodo
 
-## LOCATION
+>#### ORDINE_BIGLIETTI
 
-**LOCATION**(  
+- *idOrdine* (Ordine-->id)
+- *idBiglietto* (Biglietto-->id)
+- **PK(idOrdine, idBiglietto)**
 
-- id **PK**,  
-- Nome,  
-- CAP,  
-- civico *(NULL)*,  
-- Indirizzo,  
-- Città,  
-- Regione,  
-- Stato  
-)
+>#### UTENTE
 
----
+- id **PK**
+- Nome
+- Cognome
+- Email **UK**
 
-## BIGLIETTO
+>#### UTENTE_ORDINI
 
-**BIGLIETTO**(  
+- *idOrdine* (Ordine-->id)
+- *idUtente* (Utente-->id)
+- **PK(idOrdine, idUtente)**
 
-- matricola **PK**,  
-- Nome,  
-- Cognome,  
-- sesso **ENUM('M', 'F')**,  
-- qr-code,  
-- Emissione,  
-- Validato,  
-- EventoID **FK → EVENTO(id)**,  
-- OrdineID **FK → ORDINE(id)**,  
-- TipoNome **FK → TIPO(nome)**,  
-- SettoreID **FK → SETTORE(id)**  
-)
-
----
-
-## TIPO
-
-**TIPO**(  
+>#### TIPO
 
 - nome **PK**,  
-- ModificatorePrezzo  
-)
+- ModificatorePrezzo
 
 ---
 
-## SETTORE
-
-**SETTORE**(  
-
-- id **PK**,  
-- Posti,  
-- MoltiplicatorePrezzo,  
-- LocationID **FK → LOCATION(id)**  
-)
-
----
-
-## ORDINE
-
-**ORDINE**(  
-
-- id **PK**,  
-- Data,  
-- Totale,  
-- Metodo **ENUM('PayPal', 'Gpay', 'Wallet')**,  
-- UtenteEmail **FK → UTENTE(email)**  
-)
-
----
-
-## UTENTE
-
-**UTENTE**(  
-
-- email **PK**,  
-- Nome,  
-- Cognome  
-)
+### SQL HIGHLIGHTS
+<!-- TODO: inserire le parti da spiegare del DDL -->
+```sql
+    
+```
