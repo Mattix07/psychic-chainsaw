@@ -16,6 +16,7 @@
 
 ## Introduzione
 <!-- Introduzione generale al progetto e agli obiettivi -->
+il progetto è una web app per l'acquisto di biglietti
 
 ---
 ---
