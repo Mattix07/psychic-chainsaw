@@ -1,18 +1,15 @@
 
-DELETE DATABASE IF EXISTS 5cit_eventsMaster
-CREATE DATABASE 5cit_eventsMaster
-CHARACTER SET utf8mb4
-COLLATE utf8mb4_unicode_ci;
-
+DROP DATABASE IF EXISTS 5cit_eventsMaster;
+CREATE DATABASE 5cit_eventsMaster;
 USE 5cit_eventsMaster;
 
 CREATE TABLE Manifestazioni (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id INT(4)  PRIMARY KEY,
     Nome VARCHAR(100) NOT NULL
 );
 
 CREATE TABLE Locations (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id INT(4)  PRIMARY KEY,
     Nome VARCHAR(100) NOT NULL,
     Stato VARCHAR(50) NOT NULL,
     Regione VARCHAR(50) NOT NULL,
@@ -22,7 +19,7 @@ CREATE TABLE Locations (
 );
 
 CREATE TABLE Eventi (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id INT(4)  PRIMARY KEY,
     idManifestazione INT NOT NULL,
     idLocation INT NOT NULL,
     Nome VARCHAR(100) NOT NULL,
@@ -36,7 +33,7 @@ CREATE TABLE Eventi (
 );
 
 CREATE TABLE Intrattenitori (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id INT  PRIMARY KEY,
     Nome VARCHAR(100) NOT NULL,
     Mestiere VARCHAR(100) NOT NULL
 );
@@ -59,7 +56,7 @@ CREATE TABLE Esibizioni (
 );
 
 CREATE TABLE Utenti (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id INT(4)  PRIMARY KEY,
     Nome VARCHAR(100) NOT NULL,
     Cognome VARCHAR(100) NOT NULL,
     Email VARCHAR(150) NOT NULL UNIQUE
@@ -76,7 +73,7 @@ CREATE TABLE Recensioni (
 );
 
 CREATE TABLE Organizzatori (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id INT(4)  PRIMARY KEY,
     Nome VARCHAR(100) NOT NULL,
     Cognome VARCHAR(100) NOT NULL,
     Ruolo VARCHAR(50) NOT NULL
@@ -91,7 +88,7 @@ CREATE TABLE Organizzatori_Evento (
 );
 
 CREATE TABLE Settori (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id INT(4)  PRIMARY KEY,
     idLocation INT NOT NULL,
     Posti INT NOT NULL,
     MoltiplicatorePrezzo DECIMAL(5,2) NOT NULL,
@@ -104,14 +101,14 @@ CREATE TABLE Tipo (
 );
 
 CREATE TABLE Biglietti (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id INT(4)  PRIMARY KEY,
     idEvento INT NOT NULL,
     idClasse VARCHAR(50) NOT NULL,
     `Check` BOOLEAN DEFAULT FALSE,
     Nome VARCHAR(100) NOT NULL,
     Cognome VARCHAR(100) NOT NULL,
     Sesso ENUM('M','F','Altro') NOT NULL,
-    QRcode BLOB NOT NULL,
+    QRcode BLOB NOT NULL UNIQUE,
     FOREIGN KEY (idEvento) REFERENCES Eventi(id) ON DELETE CASCADE,
     FOREIGN KEY (idClasse) REFERENCES Tipo(nome) ON DELETE RESTRICT
 );
@@ -120,14 +117,14 @@ CREATE TABLE Settore_Biglietti (
     idSettore INT NOT NULL,
     idBiglietto INT NOT NULL,
     Fila VARCHAR(5) NOT NULL,
-    Numero INT NOT NULL,
-    PRIMARY KEY (idSettore, idBiglietto),
+    Numero INT(2) NOT NULL,
+    PRIMARY KEY (idSettore, idBiglietto, Fila, Numero),
     FOREIGN KEY (idSettore) REFERENCES Settori(id) ON DELETE CASCADE,
     FOREIGN KEY (idBiglietto) REFERENCES Biglietti(id) ON DELETE CASCADE
 );
 
 CREATE TABLE Ordini (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id INT(4)  PRIMARY KEY,
     Metodo ENUM('Carta','PayPal','Bonifico') NOT NULL
 );
 
