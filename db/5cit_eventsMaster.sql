@@ -28,6 +28,7 @@ CREATE TABLE Eventi (
     OraI TIME NOT NULL,
     OraF TIME NOT NULL,
     Programma TEXT,
+    Locandina IMAGE,
     FOREIGN KEY (idManifestazione) REFERENCES Manifestazioni(id) ON DELETE CASCADE,
     FOREIGN KEY (idLocation) REFERENCES Locations(id) ON DELETE RESTRICT
 );

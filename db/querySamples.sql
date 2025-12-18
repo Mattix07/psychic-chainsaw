@@ -1,4 +1,4 @@
--- 1.Programma di una manifestazione
+-- 1.Elenco di una manifestazione
 select m.nome, e.nome, e.OraI, e.OraF 
 from eventi e, manifestazioni m 
 where e.idManifestazione=m.id and m.nome = "[nome di una manifestazione]"
