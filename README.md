@@ -175,9 +175,8 @@ erDiagram
 - id **PK**
 - Nome
 
-```md
-Manifestazione è caratterizzata da un identificatore univoco e da un nome, la manifestazione non è altro che un insieme di eventi.
-```
+|La tabella MANIFESTAZIONI rappresenta un contenitore logico di eventi accomunati da un tema o da un contesto comune. Ogni manifestazione è identificata da un codice univoco ed è descritta da un nome significativo. Non contiene informazioni temporali o spaziali, che vengono invece delegate agli eventi che ne fanno parte.|
+|--|
 
 >#### MANIFESTAZIONE_EVENTI
 
@@ -185,9 +184,8 @@ Manifestazione è caratterizzata da un identificatore univoco e da un nome, la m
 - *idEvento* (Evento-->id)
 - **PK(idManifestazione, idEvento)**
 
-```md
-Tabella ausiliara che rappresenta il programma di una manifestazione.
-```
+|La tabella MANIFESTAZIONE_EVENTI modella l’associazione tra una manifestazione e gli eventi che la compongono. È una tabella di collegamento necessaria per rappresentare il programma di una manifestazione e consente di gestire correttamente il caso in cui una manifestazione includa più eventi distinti.|
+|--|
 
 >#### EVENTI
 
@@ -200,9 +198,8 @@ Tabella ausiliara che rappresenta il programma di una manifestazione.
 - OraI
 - OraF
 
-```md
-Evento è caratterizzata da un identificatore univoco proprio e da quelli di manifestazione e location, oltra alle chiavi si vuole registrare il nome, la data in cui avviene con annesse ora di inizio e fine in modo da poter poi costruire il programma. In più all'evento è attribuito un prezzo di partenza che verrà poi modificato in base al settore scelto e dalla classe del biglietto.
-```
+|La tabella EVENTI rappresenta l’unità fondamentale del sistema. Ogni evento è identificato da un codice univoco ed è associato a una manifestazione e a una location. Oltre al nome, vengono memorizzate la data e la fascia oraria di svolgimento, necessarie per la costruzione del programma. Il prezzo memorizzato è il prezzo base, che verrà successivamente modificato in base al settore e alla tipologia di biglietto scelta.|
+|--|
 
 >#### INTRATTENITORI
 
@@ -210,18 +207,16 @@ Evento è caratterizzata da un identificatore univoco proprio e da quelli di man
 - Nome
 - Mestiere
 
-```md
-Un intrattenitore può essere un singolo come un gruppo infatti nel campo nome ci va quello d'arte. l'attributo mestiere indica il tipo di intrattenitore: comico, cantante, mago,...
-```
+|La tabella INTRATTENITORI memorizza gli artisti o i gruppi che partecipano agli eventi. L’attributo Nome rappresenta il nome d’arte o del gruppo, mentre Mestiere identifica la tipologia di intrattenitore, come cantante, comico o altro. La separazione degli intrattenitori dagli eventi consente il riutilizzo degli stessi in più contesti.|
+|--|
 
 >#### TEMPI
 
 - OraI **PK**
 - OraF **PK**
 
-```md
-Si usa l'entità tempi per non avere la stessa esibizione ripetuta in più fasce orarie
-```
+|La tabella TEMPI rappresenta una fascia oraria definita da un’ora di inizio e un’ora di fine. Questa entità consente di evitare la duplicazione delle stesse fasce orarie per esibizioni diverse e rende più flessibile la gestione del programma degli eventi.|
+|--|
 
 >#### ESIBIZIONI
 
@@ -231,9 +226,8 @@ Si usa l'entità tempi per non avere la stessa esibizione ripetuta in più fasce
 - *OraF* (Tempo-->OraF)
 - **PK(idEvento, idIntrattenitore, OraI, OraF)**
 
-```md
-Un esibizione non è altro che la relazione tra una fascia oraria, un intrattenitore ed un evento.
-```
+|La tabella ESIBIZIONI rappresenta la relazione tra un evento, un intrattenitore e una specifica fascia oraria. Ogni esibizione identifica quindi chi si esibisce, in quale evento e in quale intervallo di tempo, permettendo di descrivere programmi complessi con più artisti e più momenti all’interno dello stesso evento.|
+|--|
 
 >#### RECENSIONI
 
@@ -243,9 +237,8 @@ Un esibizione non è altro che la relazione tra una fascia oraria, un intratteni
 - Messaggio ***NULL***
 - **PK(idEvento, IdUtente)**
 
-```md
-La recensione è identificata dall'utente che la fa e dall'evento che viene recensito, una recensione è composta inoltro da una valutazione (obbligatoria) e da un messaggio (opzionale).
-```
+|La tabella RECENSIONI memorizza le valutazioni lasciate dagli utenti sugli eventi. Ogni recensione è univocamente identificata dall’evento recensito e dall’utente che l’ha scritta, impedendo recensioni duplicate. Il voto è obbligatorio, mentre il messaggio testuale è facoltativo, permettendo sia valutazioni rapide sia commenti più dettagliati.|
+|--|
 
 >#### ORGANIZZATORI
 
@@ -254,9 +247,8 @@ La recensione è identificata dall'utente che la fa e dall'evento che viene rece
 - Cognome
 - Ruolo
 
-```md
-L'organizzatore è caratterizzato da nome e cognome più il ruolo che ricopre nell'organizzazione dell'evento.
-```
+|L'organizzatore è caratterizzato da nome e cognome più il ruolo che ricopre nell'organizzazione dell'evento.|
+|--|
 
 >#### ORGANIZZATORI_EVENTO
 
@@ -264,9 +256,8 @@ L'organizzatore è caratterizzato da nome e cognome più il ruolo che ricopre ne
 - *idOrganizzatore* (Organizzatore-->id)
 - **PK(idEvento, idOrganizzatore)**
 
-```md
-Tabella ausiliaria che rappresenta un evento con tutti gli organizzatori del caso o, nel caso contrario tutti gli eventi a cui un organizzatore ha lavorato
-```
+|La tabella ORGANIZZATORI rappresenta le persone coinvolte nell’organizzazione degli eventi. Oltre ai dati anagrafici di base, viene memorizzato il ruolo ricoperto, utile per distinguere responsabilità e funzioni all’interno dell’organizzazione.|
+|--|
 
 >#### LOCATIONS
 
@@ -279,9 +270,8 @@ Tabella ausiliaria che rappresenta un evento con tutti gli organizzatori del cas
   - Città
   - civico ***NULL***
   
-```md
-La location, identificata da un id univoco, è caratterizzata dal nome e dal luogo, il civico non è obbligatorio dato che non sempre c'è.
-```
+|La tabella LOCATIONS rappresenta i luoghi fisici in cui si svolgono gli eventi. Ogni location è identificata da un codice univoco ed è descritta tramite un nome e un indirizzo strutturato. Il numero civico è opzionale, poiché non sempre disponibile o significativo.|
+|--|
 
 >#### SETTORI
 
@@ -290,9 +280,8 @@ La location, identificata da un id univoco, è caratterizzata dal nome e dal luo
 - Posti
 - MoltiplicatorePrezzo
 
-```md
-Il settore è un'entità debole della location e ha con se il numero di posti e un moltiplicatore di prezzo per modificare il prezzo di partenza.
-```
+|La tabella SETTORI rappresenta le suddivisioni interne di una location. Ogni settore è associato a una specifica location e contiene il numero di posti disponibili e un moltiplicatore di prezzo, utilizzato per il calcolo del costo finale del biglietto in base alla posizione.|
+|--|
 
 >#### BIGLIETTI
 
@@ -305,9 +294,8 @@ Il settore è un'entità debole della location e ha con se il numero di posti e 
 - Sesso
 - QR-code
 
-```md
-Il biglietto, identificato da un suo codice univoco più quello di evento e della classe dello stesso, ha inoltre come attributi nome e cognome della persona a appartiene, il sesso di questa persona e un qr-code che lo rappresenta digitalmente.
-```
+|La tabella BIGLIETTI rappresenta il titolo di accesso a un evento. Ogni biglietto è associato a un evento e a una tipologia di biglietto e contiene i dati della persona che ne usufruisce. Il QR-code consente la rappresentazione digitale del biglietto e la sua validazione, mentre il campo di controllo indica se il biglietto è già stato utilizzato.|
+|--|
 
 >#### SETTORE_BIGLIETTI
 
@@ -318,18 +306,16 @@ Il biglietto, identificato da un suo codice univoco più quello di evento e dell
   - Numero
 - **PK(idSettore, idBiglietto)**
 
-```md
-Tabella ausiliaria che permette di associare un biglietto ad un settore e definire quindi il posto associato al biglietto.
-```
+|La tabella SETTORE_BIGLIETTI associa un biglietto a un settore specifico e definisce il posto assegnato tramite fila e numero. Questa struttura permette di gestire posti numerati e garantisce che ogni biglietto sia collegato a una posizione precisa all’interno della location.|
+|--|
 
 >#### ORDINI
 
 - id **PK**
 - Metodo
 
-```md
-L'ordine definisce il metodo di pagamento usato da un utente per pagare n biglietti
-```
+|La tabella ORDINI rappresenta una transazione di acquisto effettuata da un utente. Ogni ordine è identificato da un codice univoco e memorizza il metodo di pagamento utilizzato. Un ordine può comprendere uno o più biglietti.|
+|--|
 
 >#### ORDINE_BIGLIETTI
 
@@ -337,9 +323,8 @@ L'ordine definisce il metodo di pagamento usato da un utente per pagare n biglie
 - *idBiglietto* (Biglietto-->id)
 - **PK(idOrdine, idBiglietto)**
 
-```md
-Tabella ausiliara che associa n biglietti ad un ordine.
-```
+|La tabella ORDINE_BIGLIETTI è una tabella di collegamento che associa i biglietti a un ordine. Consente di gestire acquisti multipli all’interno della stessa transazione, mantenendo separata la logica dell’ordine da quella del singolo biglietto.|
+|--|
 
 >#### UTENTE
 
@@ -348,9 +333,8 @@ Tabella ausiliara che associa n biglietti ad un ordine.
 - Cognome
 - Email **UK**
 
-```md
-L'utente è quello che ha fatto un ordine o una recensione, da non confondere da una persona, quest'ultima infatti non è un entità nel db ma più che altro un campo calcolato dal biglietto. L'utente oltre a nome cognome e id ha anche una mail associata in modo da poter essere aggiunto alla newsletter.
-```
+|La tabella UTENTE rappresenta l’utente registrato al sistema. L’utente può effettuare ordini e scrivere recensioni. Oltre ai dati anagrafici di base, viene memorizzata un’email univoca, utilizzabile sia per l’autenticazione sia per comunicazioni come newsletter o notifiche.|
+|--|
 
 >#### UTENTE_ORDINI
 
@@ -358,17 +342,15 @@ L'utente è quello che ha fatto un ordine o una recensione, da non confondere da
 - *idUtente* (Utente-->id)
 - **PK(idOrdine, idUtente)**
 
-```md
-Tabella ausiliaria che lega più ordini ad un utente
-```
+|La tabella UTENTE_ORDINI collega gli utenti agli ordini effettuati. Questa struttura consente di gestire correttamente la relazione tra utenti e ordini e mantiene il modello flessibile in caso di future estensioni del sistema.|
+|--|
 
 >#### TIPO
 
 - nome **PK**,  
 - ModificatorePrezzo
 
-```md
-Tipo è la classe del biglietto (standard, ridotto, vip,...), infatti ha un modificatore di prezzo oltre al nome (id).
-```
+|La tabella TIPO rappresenta la tipologia del biglietto, come standard, ridotto o VIP. Ogni tipo è caratterizzato da un modificatore di prezzo che viene applicato al prezzo base dell’evento, permettendo una gestione dinamica e scalabile dei costi.|
+|--|
 
 ---
