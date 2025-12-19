@@ -1,8 +1,8 @@
 -- =====================================================
--- DUMP DI TEST ESTESO – EventsMaster
+-- DUMP – EventsMaster
 -- =====================================================
 
--- Pulizia tabelle (ordine corretto per FK)
+-- Pulizia tabelle
 DELETE FROM Utente_Ordini;
 DELETE FROM Ordine_Biglietti;
 DELETE FROM Biglietti;
@@ -20,10 +20,6 @@ DELETE FROM Tipo;
 DELETE FROM Locations;
 DELETE FROM Utenti;
 DELETE FROM Manifestazioni;
-
--- =====================================================
--- DUMP ESTESO ORDINATO – EventsMaster
--- =====================================================
 
 -- =====================================================
 -- 1. MANIFESTAZIONI
@@ -201,5 +197,5 @@ INSERT INTO Organizzatori_Evento (idEvento, idOrganizzatore) VALUES
 (0005,0004);
 
 -- =====================================================
--- FINE DUMP ESTESO ORDINATO
+-- FINE DUMP
 -- =====================================================
