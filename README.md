@@ -17,7 +17,18 @@ Il cuore del progetto è il database, che deve essere progettato in modo solido,
 ---
 
 ## Analisi dei Requisiti
-<!-- Descrizione dei requisiti funzionali e non funzionali, attori, dati necessari, vincoli -->
+
+L’applicazione EventsMaster è pensata per gestire eventi pubblici di varia natura, come concerti, spettacoli o manifestazioni articolate in più appuntamenti. Dal punto di vista funzionale, il sistema deve consentire la definizione di manifestazioni generali, intese come contenitori logici di più eventi, ognuno dei quali si svolge in una data specifica, in una determinata fascia oraria e presso una precisa location. Ogni evento deve avere un prezzo base, che non rappresenta il costo finale del biglietto ma il punto di partenza per il calcolo del prezzo effettivo.
+
+Gli eventi possono prevedere la partecipazione di uno o più intrattenitori, come artisti singoli o gruppi, che si esibiscono in specifiche fasce orarie. È quindi necessario gestire il tempo come entità separata, in modo da evitare duplicazioni di esibizioni identiche su più eventi o orari. Allo stesso modo, un evento può coinvolgere più organizzatori, ciascuno con un ruolo ben definito, rendendo indispensabile una relazione molti-a-molti tra eventi e organizzatori.
+
+La gestione delle location è un altro aspetto centrale: ogni evento si svolge in una sola location, caratterizzata da un nome e da un indirizzo strutturato. Ogni location è suddivisa in settori, ciascuno con un numero limitato di posti e un moltiplicatore di prezzo che influisce sul costo finale del biglietto. Questo consente di modellare situazioni reali come platea, tribuna o VIP, mantenendo flessibilità nel calcolo dei prezzi.
+
+Dal punto di vista dell’utente finale, il sistema deve permettere l’acquisto di uno o più biglietti tramite un ordine, specificando il metodo di pagamento utilizzato. Ogni biglietto è associato a un singolo evento, a una tipologia (standard, ridotto, VIP, ecc.) e a un settore, e contiene le informazioni della persona che lo utilizzerà. Il biglietto deve inoltre essere identificabile in modo univoco e rappresentabile digitalmente tramite un QR-code, che consente la validazione all’ingresso dell’evento.
+
+Gli utenti registrati nel sistema possono inoltre lasciare recensioni sugli eventi a cui hanno partecipato. Ogni recensione è legata a un solo evento e a un solo utente e prevede obbligatoriamente un voto, mentre il commento testuale è facoltativo. Questo vincolo evita recensioni duplicate e garantisce coerenza nei dati.
+
+Dal punto di vista dei requisiti non funzionali, il database deve garantire integrità referenziale, evitando dati orfani o incoerenti. Le chiavi primarie e le chiavi esterne devono essere definite in modo esplicito, così come i vincoli di unicità e di nullabilità. La struttura deve essere normalizzata per ridurre al minimo la ridondanza, ma senza compromettere la leggibilità dello schema o la semplicità delle interrogazioni. Infine, il modello deve essere pensato per poter essere esteso in futuro, ad esempio aggiungendo nuovi metodi di pagamento, nuove tipologie di biglietto o funzionalità avanzate di analisi delle vendite.
 
 ---
 ---
