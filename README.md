@@ -1,9 +1,9 @@
 # Relazione Tecnica – Fase 1: Progettazione del Database
 
-**EventsMaster:**  
+**EventsMaster**  
 **Studente: Bosco Mattia**  
 **Classe: 5°C-IT**  
-**Data:10/12/2025**  
+**Data Creazione:10/12/2025**  
 
 ---
 ---
@@ -93,7 +93,7 @@ erDiagram
         string Stato
         string Regione
         int CAP
-        string Città
+        string Citta
         string civico "nullable"
         %% )
     }
@@ -165,12 +165,12 @@ erDiagram
 ```
 
 ---
-<!-- Schema relazionale logico  -->
-### LO SCHEMA RELAZIONALE
+
+### Lo schema relazionale
 
 ---
 
->#### MANIFESTAZIONI
+#### MANIFESTAZIONI
 
 - id **PK**
 - Nome
@@ -178,7 +178,9 @@ erDiagram
 |La tabella MANIFESTAZIONI rappresenta un contenitore logico di eventi accomunati da un tema o da un contesto comune. Ogni manifestazione è identificata da un codice univoco ed è descritta da un nome significativo. Non contiene informazioni temporali o spaziali, che vengono invece delegate agli eventi che ne fanno parte.|
 |--|
 
->#### MANIFESTAZIONE_EVENTI
+---
+
+#### MANIFESTAZIONE_EVENTI
 
 - *idManifestazione* (Manifestazione-->id)
 - *idEvento* (Evento-->id)
@@ -187,7 +189,9 @@ erDiagram
 |La tabella MANIFESTAZIONE_EVENTI modella l’associazione tra una manifestazione e gli eventi che la compongono. È una tabella di collegamento necessaria per rappresentare il programma di una manifestazione e consente di gestire correttamente il caso in cui una manifestazione includa più eventi distinti.|
 |--|
 
->#### EVENTI
+---
+
+#### EVENTI
 
 - id **PK**
 - *idManifestazione* (Manifestazione-->id)
@@ -201,7 +205,9 @@ erDiagram
 |La tabella EVENTI rappresenta l’unità fondamentale del sistema. Ogni evento è identificato da un codice univoco ed è associato a una manifestazione e a una location. Oltre al nome, vengono memorizzate la data e la fascia oraria di svolgimento, necessarie per la costruzione del programma. Il prezzo memorizzato è il prezzo base, che verrà successivamente modificato in base al settore e alla tipologia di biglietto scelta.|
 |--|
 
->#### INTRATTENITORI
+---
+
+#### INTRATTENITORI
 
 - id **PK**
 - Nome
@@ -210,7 +216,9 @@ erDiagram
 |La tabella INTRATTENITORI memorizza gli artisti o i gruppi che partecipano agli eventi. L’attributo Nome rappresenta il nome d’arte o del gruppo, mentre Mestiere identifica la tipologia di intrattenitore, come cantante, comico o altro. La separazione degli intrattenitori dagli eventi consente il riutilizzo degli stessi in più contesti.|
 |--|
 
->#### TEMPI
+---
+
+#### TEMPI
 
 - OraI **PK**
 - OraF **PK**
@@ -218,7 +226,9 @@ erDiagram
 |La tabella TEMPI rappresenta una fascia oraria definita da un’ora di inizio e un’ora di fine. Questa entità consente di evitare la duplicazione delle stesse fasce orarie per esibizioni diverse e rende più flessibile la gestione del programma degli eventi.|
 |--|
 
->#### ESIBIZIONI
+---
+
+#### ESIBIZIONI
 
 - *idIntrattenitore* (Intrattenitore-->id)
 - *idEvento* (Evento-->id)
@@ -229,7 +239,9 @@ erDiagram
 |La tabella ESIBIZIONI rappresenta la relazione tra un evento, un intrattenitore e una specifica fascia oraria. Ogni esibizione identifica quindi chi si esibisce, in quale evento e in quale intervallo di tempo, permettendo di descrivere programmi complessi con più artisti e più momenti all’interno dello stesso evento.|
 |--|
 
->#### RECENSIONI
+---
+
+#### RECENSIONI
 
 - *idEvento* (Evento-->id)
 - *idUtente* (Utente-->id)
@@ -240,7 +252,9 @@ erDiagram
 |La tabella RECENSIONI memorizza le valutazioni lasciate dagli utenti sugli eventi. Ogni recensione è univocamente identificata dall’evento recensito e dall’utente che l’ha scritta, impedendo recensioni duplicate. Il voto è obbligatorio, mentre il messaggio testuale è facoltativo, permettendo sia valutazioni rapide sia commenti più dettagliati.|
 |--|
 
->#### ORGANIZZATORI
+---
+
+#### ORGANIZZATORI
 
 - id **PK**
 - Nome
@@ -250,7 +264,9 @@ erDiagram
 |L'organizzatore è caratterizzato da nome e cognome più il ruolo che ricopre nell'organizzazione dell'evento.|
 |--|
 
->#### ORGANIZZATORI_EVENTO
+---
+
+#### ORGANIZZATORI_EVENTO
 
 - *idEvento* (Evento-->id)
 - *idOrganizzatore* (Organizzatore-->id)
@@ -259,7 +275,9 @@ erDiagram
 |La tabella ORGANIZZATORI rappresenta le persone coinvolte nell’organizzazione degli eventi. Oltre ai dati anagrafici di base, viene memorizzato il ruolo ricoperto, utile per distinguere responsabilità e funzioni all’interno dell’organizzazione.|
 |--|
 
->#### LOCATIONS
+---
+
+#### LOCATIONS
 
 - id **PK**
 - Nome
@@ -273,7 +291,9 @@ erDiagram
 |La tabella LOCATIONS rappresenta i luoghi fisici in cui si svolgono gli eventi. Ogni location è identificata da un codice univoco ed è descritta tramite un nome e un indirizzo strutturato. Il numero civico è opzionale, poiché non sempre disponibile o significativo.|
 |--|
 
->#### SETTORI
+---
+
+#### SETTORI
 
 - id **PK**
 - *idLocation* (Location-->id)
@@ -283,7 +303,9 @@ erDiagram
 |La tabella SETTORI rappresenta le suddivisioni interne di una location. Ogni settore è associato a una specifica location e contiene il numero di posti disponibili e un moltiplicatore di prezzo, utilizzato per il calcolo del costo finale del biglietto in base alla posizione.|
 |--|
 
->#### BIGLIETTI
+---
+
+#### BIGLIETTI
 
 - id **PK**
 - *idEvento* (Evento-->id)
@@ -297,7 +319,9 @@ erDiagram
 |La tabella BIGLIETTI rappresenta il titolo di accesso a un evento. Ogni biglietto è associato a un evento e a una tipologia di biglietto e contiene i dati della persona che ne usufruisce. Il QR-code consente la rappresentazione digitale del biglietto e la sua validazione, mentre il campo di controllo indica se il biglietto è già stato utilizzato.|
 |--|
 
->#### SETTORE_BIGLIETTI
+---
+
+#### SETTORE_BIGLIETTI
 
 - *idSettore* (Settore-->id)
 - *idBiglietto* (Biglietto-->id)
@@ -309,7 +333,9 @@ erDiagram
 |La tabella SETTORE_BIGLIETTI associa un biglietto a un settore specifico e definisce il posto assegnato tramite fila e numero. Questa struttura permette di gestire posti numerati e garantisce che ogni biglietto sia collegato a una posizione precisa all’interno della location.|
 |--|
 
->#### ORDINI
+---
+
+#### ORDINI
 
 - id **PK**
 - Metodo
@@ -317,7 +343,9 @@ erDiagram
 |La tabella ORDINI rappresenta una transazione di acquisto effettuata da un utente. Ogni ordine è identificato da un codice univoco e memorizza il metodo di pagamento utilizzato. Un ordine può comprendere uno o più biglietti.|
 |--|
 
->#### ORDINE_BIGLIETTI
+---
+
+#### ORDINE_BIGLIETTI
 
 - *idOrdine* (Ordine-->id)
 - *idBiglietto* (Biglietto-->id)
@@ -326,7 +354,9 @@ erDiagram
 |La tabella ORDINE_BIGLIETTI è una tabella di collegamento che associa i biglietti a un ordine. Consente di gestire acquisti multipli all’interno della stessa transazione, mantenendo separata la logica dell’ordine da quella del singolo biglietto.|
 |--|
 
->#### UTENTE
+---
+
+#### UTENTE
 
 - id **PK**
 - Nome
@@ -336,7 +366,9 @@ erDiagram
 |La tabella UTENTE rappresenta l’utente registrato al sistema. L’utente può effettuare ordini e scrivere recensioni. Oltre ai dati anagrafici di base, viene memorizzata un’email univoca, utilizzabile sia per l’autenticazione sia per comunicazioni come newsletter o notifiche.|
 |--|
 
->#### UTENTE_ORDINI
+---
+
+#### UTENTE_ORDINI
 
 - *idOrdine* (Ordine-->id)
 - *idUtente* (Utente-->id)
@@ -345,7 +377,9 @@ erDiagram
 |La tabella UTENTE_ORDINI collega gli utenti agli ordini effettuati. Questa struttura consente di gestire correttamente la relazione tra utenti e ordini e mantiene il modello flessibile in caso di future estensioni del sistema.|
 |--|
 
->#### TIPO
+---
+
+#### TIPO
 
 - nome **PK**,  
 - ModificatorePrezzo
@@ -353,4 +387,5 @@ erDiagram
 |La tabella TIPO rappresenta la tipologia del biglietto, come standard, ridotto o VIP. Ogni tipo è caratterizzato da un modificatore di prezzo che viene applicato al prezzo base dell’evento, permettendo una gestione dinamica e scalabile dei costi.|
 |--|
 
+---
 ---
