@@ -8,15 +8,10 @@
 ---
 ---
 
-## Indice
-<!-- L’indice sarà generato automaticamente nel documento ODT/PDF -->
-
----
----
-
 ## Introduzione
-<!-- Introduzione generale al progetto e agli obiettivi -->
-il progetto è una web app per l'acquisto di biglietti
+
+Il progetto EventsMaster nasce con l’obiettivo di realizzare una web application dedicata alla gestione completa della compravendita di biglietti per eventi. L’applicazione deve permettere di organizzare eventi strutturati, distribuirli nel tempo e nello spazio, associarvi intrattenitori, organizzatori e location, e infine consentire agli utenti di acquistare uno o più biglietti scegliendo settore e tipologia, con un prezzo che varia dinamicamente in base a diversi fattori.
+Il cuore del progetto è il database, che deve essere progettato in modo solido, coerente e facilmente estendibile. In questa prima fase si affronta quindi la progettazione concettuale e logica del database, partendo dall’analisi dei requisiti fino alla definizione dello schema ER e dello schema relazionale. A progettazione conclusa si passa alla scrittura delle istruzioni DDL per la creazione delle tabelle e delle relative chiavi, seguita dal DML per il popolamento del database tramite un dump di dati. L’attenzione è posta non solo sulla correttezza formale dello schema, ma anche sulla sua aderenza a uno scenario reale di utilizzo e sulla capacità di gestire relazioni complesse senza ridondanze inutili.
 
 ---
 ---
@@ -234,7 +229,7 @@ Un esibizione non è altro che la relazione tra una fascia oraria, un intratteni
 - *idEvento* (Evento-->id)
 - *idUtente* (Utente-->id)
 - Voto
-- Messaggio ***NULLABLE***
+- Messaggio ***NULL***
 - **PK(idEvento, IdUtente)**
 
 ```md
