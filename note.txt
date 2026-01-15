@@ -1,0 +1,4 @@
+la recensione deve poter essere fatta solo da qualcuno che ha comprato almeno 1 biglietto dell'evento.
+deve essere possibile mettere nel carrello più biglietti, anche senzaa aver fatto il login, il login diventa obbligatorio solo quando si vuole completare le prenotazioni dal carrello 
+quando si passa a fare registrazione/login usando il link del carrello, l'user poi deve tornare alla pagina del carrello e non alla home, tornare al carrello o in qualsiasi altra pagina fosse nel caso abbia deciso di fare login prima del carrello, ovviamente la home va ricarità con le preferenze dell'user definite nel profilo
+il carrello però non si deve svuotare, se aveva dei biglietti nel carrello li migra anche nel carrello dell'account, da aggiungere un pop up nel caso, che quando si migr, si trova un biglietto identico già nel carrello, nel popup si da l'opzione di mantenere (e quindi poi ne si ha due), o di non migrarlo (nessuna copia) 
