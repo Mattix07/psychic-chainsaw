@@ -1,0 +1,12 @@
+/* EventsMaster - Main CSS Import File
+   This file imports all modular CSS files in the correct order
+*/
+
+@import url('variables.css');
+@import url('base.css');
+@import url('header.css');
+@import url('components.css');
+@import url('cart.css');
+@import url('forms.css');
+@import url('footer.css');
+@import url('responsive.css');

@@ -135,3 +135,36 @@ function getIntrattenitoriEvento(PDO $pdo, int $idEvento): array
     $stmt->execute([$idEvento]);
     return $stmt->fetchAll();
 }
+
+function searchEventiByQuery(PDO $pdo, string $query): array
+{
+    $search = "%{$query}%";
+    $stmt = $pdo->prepare("
+        SELECT e.*, e.id as id, m.Nome as ManifestazioneName, m.Tipo as ManifestazioneTipo,
+               l.Nome as LocationName
+        FROM Eventi e
+        JOIN Manifestazioni m ON e.idManifestazione = m.id
+        JOIN Locations l ON e.idLocation = l.id
+        WHERE e.Nome LIKE ?
+           OR m.Nome LIKE ?
+           OR l.Nome LIKE ?
+        ORDER BY e.Data, e.OraI
+    ");
+    $stmt->execute([$search, $search, $search]);
+    return $stmt->fetchAll();
+}
+
+function getEventiByTipo(PDO $pdo, string $tipo): array
+{
+    $stmt = $pdo->prepare("
+        SELECT e.*, e.id as id, m.Nome as ManifestazioneName, m.Tipo as ManifestazioneTipo,
+               l.Nome as LocationName
+        FROM Eventi e
+        JOIN Manifestazioni m ON e.idManifestazione = m.id
+        JOIN Locations l ON e.idLocation = l.id
+        WHERE m.Tipo = ?
+        ORDER BY e.Data, e.OraI
+    ");
+    $stmt->execute([$tipo]);
+    return $stmt->fetchAll();
+}

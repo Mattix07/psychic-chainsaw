@@ -31,14 +31,20 @@ switch ($action) {
 
     // Navigazione pagine
     case 'list_eventi':
-    case 'home':
         require_once 'controllers/PageController.php';
         require_once 'controllers/EventoController.php';
-        if ($action === 'list_eventi') {
-            listEventi($pdo);
-        } else {
-            setPage('home');
-        }
+        listEventi($pdo);
+        break;
+
+    case 'home':
+        require_once 'controllers/PageController.php';
+        setPage('home');
+        break;
+
+    case 'category':
+        require_once 'controllers/PageController.php';
+        require_once 'controllers/EventoController.php';
+        listByCategory($pdo, $_GET['cat'] ?? '');
         break;
 
     // Eventi
@@ -84,9 +90,7 @@ switch ($action) {
     // Default: homepage
     default:
         require_once 'controllers/PageController.php';
-        if (!isset($_SESSION['page'])) {
-            setPage('home');
-        }
+        setPage('home');
         break;
 }
 

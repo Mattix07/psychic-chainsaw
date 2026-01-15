@@ -74,15 +74,38 @@ function searchEventi(PDO $pdo): void
         redirect('index.php', null, 'Richiesta non valida');
     }
 
-    $nome = sanitize($_POST['nome_manifestazione'] ?? '');
+    $query = sanitize($_POST['query'] ?? $_POST['nome_manifestazione'] ?? '');
 
-    if (empty($nome)) {
-        redirect('index.php', null, 'Inserisci il nome della manifestazione');
+    if (empty($query)) {
+        redirect('index.php', null, 'Inserisci un termine di ricerca');
     }
 
-    $_SESSION['eventi_ricerca'] = getEventiByManifestazioneNome($pdo, $nome);
-    $_SESSION['ricerca_nome'] = $nome;
+    $_SESSION['eventi_ricerca'] = searchEventiByQuery($pdo, $query);
+    $_SESSION['ricerca_nome'] = $query;
     setPage('eventi_ricerca');
+}
+
+function listByCategory(PDO $pdo, string $category): void
+{
+    $categoriesMap = [
+        'concerti' => 'Concerto',
+        'teatro' => 'Teatro',
+        'sport' => 'Sport',
+        'festival' => 'Festival',
+        'mostre' => 'Mostra'
+    ];
+
+    $tipo = $categoriesMap[strtolower($category)] ?? null;
+
+    if ($tipo) {
+        $_SESSION['eventi'] = getEventiByTipo($pdo, $tipo);
+        $_SESSION['categoria_nome'] = ucfirst($category);
+    } else {
+        $_SESSION['eventi'] = getAllEventi($pdo);
+        $_SESSION['categoria_nome'] = 'Tutti gli eventi';
+    }
+
+    setPage('eventi_lista');
 }
 
 function createEventoAction(PDO $pdo): void

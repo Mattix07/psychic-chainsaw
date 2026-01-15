@@ -1,0 +1,169 @@
+/* EventsMaster - Responsive Styles */
+
+/* ============================================
+   RESPONSIVE BREAKPOINTS
+   ============================================ */
+
+/* Large screens */
+@media (max-width: 1200px) {
+    .hero-title {
+        font-size: 3rem;
+    }
+
+    .banner-card {
+        height: 280px;
+    }
+}
+
+/* Medium screens / Tablets */
+@media (max-width: 992px) {
+    .nav-main {
+        display: none;
+    }
+
+    .hero-billboard {
+        height: 70vh;
+    }
+
+    .hero-title {
+        font-size: 2.2rem;
+    }
+
+    .hero-content {
+        padding-bottom: 18%;
+    }
+}
+
+/* Small screens / Mobile landscape */
+@media (max-width: 768px) {
+    .header {
+        padding: 12px 4%;
+    }
+
+    .logo {
+        font-size: 1.4rem;
+    }
+
+    .search-bar.active input {
+        width: 150px;
+    }
+
+    .hero-billboard {
+        height: 60vh;
+    }
+
+    .hero-title {
+        font-size: 1.8rem;
+    }
+
+    .hero-description {
+        font-size: 1rem;
+        -webkit-line-clamp: 2;
+    }
+
+    .hero-actions {
+        flex-direction: column;
+    }
+
+    .btn-hero {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .event-card {
+        width: 160px;
+    }
+
+    .event-card.large {
+        width: 280px;
+    }
+
+    .row-title {
+        font-size: 1.2rem;
+    }
+
+    .banner-card {
+        height: 240px;
+    }
+
+    .banner-card-title {
+        font-size: 1.4rem;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .auth-form {
+        padding: 30px 24px;
+    }
+
+    .cart-sidebar {
+        width: 100%;
+    }
+
+    .events-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 16px;
+    }
+
+    .footer-content {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* Extra small screens / Mobile portrait */
+@media (max-width: 480px) {
+    .event-card {
+        width: 140px;
+    }
+
+    .event-card.large {
+        width: 240px;
+    }
+
+    .event-card-info {
+        padding: 10px;
+    }
+
+    .event-card-title {
+        font-size: 0.85rem;
+    }
+
+    .carousel {
+        gap: 8px;
+    }
+
+    .nav-actions {
+        gap: 8px;
+    }
+
+    .nav-actions a,
+    .nav-actions button {
+        width: 36px;
+        height: 36px;
+    }
+
+    .hero-title {
+        font-size: 1.5rem;
+    }
+
+    .hero-info {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .events-grid {
+        grid-template-columns: repeat(2, 1fr);
+        padding: 16px;
+    }
+
+    .footer-content {
+        grid-template-columns: 1fr;
+    }
+
+    .footer-bottom {
+        flex-direction: column;
+        text-align: center;
+    }
+}
