@@ -186,7 +186,7 @@ function searchEventiByQuery(PDO $pdo, string $query): array
 {
     $search = "%{$query}%";
     $stmt = $pdo->prepare("
-        SELECT e.*, e.id as id, m.Nome as ManifestazioneName, e.Categoria,
+        SELECT e.*, e.Nome as eNome, e.id as id, m.Nome as ManifestazioneName, e.Categoria,
                l.Nome as LocationName
         FROM Eventi e
         JOIN Manifestazioni m ON e.idManifestazione = m.id
