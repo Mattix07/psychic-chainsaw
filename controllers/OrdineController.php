@@ -1,11 +1,19 @@
 <?php
 /**
- * Controller per la gestione degli Ordini
+ * Controller Ordini
+ * Gestisce visualizzazione storico ordini e dettaglio singolo ordine
+ *
+ * Gli ordini sono accessibili solo dall'utente proprietario.
+ * Ogni ordine contiene uno o piu biglietti acquistati.
  */
 
 require_once __DIR__ . '/../models/Ordine.php';
 require_once __DIR__ . '/../models/Biglietto.php';
 
+/**
+ * Mostra lo storico ordini dell'utente corrente
+ * Richiede autenticazione
+ */
 function showOrdiniUtente(PDO $pdo): void
 {
     if (!isLoggedIn()) {
@@ -19,6 +27,10 @@ function showOrdiniUtente(PDO $pdo): void
     setPage('miei_ordini');
 }
 
+/**
+ * Mostra il dettaglio di un ordine con i biglietti associati
+ * Verifica che l'ordine appartenga all'utente corrente
+ */
 function viewOrdine(PDO $pdo): void
 {
     if (!isLoggedIn()) {
@@ -36,7 +48,7 @@ function viewOrdine(PDO $pdo): void
         exit;
     }
 
-    // Verifica che l'ordine appartenga all'utente
+    // Controllo autorizzazione: l'ordine deve appartenere all'utente
     if (!isOrdineOfUtente($pdo, $id, $_SESSION['user_id'])) {
         $_SESSION['error'] = 'Non hai accesso a questo ordine.';
         header('Location: index.php?action=miei_ordini');

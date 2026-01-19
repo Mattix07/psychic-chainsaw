@@ -1,27 +1,30 @@
 <?php
 /**
- * EventsMaster - Entry Point (Router)
- * Sistema di gestione eventi e vendita biglietti
+ * EventsMaster - Entry Point
+ * Router principale dell'applicazione
+ * Gestisce tutte le richieste HTTP e le indirizza ai controller appropriati
  */
 
 require_once 'config/session.php';
 require_once 'config/database.php';
 
-// Previeni cache browser
+// Disabilita cache browser per evitare problemi con dati di sessione
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
 
-// Messaggi flash
+// Recupera e pulisce i messaggi flash dalla sessione
 $msg = $_SESSION['msg'] ?? null;
 $error = $_SESSION['error'] ?? null;
 unset($_SESSION['msg'], $_SESSION['error']);
 
-// Router: determina l'azione
+// Determina l'azione richiesta (POST ha priorita su GET)
 $action = $_POST['action'] ?? $_GET['action'] ?? null;
 
-// Routing delle azioni
 switch ($action) {
-    // Autenticazione
+
+    // ==========================================
+    // AUTENTICAZIONE
+    // ==========================================
     case 'login':
     case 'register':
     case 'logout':
@@ -29,54 +32,6 @@ switch ($action) {
         handleAuth($pdo, $action);
         break;
 
-    // Navigazione pagine
-    case 'list_eventi':
-        require_once 'controllers/PageController.php';
-        require_once 'controllers/EventoController.php';
-        listEventi($pdo);
-        break;
-
-    case 'home':
-        require_once 'controllers/PageController.php';
-        setPage('home');
-        break;
-
-    case 'category':
-        require_once 'controllers/PageController.php';
-        require_once 'controllers/EventoController.php';
-        listByCategory($pdo, $_GET['cat'] ?? '');
-        break;
-
-    // Eventi
-    case 'view_evento':
-    case 'search_eventi':
-    case 'create_evento':
-    case 'update_evento':
-    case 'delete_evento':
-        require_once 'controllers/PageController.php';
-        require_once 'controllers/EventoController.php';
-        handleEvento($pdo, $action);
-        break;
-
-    // Biglietti
-    case 'acquista':
-    case 'valida':
-    case 'view_biglietto':
-        require_once 'controllers/PageController.php';
-        require_once 'controllers/BigliettoController.php';
-        handleBiglietto($pdo, $action);
-        break;
-
-    // Recensioni
-    case 'add_recensione':
-    case 'update_recensione':
-    case 'delete_recensione':
-        require_once 'controllers/PageController.php';
-        require_once 'controllers/RecensioneController.php';
-        handleRecensione($pdo, $action);
-        break;
-
-    // Pagine statiche di autenticazione
     case 'show_login':
         require_once 'controllers/PageController.php';
         setPage('login');
@@ -87,19 +42,76 @@ switch ($action) {
         setPage('register');
         break;
 
-    // Profilo utente
+    // ==========================================
+    // NAVIGAZIONE EVENTI
+    // ==========================================
+    case 'home':
+        require_once 'controllers/PageController.php';
+        setPage('home');
+        break;
+
+    case 'list_eventi':
+        require_once 'controllers/PageController.php';
+        require_once 'controllers/EventoController.php';
+        listEventi($pdo);
+        break;
+
+    case 'category':
+        require_once 'controllers/PageController.php';
+        require_once 'controllers/EventoController.php';
+        listByCategory($pdo, $_GET['cat'] ?? '');
+        break;
+
+    case 'view_evento':
+    case 'search_eventi':
+    case 'create_evento':
+    case 'update_evento':
+    case 'delete_evento':
+        require_once 'controllers/PageController.php';
+        require_once 'controllers/EventoController.php';
+        handleEvento($pdo, $action);
+        break;
+
+    // ==========================================
+    // BIGLIETTI
+    // ==========================================
+    case 'acquista':
+    case 'valida':
+    case 'view_biglietto':
+        require_once 'controllers/PageController.php';
+        require_once 'controllers/BigliettoController.php';
+        handleBiglietto($pdo, $action);
+        break;
+
+    // ==========================================
+    // RECENSIONI
+    // ==========================================
+    case 'add_recensione':
+    case 'update_recensione':
+    case 'delete_recensione':
+        require_once 'controllers/PageController.php';
+        require_once 'controllers/RecensioneController.php';
+        handleRecensione($pdo, $action);
+        break;
+
+    // ==========================================
+    // PROFILO UTENTE
+    // ==========================================
     case 'profilo':
         require_once 'controllers/PageController.php';
         require_once 'controllers/UserController.php';
         showProfilo($pdo);
         break;
 
+    case 'update_profile':
+        require_once 'controllers/UserController.php';
+        updateProfile($pdo);
+        break;
+
     case 'miei_biglietti':
         require_once 'controllers/PageController.php';
         if (!isLoggedIn()) {
-            $_SESSION['error'] = 'Devi effettuare il login.';
-            header('Location: index.php?action=show_login');
-            exit;
+            redirect('index.php?action=show_login', null, 'Devi effettuare il login.');
         }
         setPage('miei_biglietti');
         break;
@@ -116,12 +128,13 @@ switch ($action) {
         viewOrdine($pdo);
         break;
 
+    // ==========================================
+    // GESTIONE PASSWORD
+    // ==========================================
     case 'cambia_password':
         require_once 'controllers/PageController.php';
         if (!isLoggedIn()) {
-            $_SESSION['error'] = 'Devi effettuare il login.';
-            header('Location: index.php?action=show_login');
-            exit;
+            redirect('index.php?action=show_login', null, 'Devi effettuare il login.');
         }
         setPage('cambia_password');
         break;
@@ -131,27 +144,6 @@ switch ($action) {
         updatePassword($pdo);
         break;
 
-    case 'update_profile':
-        require_once 'controllers/UserController.php';
-        updateProfile($pdo);
-        break;
-
-    case 'elimina_account':
-        require_once 'controllers/PageController.php';
-        if (!isLoggedIn()) {
-            $_SESSION['error'] = 'Devi effettuare il login.';
-            header('Location: index.php?action=show_login');
-            exit;
-        }
-        setPage('elimina_account');
-        break;
-
-    case 'delete_account':
-        require_once 'controllers/UserController.php';
-        deleteAccount($pdo);
-        break;
-
-    // Password Recovery
     case 'recupera_password':
         require_once 'controllers/PageController.php';
         setPage('recupera_password');
@@ -172,7 +164,9 @@ switch ($action) {
         doResetPassword($pdo);
         break;
 
-    // Email Verification
+    // ==========================================
+    // VERIFICA EMAIL
+    // ==========================================
     case 'verify_email':
         require_once 'controllers/UserController.php';
         verifyEmail($pdo);
@@ -184,7 +178,23 @@ switch ($action) {
         break;
 
     // ==========================================
-    // ADMIN ROUTES
+    // ELIMINAZIONE ACCOUNT
+    // ==========================================
+    case 'elimina_account':
+        require_once 'controllers/PageController.php';
+        if (!isLoggedIn()) {
+            redirect('index.php?action=show_login', null, 'Devi effettuare il login.');
+        }
+        setPage('elimina_account');
+        break;
+
+    case 'delete_account':
+        require_once 'controllers/UserController.php';
+        deleteAccount($pdo);
+        break;
+
+    // ==========================================
+    // PANNELLO AMMINISTRAZIONE
     // ==========================================
     case 'admin_dashboard':
         require_once 'controllers/PageController.php';
@@ -225,26 +235,29 @@ switch ($action) {
         adminDeleteEvent($pdo);
         break;
 
-    // Promoter Dashboard
+    // ==========================================
+    // DASHBOARD PROMOTER E MODERATORE
+    // ==========================================
     case 'promoter_dashboard':
         require_once 'controllers/PageController.php';
         require_once 'controllers/AdminController.php';
         showPromoterDashboard($pdo);
         break;
 
-    // Mod Dashboard
     case 'mod_dashboard':
         require_once 'controllers/PageController.php';
         require_once 'controllers/AdminController.php';
         showModDashboard($pdo);
         break;
 
-    // Default: homepage
+    // ==========================================
+    // DEFAULT: HOMEPAGE
+    // ==========================================
     default:
         require_once 'controllers/PageController.php';
         setPage('home');
         break;
 }
 
-// Carica il layout principale
+// Renderizza il layout con la pagina richiesta
 require_once 'views/layouts/main.php';

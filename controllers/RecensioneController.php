@@ -1,11 +1,19 @@
 <?php
-
 /**
- * Controller per la gestione delle Recensioni
+ * Controller Recensioni
+ * Gestisce creazione, modifica e eliminazione delle recensioni eventi
+ *
+ * Solo gli utenti che hanno acquistato un biglietto possono recensire.
+ * Ogni utente puo lasciare una sola recensione per evento.
  */
 
 require_once __DIR__ . '/../models/Recensione.php';
 
+/**
+ * Router interno per le azioni sulle recensioni
+ *
+ * @param string $action Azione da eseguire
+ */
 function handleRecensione(PDO $pdo, string $action): void
 {
     switch ($action) {
@@ -23,6 +31,10 @@ function handleRecensione(PDO $pdo, string $action): void
     }
 }
 
+/**
+ * Aggiunge una nuova recensione
+ * Verifica che l'utente abbia acquistato un biglietto e non abbia gia recensito
+ */
 function addRecensioneAction(PDO $pdo): void
 {
     requireAuth();
@@ -36,30 +48,34 @@ function addRecensioneAction(PDO $pdo): void
     $voto = (int) $_POST['voto'];
     $messaggio = sanitize($_POST['messaggio'] ?? '');
 
-    // Validazione voto
+    // Voto deve essere tra 1 e 5
     if ($voto < 1 || $voto > 5) {
-        redirect('index.php?action=view_evento&id=' . $idEvento, null, 'Voto non valido (1-5)');
+        redirect("index.php?action=view_evento&id={$idEvento}", null, 'Voto non valido (1-5)');
     }
 
-    // Verifica se ha acquistato un biglietto per questo evento
+    // Requisito: aver acquistato un biglietto
     if (!hasAcquistatoBiglietto($pdo, $idEvento, $idUtente)) {
-        redirect('index.php?action=view_evento&id=' . $idEvento, null, 'Devi aver acquistato un biglietto per poter recensire questo evento');
+        redirect("index.php?action=view_evento&id={$idEvento}", null, 'Devi aver acquistato un biglietto per poter recensire questo evento');
     }
 
-    // Verifica se ha gia' recensito
+    // Vincolo: una sola recensione per utente/evento
     if (hasRecensito($pdo, $idEvento, $idUtente)) {
-        redirect('index.php?action=view_evento&id=' . $idEvento, null, 'Hai gia\' recensito questo evento');
+        redirect("index.php?action=view_evento&id={$idEvento}", null, 'Hai gia\' recensito questo evento');
     }
 
     try {
         createRecensione($pdo, $idEvento, $idUtente, $voto, $messaggio ?: null);
-        redirect('index.php?action=view_evento&id=' . $idEvento, 'Recensione aggiunta con successo');
+        redirect("index.php?action=view_evento&id={$idEvento}", 'Recensione aggiunta con successo');
     } catch (Exception $e) {
         logError("Errore creazione recensione: " . $e->getMessage());
-        redirect('index.php?action=view_evento&id=' . $idEvento, null, 'Errore durante l\'aggiunta della recensione');
+        redirect("index.php?action=view_evento&id={$idEvento}", null, 'Errore durante l\'aggiunta della recensione');
     }
 }
 
+/**
+ * Modifica una recensione esistente
+ * L'utente puo modificare solo le proprie recensioni
+ */
 function updateRecensioneAction(PDO $pdo): void
 {
     requireAuth();
@@ -74,18 +90,22 @@ function updateRecensioneAction(PDO $pdo): void
     $messaggio = sanitize($_POST['messaggio'] ?? '');
 
     if ($voto < 1 || $voto > 5) {
-        redirect('index.php?action=view_evento&id=' . $idEvento, null, 'Voto non valido (1-5)');
+        redirect("index.php?action=view_evento&id={$idEvento}", null, 'Voto non valido (1-5)');
     }
 
     try {
         updateRecensione($pdo, $idEvento, $idUtente, $voto, $messaggio ?: null);
-        redirect('index.php?action=view_evento&id=' . $idEvento, 'Recensione aggiornata con successo');
+        redirect("index.php?action=view_evento&id={$idEvento}", 'Recensione aggiornata con successo');
     } catch (Exception $e) {
         logError("Errore aggiornamento recensione: " . $e->getMessage());
-        redirect('index.php?action=view_evento&id=' . $idEvento, null, 'Errore durante l\'aggiornamento');
+        redirect("index.php?action=view_evento&id={$idEvento}", null, 'Errore durante l\'aggiornamento');
     }
 }
 
+/**
+ * Elimina una recensione
+ * L'utente puo eliminare solo le proprie recensioni
+ */
 function deleteRecensioneAction(PDO $pdo): void
 {
     requireAuth();
@@ -99,9 +119,9 @@ function deleteRecensioneAction(PDO $pdo): void
 
     try {
         deleteRecensione($pdo, $idEvento, $idUtente);
-        redirect('index.php?action=view_evento&id=' . $idEvento, 'Recensione eliminata');
+        redirect("index.php?action=view_evento&id={$idEvento}", 'Recensione eliminata');
     } catch (Exception $e) {
         logError("Errore eliminazione recensione: " . $e->getMessage());
-        redirect('index.php?action=view_evento&id=' . $idEvento, null, 'Errore durante l\'eliminazione');
+        redirect("index.php?action=view_evento&id={$idEvento}", null, 'Errore durante l\'eliminazione');
     }
 }

@@ -1,7 +1,10 @@
 <?php
-
 /**
- * Controller per la gestione degli Eventi
+ * Controller Eventi
+ * Gestisce visualizzazione, ricerca e CRUD degli eventi
+ *
+ * Gli eventi possono essere filtrati per categoria o cercati per nome.
+ * Le operazioni di modifica richiedono privilegi amministratore.
  */
 
 require_once __DIR__ . '/../models/Evento.php';
@@ -9,6 +12,11 @@ require_once __DIR__ . '/../models/Manifestazione.php';
 require_once __DIR__ . '/../models/Location.php';
 require_once __DIR__ . '/../models/Recensione.php';
 
+/**
+ * Router interno per le azioni sugli eventi
+ *
+ * @param string $action Azione da eseguire
+ */
 function handleEvento(PDO $pdo, string $action): void
 {
     switch ($action) {
@@ -41,6 +49,10 @@ function handleEvento(PDO $pdo, string $action): void
     }
 }
 
+/**
+ * Mostra la pagina dettaglio di un evento
+ * Include intrattenitori, recensioni e media voti
+ */
 function viewEvento(PDO $pdo): void
 {
     $id = (int) ($_GET['id'] ?? 0);
@@ -55,6 +67,7 @@ function viewEvento(PDO $pdo): void
         redirect('index.php', null, 'Evento non trovato');
     }
 
+    // Carica dati correlati per la view
     $_SESSION['evento_corrente'] = $evento;
     $_SESSION['intrattenitori_evento'] = getIntrattenitoriEvento($pdo, $id);
     $_SESSION['recensioni_evento'] = getRecensioniByEvento($pdo, $id);
@@ -62,12 +75,18 @@ function viewEvento(PDO $pdo): void
     setPage('evento_dettaglio');
 }
 
+/**
+ * Lista tutti gli eventi disponibili
+ */
 function listEventi(PDO $pdo): void
 {
     $_SESSION['eventi'] = getAllEventi($pdo);
     setPage('eventi_lista');
 }
 
+/**
+ * Cerca eventi per nome, manifestazione o altri criteri
+ */
 function searchEventi(PDO $pdo): void
 {
     if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
@@ -85,9 +104,14 @@ function searchEventi(PDO $pdo): void
     setPage('eventi_ricerca');
 }
 
+/**
+ * Filtra eventi per categoria
+ * Le categorie valide sono: concerti, teatro, sport, eventi
+ *
+ * @param string $category Categoria da filtrare
+ */
 function listByCategory(PDO $pdo, string $category): void
 {
-    // Mappa alle categorie nel database (minuscolo)
     $validCategories = ['concerti', 'teatro', 'sport', 'eventi'];
     $categoria = strtolower($category);
 
@@ -102,6 +126,9 @@ function listByCategory(PDO $pdo, string $category): void
     setPage('eventi_lista');
 }
 
+/**
+ * Crea un nuovo evento (solo admin)
+ */
 function createEventoAction(PDO $pdo): void
 {
     if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
@@ -128,6 +155,9 @@ function createEventoAction(PDO $pdo): void
     }
 }
 
+/**
+ * Aggiorna un evento esistente (solo admin)
+ */
 function updateEventoAction(PDO $pdo): void
 {
     if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
@@ -155,6 +185,9 @@ function updateEventoAction(PDO $pdo): void
     }
 }
 
+/**
+ * Elimina un evento (solo admin)
+ */
 function deleteEventoAction(PDO $pdo): void
 {
     if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {

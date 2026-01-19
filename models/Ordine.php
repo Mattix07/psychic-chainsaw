@@ -1,14 +1,28 @@
 <?php
-
 /**
- * Model per la gestione degli Ordini
+ * Model Ordine
+ * Gestisce le transazioni di acquisto biglietti
+ *
+ * Un ordine raggruppa uno o piu biglietti acquistati in una singola transazione.
+ * E collegato all'utente tramite la tabella ponte Utente_Ordini e ai biglietti
+ * tramite Ordine_Biglietti.
  */
 
+/**
+ * Recupera tutti gli ordini ordinati dal piu recente
+ *
+ * @return array Lista completa ordini
+ */
 function getAllOrdini(PDO $pdo): array
 {
     return $pdo->query("SELECT * FROM Ordini ORDER BY id DESC")->fetchAll();
 }
 
+/**
+ * Recupera un ordine tramite ID
+ *
+ * @return array|null Dati ordine o null se non trovato
+ */
 function getOrdineById(PDO $pdo, int $id): ?array
 {
     $stmt = $pdo->prepare("SELECT * FROM Ordini WHERE id = ?");
@@ -16,6 +30,12 @@ function getOrdineById(PDO $pdo, int $id): ?array
     return $stmt->fetch() ?: null;
 }
 
+/**
+ * Recupera un ordine con tutti i dettagli associati
+ * Include lista biglietti e dati utente acquirente
+ *
+ * @return array|null Ordine arricchito o null se non trovato
+ */
 function getOrdineCompleto(PDO $pdo, int $id): ?array
 {
     $ordine = getOrdineById($pdo, $id);
@@ -27,6 +47,12 @@ function getOrdineCompleto(PDO $pdo, int $id): ?array
     return $ordine;
 }
 
+/**
+ * Recupera l'utente associato a un ordine
+ * Utilizza la tabella ponte Utente_Ordini
+ *
+ * @return array|null Dati utente o null
+ */
 function getUtenteByOrdine(PDO $pdo, int $idOrdine): ?array
 {
     $stmt = $pdo->prepare("
@@ -39,6 +65,13 @@ function getUtenteByOrdine(PDO $pdo, int $idOrdine): ?array
     return $stmt->fetch() ?: null;
 }
 
+/**
+ * Crea un nuovo ordine
+ * L'ordine viene creato vuoto, i biglietti vanno associati separatamente
+ *
+ * @param string $metodo Metodo di pagamento utilizzato
+ * @return int ID del nuovo ordine
+ */
 function createOrdine(PDO $pdo, string $metodo): int
 {
     $stmt = $pdo->prepare("INSERT INTO Ordini (Metodo) VALUES (?)");
@@ -46,6 +79,12 @@ function createOrdine(PDO $pdo, string $metodo): int
     return (int) $pdo->lastInsertId();
 }
 
+/**
+ * Associa un ordine a un utente
+ * Crea il record nella tabella ponte Utente_Ordini
+ *
+ * @return bool Esito operazione
+ */
 function associaOrdineUtente(PDO $pdo, int $idOrdine, int $idUtente): bool
 {
     $stmt = $pdo->prepare("
@@ -55,6 +94,12 @@ function associaOrdineUtente(PDO $pdo, int $idOrdine, int $idUtente): bool
     return $stmt->execute([$idUtente, $idOrdine]);
 }
 
+/**
+ * Associa un biglietto a un ordine
+ * Crea il record nella tabella ponte Ordine_Biglietti
+ *
+ * @return bool Esito operazione
+ */
 function associaOrdineBiglietto(PDO $pdo, int $idOrdine, int $idBiglietto): bool
 {
     $stmt = $pdo->prepare("
@@ -64,12 +109,24 @@ function associaOrdineBiglietto(PDO $pdo, int $idOrdine, int $idBiglietto): bool
     return $stmt->execute([$idOrdine, $idBiglietto]);
 }
 
+/**
+ * Elimina un ordine
+ * I biglietti e le associazioni vengono gestiti dal cascade del DB
+ *
+ * @return bool Esito operazione
+ */
 function deleteOrdine(PDO $pdo, int $id): bool
 {
     $stmt = $pdo->prepare("DELETE FROM Ordini WHERE id = ?");
     return $stmt->execute([$id]);
 }
 
+/**
+ * Calcola il totale di un ordine sommando i prezzi dei biglietti
+ * Il prezzo di ogni biglietto dipende da evento, tipologia e settore
+ *
+ * @return float Totale ordine in euro
+ */
 function calcolaTotaleOrdine(PDO $pdo, int $idOrdine): float
 {
     $stmt = $pdo->prepare("
@@ -87,6 +144,12 @@ function calcolaTotaleOrdine(PDO $pdo, int $idOrdine): float
     return $result ? (float) $result['totale'] : 0.0;
 }
 
+/**
+ * Recupera lo storico ordini di un utente
+ * Include conteggio biglietti per ogni ordine
+ *
+ * @return array Lista ordini con numero biglietti
+ */
 function getOrdiniByUtente(PDO $pdo, int $idUtente): array
 {
     $stmt = $pdo->prepare("
@@ -102,6 +165,12 @@ function getOrdiniByUtente(PDO $pdo, int $idUtente): array
     return $stmt->fetchAll();
 }
 
+/**
+ * Verifica se un ordine appartiene a un utente specifico
+ * Utilizzato per controlli di autorizzazione
+ *
+ * @return bool True se l'ordine appartiene all'utente
+ */
 function isOrdineOfUtente(PDO $pdo, int $idOrdine, int $idUtente): bool
 {
     $stmt = $pdo->prepare("

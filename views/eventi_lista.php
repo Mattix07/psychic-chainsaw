@@ -24,8 +24,8 @@ $categoriaNome = $_SESSION['categoria_nome'] ?? 'Tutti gli Eventi';
             <article class="event-card" onclick="window.location='index.php?action=view_evento&id=<?= $evento['id'] ?>'">
                 <div class="event-card-poster">
                     <img src="img/events/<?= $evento['id'] ?>.jpg"
-                         alt="<?= e($evento['Nome']) ?>"
-                         onerror="this.src='https://picsum.photos/250/375?random=<?= $evento['id'] ?>'">
+                        alt="<?= e($evento['Nome']) ?>"
+                        onerror="this.src='https://picsum.photos/250/375?random=<?= $evento['id'] ?>'">
                     <span class="event-card-badge"><?= e($evento['ManifestazioneName'] ?? 'Evento') ?></span>
                     <div class="event-card-overlay">
                         <div class="event-card-actions">

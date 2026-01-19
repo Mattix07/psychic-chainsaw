@@ -1,12 +1,22 @@
 <?php
 /**
- * Controller per l'area di amministrazione
+ * Controller Amministrazione
+ * Gestisce dashboard e operazioni per admin, moderatori e promoter
+ *
+ * Implementa un sistema di accesso basato su ruoli con controlli
+ * di autorizzazione per ogni funzione sensibile.
  */
 
 require_once __DIR__ . '/../models/Utente.php';
 require_once __DIR__ . '/../models/Evento.php';
 require_once __DIR__ . '/../models/Ordine.php';
 
+/**
+ * Middleware di controllo accesso basato su ruolo
+ * Verifica autenticazione e ruolo minimo richiesto
+ *
+ * @param string $role Ruolo minimo richiesto (usa costanti ROLE_*)
+ */
 function requireRole(string $role): void
 {
     if (!isLoggedIn()) {
@@ -26,11 +36,14 @@ function requireRole(string $role): void
 // ADMIN DASHBOARD
 // ==========================================
 
+/**
+ * Mostra la dashboard amministratore con statistiche sistema
+ * Richiede ruolo ADMIN
+ */
 function showAdminDashboard(PDO $pdo): void
 {
     requireRole(ROLE_ADMIN);
 
-    // Statistiche
     $stats = [
         'utenti' => countUtentiByRole($pdo),
         'eventi_totali' => countEventi($pdo),
@@ -43,6 +56,10 @@ function showAdminDashboard(PDO $pdo): void
     setPage('admin/dashboard');
 }
 
+/**
+ * Gestione utenti con filtro opzionale per ruolo
+ * Richiede ruolo ADMIN
+ */
 function adminManageUsers(PDO $pdo): void
 {
     requireRole(ROLE_ADMIN);
@@ -59,6 +76,10 @@ function adminManageUsers(PDO $pdo): void
     setPage('admin/utenti');
 }
 
+/**
+ * Aggiorna il ruolo di un utente
+ * Impedisce la modifica del proprio ruolo per sicurezza
+ */
 function adminUpdateUserRole(PDO $pdo): void
 {
     requireRole(ROLE_ADMIN);
@@ -72,6 +93,7 @@ function adminUpdateUserRole(PDO $pdo): void
     $userId = (int) ($_POST['user_id'] ?? 0);
     $newRole = $_POST['role'] ?? '';
 
+    // Protezione: non permettere modifica del proprio ruolo
     if ($userId === $_SESSION['user_id']) {
         $_SESSION['error'] = 'Non puoi modificare il tuo stesso ruolo.';
         header('Location: index.php?action=admin_users');
@@ -88,6 +110,10 @@ function adminUpdateUserRole(PDO $pdo): void
     exit;
 }
 
+/**
+ * Elimina un utente dal sistema
+ * Impedisce l'auto-eliminazione dell'admin
+ */
 function adminDeleteUser(PDO $pdo): void
 {
     requireRole(ROLE_ADMIN);
@@ -100,6 +126,7 @@ function adminDeleteUser(PDO $pdo): void
 
     $userId = (int) ($_POST['user_id'] ?? 0);
 
+    // Protezione: non permettere auto-eliminazione
     if ($userId === $_SESSION['user_id']) {
         $_SESSION['error'] = 'Non puoi eliminare il tuo stesso account.';
         header('Location: index.php?action=admin_users');
@@ -116,6 +143,10 @@ function adminDeleteUser(PDO $pdo): void
     exit;
 }
 
+/**
+ * Lista eventi per amministrazione
+ * Richiede almeno ruolo MOD
+ */
 function adminManageEvents(PDO $pdo): void
 {
     requireRole(ROLE_MOD);
@@ -125,6 +156,11 @@ function adminManageEvents(PDO $pdo): void
     setPage('admin/eventi');
 }
 
+/**
+ * Creazione nuovo evento
+ * Gestisce sia GET (form) che POST (salvataggio)
+ * Richiede almeno ruolo PROMOTER
+ */
 function adminCreateEvent(PDO $pdo): void
 {
     requireRole(ROLE_PROMOTER);
@@ -136,7 +172,6 @@ function adminCreateEvent(PDO $pdo): void
             exit;
         }
 
-        // Crea evento
         $data = [
             'Nome' => sanitize($_POST['nome'] ?? ''),
             'Data' => $_POST['data'] ?? '',
@@ -166,7 +201,7 @@ function adminCreateEvent(PDO $pdo): void
         exit;
     }
 
-    // Mostra form
+    // GET: mostra form con dati per select
     require_once __DIR__ . '/../models/Location.php';
     require_once __DIR__ . '/../models/Manifestazione.php';
 
@@ -175,6 +210,10 @@ function adminCreateEvent(PDO $pdo): void
     setPage('admin/evento_form');
 }
 
+/**
+ * Elimina un evento
+ * Richiede almeno ruolo MOD
+ */
 function adminDeleteEvent(PDO $pdo): void
 {
     requireRole(ROLE_MOD);
@@ -201,15 +240,19 @@ function adminDeleteEvent(PDO $pdo): void
 // PROMOTER DASHBOARD
 // ==========================================
 
+/**
+ * Dashboard per promoter
+ * Mostra gli eventi gestiti dal promoter
+ */
 function showPromoterDashboard(PDO $pdo): void
 {
     requireRole(ROLE_PROMOTER);
 
-    // Eventi creati dal promoter (per ora mostra tutti se admin/mod)
+    // Admin e mod vedono tutti gli eventi
     if (hasRole(ROLE_MOD)) {
         $eventi = getAllEventiAdmin($pdo);
     } else {
-        // TODO: filtrare per eventi creati dal promoter
+        // TODO: filtrare per eventi creati dal promoter specifico
         $eventi = getAllEventiAdmin($pdo);
     }
 
@@ -221,11 +264,14 @@ function showPromoterDashboard(PDO $pdo): void
 // MODERATOR DASHBOARD
 // ==========================================
 
+/**
+ * Dashboard per moderatori
+ * Mostra statistiche di moderazione
+ */
 function showModDashboard(PDO $pdo): void
 {
     requireRole(ROLE_MOD);
 
-    // Statistiche moderazione
     $stats = [
         'eventi_totali' => countEventi($pdo),
         'recensioni_totali' => countRecensioni($pdo)
@@ -236,29 +282,47 @@ function showModDashboard(PDO $pdo): void
 }
 
 // ==========================================
-// HELPER FUNCTIONS
+// FUNZIONI HELPER PER STATISTICHE
 // ==========================================
 
+/**
+ * Conta il numero totale di eventi
+ */
 function countEventi(PDO $pdo): int
 {
     return (int) $pdo->query("SELECT COUNT(*) FROM Eventi")->fetchColumn();
 }
 
+/**
+ * Conta gli eventi con data futura
+ */
 function countEventiFuturi(PDO $pdo): int
 {
     return (int) $pdo->query("SELECT COUNT(*) FROM Eventi WHERE Data >= CURDATE()")->fetchColumn();
 }
 
+/**
+ * Conta il numero totale di ordini
+ */
 function countOrdini(PDO $pdo): int
 {
     return (int) $pdo->query("SELECT COUNT(*) FROM Ordini")->fetchColumn();
 }
 
+/**
+ * Conta il numero totale di recensioni
+ */
 function countRecensioni(PDO $pdo): int
 {
     return (int) $pdo->query("SELECT COUNT(*) FROM Recensioni")->fetchColumn();
 }
 
+/**
+ * Recupera tutti gli eventi per pannello admin
+ * Include nome location e manifestazione
+ *
+ * @return array Lista eventi ordinati per data decrescente
+ */
 function getAllEventiAdmin(PDO $pdo): array
 {
     return $pdo->query("

@@ -1,10 +1,22 @@
 <?php
 /**
- * Controller per la gestione del profilo utente
+ * Controller Utente
+ * Gestisce profilo, password, verifica email e eliminazione account
+ *
+ * Include funzionalita per:
+ * - Visualizzazione e modifica profilo
+ * - Cambio password con verifica password attuale
+ * - Recupero password via email
+ * - Verifica indirizzo email
+ * - Eliminazione account con conferma
  */
 
 require_once __DIR__ . '/../models/Utente.php';
 
+/**
+ * Mostra la pagina profilo utente
+ * Carica i dati aggiornati dal database
+ */
 function showProfilo(PDO $pdo): void
 {
     if (!isLoggedIn()) {
@@ -13,12 +25,15 @@ function showProfilo(PDO $pdo): void
         exit;
     }
 
-    // Carica dati utente
     $user = getUtenteById($pdo, $_SESSION['user_id']);
     $_SESSION['user_data'] = $user;
     setPage('profilo');
 }
 
+/**
+ * Aggiorna i dati anagrafici del profilo
+ * Verifica unicita email se modificata
+ */
 function updateProfile(PDO $pdo): void
 {
     if (!isLoggedIn()) {
@@ -49,7 +64,7 @@ function updateProfile(PDO $pdo): void
         exit;
     }
 
-    // Verifica che l'email non sia già usata da altri
+    // Verifica che la nuova email non sia gia usata da altri utenti
     $existingUser = getUtenteByEmail($pdo, $email);
     if ($existingUser && $existingUser['id'] !== $_SESSION['user_id']) {
         $_SESSION['error'] = 'Questa email è già registrata.';
@@ -64,7 +79,7 @@ function updateProfile(PDO $pdo): void
     ]);
 
     if ($success) {
-        // Aggiorna la sessione
+        // Sincronizza i dati di sessione
         $_SESSION['user_nome'] = $nome;
         $_SESSION['user_cognome'] = $cognome;
         $_SESSION['user_email'] = $email;
@@ -77,6 +92,10 @@ function updateProfile(PDO $pdo): void
     exit;
 }
 
+/**
+ * Aggiorna la password utente
+ * Richiede verifica della password attuale per sicurezza
+ */
 function updatePassword(PDO $pdo): void
 {
     if (!isLoggedIn()) {
@@ -113,7 +132,7 @@ function updatePassword(PDO $pdo): void
         exit;
     }
 
-    // Verifica la password attuale
+    // Verifica password attuale prima di permettere il cambio
     $user = getUtenteById($pdo, $_SESSION['user_id']);
     if (!$user || !password_verify($currentPassword, $user['Password'])) {
         $_SESSION['error'] = 'La password attuale non è corretta.';
@@ -121,7 +140,6 @@ function updatePassword(PDO $pdo): void
         exit;
     }
 
-    // Aggiorna la password
     $success = updateUtentePassword($pdo, $_SESSION['user_id'], $newPassword);
 
     if ($success) {
@@ -134,6 +152,10 @@ function updatePassword(PDO $pdo): void
     exit;
 }
 
+/**
+ * Elimina l'account utente
+ * Richiede conferma esplicita e verifica password
+ */
 function deleteAccount(PDO $pdo): void
 {
     if (!isLoggedIn()) {
@@ -151,13 +173,14 @@ function deleteAccount(PDO $pdo): void
     $password = $_POST['password'] ?? '';
     $confirmDelete = isset($_POST['confirm_delete']);
 
+    // Richiede checkbox di conferma esplicita
     if (!$confirmDelete) {
         $_SESSION['error'] = 'Devi confermare l\'eliminazione dell\'account.';
         header('Location: index.php?action=elimina_account');
         exit;
     }
 
-    // Verifica la password
+    // Verifica password per prevenire eliminazioni accidentali
     $user = getUtenteById($pdo, $_SESSION['user_id']);
     if (!$user || !password_verify($password, $user['Password'])) {
         $_SESSION['error'] = 'Password non corretta.';
@@ -165,11 +188,10 @@ function deleteAccount(PDO $pdo): void
         exit;
     }
 
-    // Elimina l'account
     $success = deleteUtente($pdo, $_SESSION['user_id']);
 
     if ($success) {
-        // Distruggi la sessione
+        // Termina la sessione dopo eliminazione
         session_destroy();
         session_start();
         $_SESSION['msg'] = 'Account eliminato con successo.';
@@ -182,9 +204,14 @@ function deleteAccount(PDO $pdo): void
 }
 
 // ==========================================
-// PASSWORD RECOVERY
+// RECUPERO PASSWORD
 // ==========================================
 
+/**
+ * Invia email per reset password
+ * Genera un token con scadenza e invia il link via email
+ * Messaggio generico per non rivelare se l'email esiste
+ */
 function sendResetEmail(PDO $pdo): void
 {
     require_once __DIR__ . '/../config/mail.php';
@@ -203,10 +230,9 @@ function sendResetEmail(PDO $pdo): void
         exit;
     }
 
-    // Verifica se l'utente esiste
     $user = getUtenteByEmail($pdo, $email);
 
-    // Mostra sempre lo stesso messaggio per sicurezza
+    // Messaggio generico per sicurezza (non rivela se email esiste)
     $_SESSION['msg'] = 'Se l\'email è registrata, riceverai le istruzioni per reimpostare la password.';
 
     if ($user) {
@@ -219,6 +245,10 @@ function sendResetEmail(PDO $pdo): void
     exit;
 }
 
+/**
+ * Esegue il reset della password usando il token
+ * Verifica validita token e aggiorna la password
+ */
 function doResetPassword(PDO $pdo): void
 {
     if (!verifyCsrf()) {
@@ -262,9 +292,13 @@ function doResetPassword(PDO $pdo): void
 }
 
 // ==========================================
-// EMAIL VERIFICATION
+// VERIFICA EMAIL
 // ==========================================
 
+/**
+ * Verifica l'indirizzo email tramite token
+ * Il token viene inviato via email durante la registrazione
+ */
 function verifyEmail(PDO $pdo): void
 {
     $token = $_GET['token'] ?? '';
@@ -288,6 +322,10 @@ function verifyEmail(PDO $pdo): void
     exit;
 }
 
+/**
+ * Reinvia l'email di verifica
+ * Utile se l'utente non ha ricevuto la prima email
+ */
 function resendVerification(PDO $pdo): void
 {
     require_once __DIR__ . '/../config/mail.php';
@@ -306,6 +344,7 @@ function resendVerification(PDO $pdo): void
         exit;
     }
 
+    // Non reinviare se gia verificata
     if (!empty($user['email_verified'])) {
         $_SESSION['msg'] = 'La tua email è già verificata.';
         header('Location: index.php?action=profilo');

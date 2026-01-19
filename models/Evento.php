@@ -1,9 +1,13 @@
 <?php
-
 /**
- * Model per la gestione degli Eventi
+ * Model Evento
+ * Gestisce operazioni CRUD e query per gli eventi
  */
 
+/**
+ * Recupera tutti gli eventi con dati di manifestazione e location
+ * @return array Lista eventi ordinati per data e ora
+ */
 function getAllEventi(PDO $pdo): array
 {
     return $pdo->query("
@@ -15,6 +19,10 @@ function getAllEventi(PDO $pdo): array
     ")->fetchAll();
 }
 
+/**
+ * Recupera un evento specifico con tutti i dettagli
+ * @return array|null Dati evento o null se non trovato
+ */
 function getEventoById(PDO $pdo, int $id): ?array
 {
     $stmt = $pdo->prepare("
@@ -28,6 +36,11 @@ function getEventoById(PDO $pdo, int $id): ?array
     return $stmt->fetch() ?: null;
 }
 
+/**
+ * Recupera tutti gli eventi di una manifestazione
+ * Utile per mostrare eventi correlati nella stessa manifestazione
+ * @return array Lista eventi della manifestazione
+ */
 function getEventiByManifestazione(PDO $pdo, int $idManifestazione): array
 {
     $stmt = $pdo->prepare("
@@ -41,6 +54,10 @@ function getEventiByManifestazione(PDO $pdo, int $idManifestazione): array
     return $stmt->fetchAll();
 }
 
+/**
+ * Recupera eventi di una manifestazione cercando per nome
+ * @return array Lista eventi trovati
+ */
 function getEventiByManifestazioneNome(PDO $pdo, string $nome): array
 {
     $stmt = $pdo->prepare("
@@ -55,6 +72,12 @@ function getEventiByManifestazioneNome(PDO $pdo, string $nome): array
     return $stmt->fetchAll();
 }
 
+/**
+ * Recupera i prossimi eventi futuri
+ * Filtra solo eventi con data >= oggi
+ * @param int $limit Numero massimo di risultati
+ * @return array Lista eventi futuri
+ */
 function getEventiProssimi(PDO $pdo, int $limit = 10): array
 {
     $stmt = $pdo->prepare("
@@ -70,6 +93,10 @@ function getEventiProssimi(PDO $pdo, int $limit = 10): array
     return $stmt->fetchAll();
 }
 
+/**
+ * Crea un nuovo evento
+ * @return int ID del nuovo evento
+ */
 function createEvento(PDO $pdo, array $data): int
 {
     $stmt = $pdo->prepare("
@@ -90,6 +117,10 @@ function createEvento(PDO $pdo, array $data): int
     return (int) $pdo->lastInsertId();
 }
 
+/**
+ * Aggiorna i dati di un evento esistente
+ * @return bool Esito operazione
+ */
 function updateEvento(PDO $pdo, int $id, array $data): bool
 {
     $stmt = $pdo->prepare("
@@ -117,12 +148,21 @@ function updateEvento(PDO $pdo, int $id, array $data): bool
     ]);
 }
 
+/**
+ * Elimina un evento (i biglietti associati vengono eliminati in cascade)
+ * @return bool Esito operazione
+ */
 function deleteEvento(PDO $pdo, int $id): bool
 {
     $stmt = $pdo->prepare("DELETE FROM Eventi WHERE id = ?");
     return $stmt->execute([$id]);
 }
 
+/**
+ * Recupera gli intrattenitori che si esibiscono in un evento
+ * Include gli orari delle esibizioni
+ * @return array Lista intrattenitori con orari
+ */
 function getIntrattenitoriEvento(PDO $pdo, int $idEvento): array
 {
     $stmt = $pdo->prepare("
@@ -136,6 +176,12 @@ function getIntrattenitoriEvento(PDO $pdo, int $idEvento): array
     return $stmt->fetchAll();
 }
 
+/**
+ * Cerca eventi per testo libero
+ * Ricerca su nome evento, manifestazione e location
+ * @param string $query Termine di ricerca
+ * @return array Eventi corrispondenti
+ */
 function searchEventiByQuery(PDO $pdo, string $query): array
 {
     $search = "%{$query}%";
@@ -154,6 +200,12 @@ function searchEventiByQuery(PDO $pdo, string $query): array
     return $stmt->fetchAll();
 }
 
+/**
+ * Recupera eventi filtrati per categoria
+ * Categorie: concerti, teatro, sport, eventi
+ * @param string $tipo Categoria da filtrare
+ * @return array Eventi della categoria
+ */
 function getEventiByTipo(PDO $pdo, string $tipo): array
 {
     $stmt = $pdo->prepare("

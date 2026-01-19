@@ -1,17 +1,22 @@
 <?php
 /**
- * Configurazione Email
+ * Configurazione e funzioni per l'invio email
  *
- * Per utilizzare PHPMailer in produzione:
+ * Il sistema supporta due modalita:
+ * - Simulazione: le email vengono salvate su file di log (sviluppo)
+ * - SMTP reale: invio tramite PHPMailer (produzione)
+ *
+ * Per attivare l'invio reale:
  * 1. Installa PHPMailer: composer require phpmailer/phpmailer
  * 2. Configura le credenziali SMTP nel file .env
  * 3. Imposta USE_REAL_MAIL = true
  */
 
-define('USE_REAL_MAIL', false); // Cambia in true per usare SMTP reale
+// Modalita invio: false = simulazione su log, true = SMTP reale
+define('USE_REAL_MAIL', false);
 define('MAIL_LOG_PATH', __DIR__ . '/../logs/mail.log');
 
-// Configurazione SMTP (da .env in produzione)
+// Configurazione server SMTP (valori da .env in produzione)
 define('SMTP_HOST', env('SMTP_HOST', 'smtp.gmail.com'));
 define('SMTP_PORT', env('SMTP_PORT', 587));
 define('SMTP_USER', env('SMTP_USER', ''));
@@ -20,7 +25,13 @@ define('SMTP_FROM_EMAIL', env('SMTP_FROM_EMAIL', 'noreply@eventsmaster.it'));
 define('SMTP_FROM_NAME', env('SMTP_FROM_NAME', 'EventsMaster'));
 
 /**
- * Invia una email (o simula l'invio in modalità sviluppo)
+ * Invia una email o la simula in base alla configurazione
+ *
+ * @param string $to Indirizzo destinatario
+ * @param string $subject Oggetto email
+ * @param string $body Contenuto HTML o testo
+ * @param bool $isHtml True se il body e HTML
+ * @return bool Esito invio
  */
 function sendMail(string $to, string $subject, string $body, bool $isHtml = true): bool
 {
@@ -32,7 +43,10 @@ function sendMail(string $to, string $subject, string $body, bool $isHtml = true
 }
 
 /**
- * Simula l'invio email (log su file)
+ * Simula l'invio email scrivendo su file di log
+ * Utile in sviluppo per verificare il contenuto senza inviare
+ *
+ * @return bool True se la scrittura su log e riuscita
  */
 function simulateMail(string $to, string $subject, string $body): bool
 {
@@ -56,11 +70,13 @@ function simulateMail(string $to, string $subject, string $body): bool
 }
 
 /**
- * Invia email reale tramite SMTP (richiede PHPMailer)
+ * Invia email reale tramite SMTP usando PHPMailer
+ * Fallback a simulazione se PHPMailer non e installato
+ *
+ * @return bool Esito invio
  */
 function sendRealMail(string $to, string $subject, string $body, bool $isHtml): bool
 {
-    // Verifica se PHPMailer è installato
     $phpmailerPath = __DIR__ . '/../vendor/autoload.php';
     if (!file_exists($phpmailerPath)) {
         logError("PHPMailer non installato. Usa: composer require phpmailer/phpmailer");
@@ -72,7 +88,7 @@ function sendRealMail(string $to, string $subject, string $body, bool $isHtml): 
     try {
         $mail = new PHPMailer\PHPMailer\PHPMailer(true);
 
-        // Configurazione SMTP
+        // Configurazione connessione SMTP
         $mail->isSMTP();
         $mail->Host = SMTP_HOST;
         $mail->SMTPAuth = true;
@@ -82,11 +98,11 @@ function sendRealMail(string $to, string $subject, string $body, bool $isHtml): 
         $mail->Port = SMTP_PORT;
         $mail->CharSet = 'UTF-8';
 
-        // Mittente e destinatario
+        // Imposta mittente e destinatario
         $mail->setFrom(SMTP_FROM_EMAIL, SMTP_FROM_NAME);
         $mail->addAddress($to);
 
-        // Contenuto
+        // Configura contenuto
         $mail->isHTML($isHtml);
         $mail->Subject = $subject;
         $mail->Body = $body;
@@ -104,7 +120,11 @@ function sendRealMail(string $to, string $subject, string $body, bool $isHtml): 
 }
 
 /**
- * Genera un token sicuro per verifica email/reset password
+ * Genera un token crittograficamente sicuro
+ * Utilizzato per verifica email e reset password
+ *
+ * @param int $length Lunghezza in byte (il risultato hex sara il doppio)
+ * @return string Token esadecimale
  */
 function generateToken(int $length = 32): string
 {
@@ -112,7 +132,10 @@ function generateToken(int $length = 32): string
 }
 
 /**
- * Invia email di verifica account
+ * Invia email di verifica account dopo la registrazione
+ * Il link scade dopo 24 ore
+ *
+ * @return bool Esito invio
  */
 function sendVerificationEmail(string $email, string $nome, string $token): bool
 {
@@ -129,6 +152,9 @@ function sendVerificationEmail(string $email, string $nome, string $token): bool
 
 /**
  * Invia email per reset password
+ * Il link scade dopo 1 ora per sicurezza
+ *
+ * @return bool Esito invio
  */
 function sendPasswordResetEmail(string $email, string $nome, string $token): bool
 {
@@ -144,7 +170,12 @@ function sendPasswordResetEmail(string $email, string $nome, string $token): boo
 }
 
 /**
- * Ottiene il template email
+ * Costruisce il corpo HTML dell'email da template
+ * I placeholder {{chiave}} vengono sostituiti con i valori
+ *
+ * @param string $template Nome del template (verify, reset_password)
+ * @param array $data Dati da inserire nel template
+ * @return string HTML dell'email
  */
 function getEmailTemplate(string $template, array $data): string
 {
@@ -184,6 +215,7 @@ function getEmailTemplate(string $template, array $data): string
 
     $html = $templates[$template] ?? '';
 
+    // Sostituisce i placeholder con i valori (escape per sicurezza)
     foreach ($data as $key => $value) {
         $html = str_replace('{{' . $key . '}}', htmlspecialchars($value), $html);
     }
@@ -192,7 +224,10 @@ function getEmailTemplate(string $template, array $data): string
 }
 
 /**
- * Ottiene l'URL base del sito
+ * Costruisce l'URL base dell'applicazione
+ * Rileva automaticamente protocollo, host e path
+ *
+ * @return string URL completo con trailing slash
  */
 function getBaseUrl(): string
 {

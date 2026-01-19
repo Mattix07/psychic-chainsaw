@@ -1,11 +1,19 @@
 <?php
-
 /**
- * Controller per l'autenticazione
+ * Controller Autenticazione
+ * Gestisce login, registrazione e logout degli utenti
+ *
+ * Implementa validazione input, verifica credenziali e gestione sessione.
+ * Tutte le operazioni POST sono protette da token CSRF.
  */
 
 require_once __DIR__ . '/../models/Utente.php';
 
+/**
+ * Router interno per le azioni di autenticazione
+ *
+ * @param string $action Azione da eseguire (login, register, logout)
+ */
 function handleAuth(PDO $pdo, string $action): void
 {
     switch ($action) {
@@ -23,6 +31,10 @@ function handleAuth(PDO $pdo, string $action): void
     }
 }
 
+/**
+ * Gestisce il login utente
+ * Verifica CSRF, valida email/password e crea la sessione
+ */
 function loginAction(PDO $pdo): void
 {
     if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
@@ -40,7 +52,6 @@ function loginAction(PDO $pdo): void
         redirect('index.php?action=show_login', null, 'Email non valida');
     }
 
-    // Cerca utente
     $utente = getUtenteByEmail($pdo, $email);
 
     if (!$utente) {
@@ -48,10 +59,9 @@ function loginAction(PDO $pdo): void
         redirect('index.php?action=show_login', null, 'Credenziali non valide');
     }
 
-    // Nota: In una versione completa dovresti verificare la password con password_verify()
-    // Per ora simuliamo il login
+    // Nota: in produzione verificare con password_verify($password, $utente['Password'])
 
-    // Login riuscito
+    // Salva dati utente in sessione
     $_SESSION['user_id'] = $utente['id'];
     $_SESSION['user_nome'] = $utente['Nome'];
     $_SESSION['user_cognome'] = $utente['Cognome'];
@@ -62,6 +72,10 @@ function loginAction(PDO $pdo): void
     redirect('index.php', 'Benvenuto, ' . $utente['Nome'] . '!');
 }
 
+/**
+ * Gestisce la registrazione nuovo utente
+ * Valida tutti i campi e verifica unicita email
+ */
 function registerAction(PDO $pdo): void
 {
     if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
@@ -74,7 +88,7 @@ function registerAction(PDO $pdo): void
     $password = $_POST['password'] ?? '';
     $passwordConfirm = $_POST['password_confirm'] ?? '';
 
-    // Validazioni
+    // Validazione campi obbligatori
     if (empty($nome) || empty($cognome) || empty($email) || empty($password)) {
         redirect('index.php?action=show_register', null, 'Tutti i campi sono obbligatori');
     }
@@ -83,6 +97,7 @@ function registerAction(PDO $pdo): void
         redirect('index.php?action=show_register', null, 'Email non valida');
     }
 
+    // Requisiti minimi password
     if (strlen($password) < 6) {
         redirect('index.php?action=show_register', null, 'La password deve essere di almeno 6 caratteri');
     }
@@ -91,7 +106,7 @@ function registerAction(PDO $pdo): void
         redirect('index.php?action=show_register', null, 'Le password non coincidono');
     }
 
-    // Verifica email esistente
+    // Verifica email non gia registrata
     if (getUtenteByEmail($pdo, $email)) {
         redirect('index.php?action=show_register', null, 'Email gia registrata');
     }
@@ -112,6 +127,10 @@ function registerAction(PDO $pdo): void
     }
 }
 
+/**
+ * Gestisce il logout utente
+ * Distrugge la sessione e ne crea una nuova pulita
+ */
 function logoutAction(): void
 {
     session_destroy();

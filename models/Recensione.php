@@ -1,9 +1,17 @@
 <?php
-
 /**
- * Model per la gestione delle Recensioni
+ * Model Recensione
+ * Gestisce le valutazioni degli eventi da parte degli utenti
+ *
+ * Gli utenti possono recensire solo eventi per cui hanno acquistato biglietti.
+ * Ogni utente puo lasciare una sola recensione per evento.
  */
 
+/**
+ * Recupera tutte le recensioni di un evento con dati autore
+ *
+ * @return array Lista recensioni con nome e cognome utente
+ */
 function getRecensioniByEvento(PDO $pdo, int $idEvento): array
 {
     $stmt = $pdo->prepare("
@@ -17,6 +25,12 @@ function getRecensioniByEvento(PDO $pdo, int $idEvento): array
     return $stmt->fetchAll();
 }
 
+/**
+ * Calcola la media voti di un evento
+ * Arrotonda a una cifra decimale per visualizzazione
+ *
+ * @return float|null Media voti o null se nessuna recensione
+ */
 function getMediaVotiEvento(PDO $pdo, int $idEvento): ?float
 {
     $stmt = $pdo->prepare("
@@ -29,6 +43,11 @@ function getMediaVotiEvento(PDO $pdo, int $idEvento): ?float
     return $result && $result['media'] ? round((float) $result['media'], 1) : null;
 }
 
+/**
+ * Recupera la recensione di un utente per un evento specifico
+ *
+ * @return array|null Dati recensione o null se non esiste
+ */
 function getRecensione(PDO $pdo, int $idEvento, int $idUtente): ?array
 {
     $stmt = $pdo->prepare("
@@ -39,6 +58,13 @@ function getRecensione(PDO $pdo, int $idEvento, int $idUtente): ?array
     return $stmt->fetch() ?: null;
 }
 
+/**
+ * Crea una nuova recensione
+ *
+ * @param int $voto Valutazione da 1 a 5
+ * @param string|null $messaggio Commento testuale opzionale
+ * @return bool Esito operazione
+ */
 function createRecensione(PDO $pdo, int $idEvento, int $idUtente, int $voto, ?string $messaggio = null): bool
 {
     $stmt = $pdo->prepare("
@@ -48,6 +74,12 @@ function createRecensione(PDO $pdo, int $idEvento, int $idUtente, int $voto, ?st
     return $stmt->execute([$idEvento, $idUtente, $voto, $messaggio]);
 }
 
+/**
+ * Aggiorna una recensione esistente
+ * Permette di modificare voto e messaggio
+ *
+ * @return bool Esito operazione
+ */
 function updateRecensione(PDO $pdo, int $idEvento, int $idUtente, int $voto, ?string $messaggio = null): bool
 {
     $stmt = $pdo->prepare("
@@ -58,6 +90,11 @@ function updateRecensione(PDO $pdo, int $idEvento, int $idUtente, int $voto, ?st
     return $stmt->execute([$voto, $messaggio, $idEvento, $idUtente]);
 }
 
+/**
+ * Elimina una recensione
+ *
+ * @return bool Esito operazione
+ */
 function deleteRecensione(PDO $pdo, int $idEvento, int $idUtente): bool
 {
     $stmt = $pdo->prepare("
@@ -67,6 +104,11 @@ function deleteRecensione(PDO $pdo, int $idEvento, int $idUtente): bool
     return $stmt->execute([$idEvento, $idUtente]);
 }
 
+/**
+ * Verifica se un utente ha gia recensito un evento
+ *
+ * @return bool True se la recensione esiste
+ */
 function hasRecensito(PDO $pdo, int $idEvento, int $idUtente): bool
 {
     return getRecensione($pdo, $idEvento, $idUtente) !== null;
@@ -74,6 +116,9 @@ function hasRecensito(PDO $pdo, int $idEvento, int $idUtente): bool
 
 /**
  * Verifica se l'utente ha acquistato almeno un biglietto per l'evento
+ * Controlla solo ordini in stato completato/confermato/pagato
+ *
+ * @return bool True se l'utente ha acquistato biglietti
  */
 function hasAcquistatoBiglietto(PDO $pdo, int $idEvento, int $idUtente): bool
 {
@@ -92,8 +137,10 @@ function hasAcquistatoBiglietto(PDO $pdo, int $idEvento, int $idUtente): bool
 }
 
 /**
- * Verifica se l'utente può recensire l'evento
- * L'utente deve aver acquistato un biglietto e non aver già recensito
+ * Verifica se l'utente puo recensire un evento
+ * Requisiti: aver acquistato un biglietto e non aver gia recensito
+ *
+ * @return bool True se l'utente puo scrivere una recensione
  */
 function canRecensire(PDO $pdo, int $idEvento, int $idUtente): bool
 {

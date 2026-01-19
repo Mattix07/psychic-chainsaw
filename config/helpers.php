@@ -1,11 +1,15 @@
 <?php
-
 /**
- * Helper functions globali per EventsMaster
+ * Funzioni helper globali per EventsMaster
+ * Raccolta di utility riutilizzabili in tutto il progetto
  */
 
 /**
- * Escaping output HTML
+ * Escape di stringhe per output HTML sicuro
+ * Previene attacchi XSS convertendo caratteri speciali in entita HTML
+ *
+ * @param string|null $string Stringa da sanificare
+ * @return string Stringa sicura per output HTML
  */
 function e(?string $string): string
 {
@@ -13,7 +17,12 @@ function e(?string $string): string
 }
 
 /**
- * Redirect helper
+ * Reindirizza l'utente con messaggi flash opzionali
+ * I messaggi vengono salvati in sessione e mostrati dopo il redirect
+ *
+ * @param string $location URL di destinazione
+ * @param string|null $msg Messaggio di successo
+ * @param string|null $error Messaggio di errore
  */
 function redirect(string $location, ?string $msg = null, ?string $error = null): void
 {
@@ -24,7 +33,10 @@ function redirect(string $location, ?string $msg = null, ?string $error = null):
 }
 
 /**
- * Genera CSRF token
+ * Genera o recupera il token CSRF dalla sessione
+ * Il token viene generato una sola volta per sessione per coerenza
+ *
+ * @return string Token CSRF di 64 caratteri esadecimali
  */
 function generateCsrfToken(): string
 {
@@ -35,7 +47,11 @@ function generateCsrfToken(): string
 }
 
 /**
- * Verifica CSRF token
+ * Verifica la validita del token CSRF
+ * Usa hash_equals per prevenire timing attacks
+ *
+ * @param string $token Token da verificare
+ * @return bool True se il token e valido
  */
 function verifyCsrfToken(string $token): bool
 {
@@ -43,7 +59,10 @@ function verifyCsrfToken(string $token): bool
 }
 
 /**
- * Genera campo hidden CSRF
+ * Genera un campo input hidden con il token CSRF
+ * Da includere in tutti i form POST
+ *
+ * @return string HTML del campo hidden
  */
 function csrfField(): string
 {
@@ -52,7 +71,9 @@ function csrfField(): string
 }
 
 /**
- * Verifica se l'utente e' autenticato
+ * Verifica se esiste una sessione utente attiva
+ *
+ * @return bool True se l'utente e autenticato
  */
 function isLoggedIn(): bool
 {
@@ -60,7 +81,8 @@ function isLoggedIn(): bool
 }
 
 /**
- * Richiede autenticazione
+ * Middleware: richiede autenticazione per accedere alla risorsa
+ * Reindirizza al login se l'utente non e autenticato
  */
 function requireAuth(): void
 {
@@ -70,7 +92,8 @@ function requireAuth(): void
 }
 
 /**
- * Richiede privilegi admin
+ * Middleware: richiede privilegi di amministratore
+ * Reindirizza alla home se l'utente non ha i permessi
  */
 function requireAdmin(): void
 {
@@ -80,7 +103,11 @@ function requireAdmin(): void
 }
 
 /**
- * Sanitizza stringa
+ * Sanifica una stringa rimuovendo tag HTML e spazi superflui
+ * Da usare per input utente che non deve contenere markup
+ *
+ * @param string $string Input da sanificare
+ * @return string Stringa pulita
  */
 function sanitize(string $string): string
 {
@@ -88,7 +115,10 @@ function sanitize(string $string): string
 }
 
 /**
- * Formatta prezzo in euro
+ * Formatta un importo numerico in euro con separatori italiani
+ *
+ * @param float $price Importo da formattare
+ * @return string Prezzo formattato (es. "25,50 €")
  */
 function formatPrice(float $price): string
 {
@@ -96,7 +126,10 @@ function formatPrice(float $price): string
 }
 
 /**
- * Formatta data in italiano
+ * Converte una data dal formato MySQL al formato italiano
+ *
+ * @param string $date Data in formato Y-m-d
+ * @return string Data in formato d/m/Y
  */
 function formatDate(string $date): string
 {
@@ -104,7 +137,10 @@ function formatDate(string $date): string
 }
 
 /**
- * Formatta ora
+ * Formatta un orario rimuovendo i secondi
+ *
+ * @param string $time Orario in formato H:i:s
+ * @return string Orario in formato H:i
  */
 function formatTime(string $time): string
 {
@@ -112,7 +148,10 @@ function formatTime(string $time): string
 }
 
 /**
- * Debug helper (solo in sviluppo)
+ * Funzione di debug: stampa variabili e termina l'esecuzione
+ * Attiva solo in ambiente di sviluppo (APP_DEBUG=true)
+ *
+ * @param mixed ...$vars Variabili da ispezionare
  */
 function dd(...$vars): void
 {
@@ -127,7 +166,11 @@ function dd(...$vars): void
 }
 
 /**
- * Log errori
+ * Registra un messaggio di errore nel file di log
+ * Crea automaticamente la directory logs se non esiste
+ *
+ * @param string $message Messaggio di errore
+ * @param array $context Dati aggiuntivi da loggare in formato JSON
  */
 function logError(string $message, array $context = []): void
 {
@@ -146,8 +189,13 @@ function logError(string $message, array $context = []): void
 }
 
 /**
- * Calcola prezzo finale biglietto
- * Formula: PrezzoBase + ModificatoreTipo * MoltiplicatoreSettore
+ * Calcola il prezzo finale di un biglietto
+ * Applica il modificatore del tipo (VIP, Premium, ecc.) e il moltiplicatore del settore
+ *
+ * @param float $prezzoBase Prezzo base dell'evento
+ * @param float $modificatoreTipo Sovrapprezzo per tipologia biglietto
+ * @param float $moltiplicatoreSettore Coefficiente del settore (es. 1.5 per posti migliori)
+ * @return float Prezzo finale calcolato
  */
 function calcolaPrezzoBiglietto(float $prezzoBase, float $modificatoreTipo, float $moltiplicatoreSettore): float
 {
