@@ -53,21 +53,77 @@
             </button>
 
             <?php if (isLoggedIn()): ?>
-                <a href="index.php?action=miei_ordini" title="I miei ordini">
-                    <i class="fas fa-ticket"></i>
-                </a>
-                <div class="user-menu">
-                    <div class="user-avatar" title="<?= e($_SESSION['user_nome'] ?? 'Utente') ?>">
-                        <?= strtoupper(substr($_SESSION['user_nome'] ?? 'U', 0, 1)) ?>
+                <div class="user-dropdown">
+                    <button class="user-dropdown-toggle" id="userDropdownToggle">
+                        <div class="user-avatar">
+                            <?= strtoupper(substr($_SESSION['user_nome'] ?? 'U', 0, 1)) ?>
+                        </div>
+                        <span class="user-name"><?= e($_SESSION['user_nome'] ?? 'Utente') ?></span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="user-dropdown-menu" id="userDropdownMenu">
+                        <div class="dropdown-header">
+                            <div class="dropdown-user-info">
+                                <div class="user-avatar-lg">
+                                    <?= strtoupper(substr($_SESSION['user_nome'] ?? 'U', 0, 1) . substr($_SESSION['user_cognome'] ?? '', 0, 1)) ?>
+                                </div>
+                                <div>
+                                    <strong><?= e(($_SESSION['user_nome'] ?? '') . ' ' . ($_SESSION['user_cognome'] ?? '')) ?></strong>
+                                    <span><?= e($_SESSION['user_email'] ?? '') ?></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <a href="index.php?action=profilo" class="dropdown-item">
+                            <i class="fas fa-user"></i> Il mio profilo
+                        </a>
+                        <a href="index.php?action=miei_biglietti" class="dropdown-item">
+                            <i class="fas fa-ticket-alt"></i> I miei biglietti
+                        </a>
+                        <a href="index.php?action=miei_ordini" class="dropdown-item">
+                            <i class="fas fa-receipt"></i> Storico ordini
+                        </a>
+                        <?php if (function_exists('isAdmin') && isAdmin()): ?>
+                            <div class="dropdown-divider"></div>
+                            <a href="index.php?action=admin_dashboard" class="dropdown-item dropdown-item-admin">
+                                <i class="fas fa-shield-alt"></i> Dashboard Admin
+                            </a>
+                        <?php elseif (function_exists('isMod') && isMod()): ?>
+                            <div class="dropdown-divider"></div>
+                            <a href="index.php?action=mod_dashboard" class="dropdown-item dropdown-item-mod">
+                                <i class="fas fa-user-shield"></i> Moderazione
+                            </a>
+                        <?php elseif (function_exists('isPromoter') && isPromoter()): ?>
+                            <div class="dropdown-divider"></div>
+                            <a href="index.php?action=promoter_dashboard" class="dropdown-item dropdown-item-promoter">
+                                <i class="fas fa-bullhorn"></i> I miei eventi
+                            </a>
+                        <?php endif; ?>
+                        <div class="dropdown-divider"></div>
+                        <a href="index.php?action=cambia_password" class="dropdown-item">
+                            <i class="fas fa-key"></i> Cambia password
+                        </a>
+                        <div class="dropdown-item theme-setting">
+                            <i class="fas fa-palette"></i> Tema
+                            <div class="theme-options">
+                                <button class="theme-opt" data-theme="light" title="Chiaro"><i class="fas fa-sun"></i></button>
+                                <button class="theme-opt" data-theme="dark" title="Scuro"><i class="fas fa-moon"></i></button>
+                                <button class="theme-opt" data-theme="auto" title="Automatico"><i class="fas fa-circle-half-stroke"></i></button>
+                            </div>
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <a href="index.php?action=elimina_account" class="dropdown-item dropdown-item-danger">
+                            <i class="fas fa-trash"></i> Elimina account
+                        </a>
+                        <form method="post" action="index.php" class="dropdown-form">
+                            <?= csrfField() ?>
+                            <input type="hidden" name="action" value="logout">
+                            <button type="submit" class="dropdown-item">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </button>
+                        </form>
                     </div>
                 </div>
-                <form method="post" action="index.php" style="display:inline">
-                    <?= csrfField() ?>
-                    <input type="hidden" name="action" value="logout">
-                    <button type="submit" title="Logout">
-                        <i class="fas fa-sign-out-alt"></i>
-                    </button>
-                </form>
             <?php else: ?>
                 <a href="index.php?action=show_login" class="btn-login">Accedi</a>
             <?php endif; ?>
@@ -96,6 +152,22 @@
     require __DIR__ . "/../{$page}.php";
     ?>
 </main>
+
+<!-- NEWSLETTER -->
+<section class="newsletter-section">
+    <div class="newsletter-content">
+        <div class="newsletter-text">
+            <h3><i class="fas fa-envelope"></i> Iscriviti alla Newsletter</h3>
+            <p>Ricevi anteprime esclusive, offerte speciali e aggiornamenti sui tuoi eventi preferiti.</p>
+        </div>
+        <form class="newsletter-form" method="post" action="index.php">
+            <?= csrfField() ?>
+            <input type="hidden" name="action" value="subscribe_newsletter">
+            <input type="email" name="newsletter_email" placeholder="La tua email..." required>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Iscriviti</button>
+        </form>
+    </div>
+</section>
 
 <!-- FOOTER -->
 <footer class="footer">

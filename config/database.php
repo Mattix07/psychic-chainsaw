@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/env.php';
 require_once __DIR__ . '/helpers.php';
+require_once __DIR__ . '/../models/Utente.php';
 
 try {
     $pdo = new PDO(

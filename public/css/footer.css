@@ -1,4 +1,98 @@
-/* EventsMaster - Footer Styles */
+/* EventsMaster - Footer & Newsletter Styles */
+
+/* ============================================
+   NEWSLETTER SECTION
+   ============================================ */
+.newsletter-section {
+    background: var(--gradient-primary);
+    padding: 50px 4%;
+    margin-top: 60px;
+}
+
+.newsletter-content {
+    max-width: 800px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 40px;
+    flex-wrap: wrap;
+}
+
+.newsletter-text {
+    flex: 1;
+    min-width: 250px;
+}
+
+.newsletter-text h3 {
+    color: white;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.newsletter-text p {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.95rem;
+}
+
+.newsletter-form {
+    display: flex;
+    gap: 12px;
+    flex: 1;
+    min-width: 300px;
+}
+
+.newsletter-form input[type="email"] {
+    flex: 1;
+    padding: 14px 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: var(--radius);
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 1rem;
+    transition: var(--transition);
+}
+
+.newsletter-form input[type="email"]::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.newsletter-form input[type="email"]:focus {
+    outline: none;
+    border-color: white;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.newsletter-form .btn {
+    white-space: nowrap;
+    background: white;
+    color: var(--primary);
+}
+
+.newsletter-form .btn:hover {
+    background: var(--bg-primary);
+    color: white;
+}
+
+@media (max-width: 600px) {
+    .newsletter-content {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .newsletter-text h3 {
+        justify-content: center;
+    }
+
+    .newsletter-form {
+        width: 100%;
+        flex-direction: column;
+    }
+}
 
 /* ============================================
    FOOTER
@@ -6,7 +100,6 @@
 .footer {
     background: var(--bg-secondary);
     padding: 60px 4% 30px;
-    margin-top: 60px;
     border-top: 1px solid var(--border-color);
 }
 

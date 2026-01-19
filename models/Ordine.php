@@ -86,3 +86,30 @@ function calcolaTotaleOrdine(PDO $pdo, int $idOrdine): float
     $result = $stmt->fetch();
     return $result ? (float) $result['totale'] : 0.0;
 }
+
+function getOrdiniByUtente(PDO $pdo, int $idUtente): array
+{
+    $stmt = $pdo->prepare("
+        SELECT o.*, COUNT(ob.idBiglietto) as num_biglietti
+        FROM Ordini o
+        JOIN Utente_Ordini uo ON o.id = uo.idOrdine
+        LEFT JOIN Ordine_Biglietti ob ON o.id = ob.idOrdine
+        WHERE uo.idUtente = ?
+        GROUP BY o.id
+        ORDER BY o.id DESC
+    ");
+    $stmt->execute([$idUtente]);
+    return $stmt->fetchAll();
+}
+
+function isOrdineOfUtente(PDO $pdo, int $idOrdine, int $idUtente): bool
+{
+    $stmt = $pdo->prepare("
+        SELECT COUNT(*) as count
+        FROM Utente_Ordini
+        WHERE idOrdine = ? AND idUtente = ?
+    ");
+    $stmt->execute([$idOrdine, $idUtente]);
+    $result = $stmt->fetch();
+    return $result && $result['count'] > 0;
+}

@@ -6,37 +6,121 @@
 document.addEventListener('DOMContentLoaded', function() {
 
     // ==========================================
-    // THEME MANAGEMENT
+    // THEME MANAGEMENT (with auto detection)
     // ==========================================
     const themeToggle = document.getElementById('themeToggle');
     const themeIcon = document.getElementById('themeIcon');
 
-    // Load saved theme or default to dark
+    // Get system theme preference
+    function getSystemTheme() {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    // Load saved theme or auto-detect
     function loadTheme() {
-        const savedTheme = localStorage.getItem('em_theme') || 'dark';
-        document.documentElement.setAttribute('data-theme', savedTheme);
-        updateThemeIcon(savedTheme);
+        const savedTheme = localStorage.getItem('em_theme') || 'auto';
+        applyTheme(savedTheme);
+    }
+
+    // Apply theme based on setting
+    function applyTheme(setting) {
+        let actualTheme;
+        if (setting === 'auto') {
+            actualTheme = getSystemTheme();
+        } else {
+            actualTheme = setting;
+        }
+        document.documentElement.setAttribute('data-theme', actualTheme);
+        updateThemeIcon(setting);
+        updateThemeButtons(setting);
     }
 
     function updateThemeIcon(theme) {
         if (themeIcon) {
-            themeIcon.className = theme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+            if (theme === 'auto') {
+                themeIcon.className = 'fas fa-circle-half-stroke';
+            } else {
+                themeIcon.className = theme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+            }
         }
     }
 
+    function updateThemeButtons(setting) {
+        document.querySelectorAll('.theme-opt').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.theme === setting);
+        });
+    }
+
     function toggleTheme() {
-        const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-theme', newTheme);
-        localStorage.setItem('em_theme', newTheme);
-        updateThemeIcon(newTheme);
+        const currentSetting = localStorage.getItem('em_theme') || 'auto';
+        // Cycle: auto -> light -> dark -> auto
+        let newSetting;
+        if (currentSetting === 'auto') {
+            newSetting = 'light';
+        } else if (currentSetting === 'light') {
+            newSetting = 'dark';
+        } else {
+            newSetting = 'auto';
+        }
+        localStorage.setItem('em_theme', newSetting);
+        applyTheme(newSetting);
+    }
+
+    function setTheme(theme) {
+        localStorage.setItem('em_theme', theme);
+        applyTheme(theme);
     }
 
     if (themeToggle) {
         themeToggle.addEventListener('click', toggleTheme);
     }
 
+    // Listen for system theme changes (when set to auto)
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+        const setting = localStorage.getItem('em_theme') || 'auto';
+        if (setting === 'auto') {
+            applyTheme('auto');
+        }
+    });
+
+    // Theme option buttons in dropdown
+    document.querySelectorAll('.theme-opt').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setTheme(btn.dataset.theme);
+        });
+    });
+
     loadTheme();
+
+    // ==========================================
+    // USER DROPDOWN MENU
+    // ==========================================
+    const userDropdown = document.querySelector('.user-dropdown');
+    const userDropdownToggle = document.getElementById('userDropdownToggle');
+    const userDropdownMenu = document.getElementById('userDropdownMenu');
+
+    if (userDropdownToggle && userDropdownMenu) {
+        userDropdownToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            userDropdown.classList.toggle('open');
+        });
+
+        // Close on click outside
+        document.addEventListener('click', (e) => {
+            if (!userDropdown.contains(e.target)) {
+                userDropdown.classList.remove('open');
+            }
+        });
+
+        // Close on ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                userDropdown.classList.remove('open');
+            }
+        });
+    }
 
     // ==========================================
     // HEADER SCROLL EFFECT
@@ -725,5 +809,35 @@ function addToCart(eventoId, tipoId, eventName, ticketType, price, eventDate, im
         price: parseFloat(price),
         eventDate,
         image
+    });
+}
+
+// Expose addToCart to window for inline event handlers
+window.addToCart = function(item) {
+    let cart = JSON.parse(localStorage.getItem('em_cart') || '[]');
+    cart.push(item);
+    localStorage.setItem('em_cart', JSON.stringify(cart));
+    Cart.updateUI();
+};
+
+// Update cart count badge
+window.updateCartCount = function() {
+    Cart.updateUI();
+};
+
+// ==========================================
+// CAROUSEL SCROLL FUNCTION (Global)
+// ==========================================
+function scrollCarousel(button, direction) {
+    const wrapper = button.closest('.carousel-wrapper');
+    const carousel = wrapper.querySelector('.carousel-row');
+
+    if (!carousel) return;
+
+    const scrollAmount = carousel.offsetWidth * 0.8;
+
+    carousel.scrollBy({
+        left: scrollAmount * direction,
+        behavior: 'smooth'
     });
 }

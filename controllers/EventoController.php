@@ -87,19 +87,13 @@ function searchEventi(PDO $pdo): void
 
 function listByCategory(PDO $pdo, string $category): void
 {
-    $categoriesMap = [
-        'concerti' => 'Concerto',
-        'teatro' => 'Teatro',
-        'sport' => 'Sport',
-        'festival' => 'Festival',
-        'mostre' => 'Mostra'
-    ];
+    // Mappa alle categorie nel database (minuscolo)
+    $validCategories = ['concerti', 'teatro', 'sport', 'eventi'];
+    $categoria = strtolower($category);
 
-    $tipo = $categoriesMap[strtolower($category)] ?? null;
-
-    if ($tipo) {
-        $_SESSION['eventi'] = getEventiByTipo($pdo, $tipo);
-        $_SESSION['categoria_nome'] = ucfirst($category);
+    if (in_array($categoria, $validCategories)) {
+        $_SESSION['eventi'] = getEventiByTipo($pdo, $categoria);
+        $_SESSION['categoria_nome'] = ucfirst($categoria);
     } else {
         $_SESSION['eventi'] = getAllEventi($pdo);
         $_SESSION['categoria_nome'] = 'Tutti gli eventi';

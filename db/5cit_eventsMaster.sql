@@ -14,12 +14,12 @@ CREATE TABLE Locations (
     Stato VARCHAR(50) NOT NULL,
     Regione VARCHAR(50) NOT NULL,
     CAP INT NOT NULL,
-    Città VARCHAR(50) NOT NULL,
+    Citta VARCHAR(50) NOT NULL,
     civico VARCHAR(10) NULL
 );
 
 CREATE TABLE Eventi (
-    id INT(4)  PRIMARY KEY,
+    id INT(4) AUTO_INCREMENT PRIMARY KEY,
     idManifestazione INT NOT NULL,
     idLocation INT NOT NULL,
     Nome VARCHAR(100) NOT NULL,
@@ -28,7 +28,8 @@ CREATE TABLE Eventi (
     OraI TIME NOT NULL,
     OraF TIME NOT NULL,
     Programma TEXT,
-    Locandina IMAGE,
+    Locandina BLOB,
+    Categoria ENUM('concerti','teatro','sport','eventi') DEFAULT 'eventi',
     FOREIGN KEY (idManifestazione) REFERENCES Manifestazioni(id) ON DELETE CASCADE,
     FOREIGN KEY (idLocation) REFERENCES Locations(id) ON DELETE RESTRICT
 );
@@ -57,10 +58,17 @@ CREATE TABLE Esibizioni (
 );
 
 CREATE TABLE Utenti (
-    id INT(4)  PRIMARY KEY,
+    id INT(4) AUTO_INCREMENT PRIMARY KEY,
     Nome VARCHAR(100) NOT NULL,
     Cognome VARCHAR(100) NOT NULL,
-    Email VARCHAR(150) NOT NULL UNIQUE
+    Email VARCHAR(150) NOT NULL UNIQUE,
+    Password VARCHAR(255) NOT NULL,
+    ruolo ENUM('user', 'promoter', 'mod', 'admin') DEFAULT 'user',
+    email_verified TINYINT(1) DEFAULT 0,
+    verification_token VARCHAR(64) NULL,
+    reset_token VARCHAR(64) NULL,
+    reset_token_expires DATETIME NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE Recensioni (
@@ -102,7 +110,7 @@ CREATE TABLE Tipo (
 );
 
 CREATE TABLE Biglietti (
-    id INT(4)  PRIMARY KEY,
+    id INT(4) AUTO_INCREMENT PRIMARY KEY,
     idEvento INT NOT NULL,
     idClasse VARCHAR(50) NOT NULL,
     `Check` BOOLEAN DEFAULT FALSE,
@@ -125,7 +133,7 @@ CREATE TABLE Settore_Biglietti (
 );
 
 CREATE TABLE Ordini (
-    id INT(4)  PRIMARY KEY,
+    id INT(4) AUTO_INCREMENT PRIMARY KEY,
     Metodo ENUM('Carta','PayPal','Bonifico') NOT NULL
 );
 

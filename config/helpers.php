@@ -60,14 +60,6 @@ function isLoggedIn(): bool
 }
 
 /**
- * Verifica se l'utente e' admin
- */
-function isAdmin(): bool
-{
-    return isset($_SESSION['is_admin']) && $_SESSION['is_admin'] === true;
-}
-
-/**
  * Richiede autenticazione
  */
 function requireAuth(): void

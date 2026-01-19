@@ -129,3 +129,74 @@ function calcolaPrezzoFinale(PDO $pdo, int $idEvento, string $idClasse, int $idS
 
     return ($result['PrezzoNoMod'] + $result['ModificatorePrezzo']) * $result['MoltiplicatorePrezzo'];
 }
+
+function getBigliettiUtenteFuturi(PDO $pdo, int $idUtente): array
+{
+    $stmt = $pdo->prepare("
+        SELECT b.*, e.Nome as EventoNome, e.Data, e.OraI, e.OraF,
+               l.Nome as LocationName,
+               sb.idSettore,
+               (e.PrezzoNoMod + t.ModificatorePrezzo) * s.MoltiplicatorePrezzo as PrezzoFinale
+        FROM Biglietti b
+        JOIN Ordine_Biglietti ob ON b.id = ob.idBiglietto
+        JOIN Ordini o ON ob.idOrdine = o.id
+        JOIN Eventi e ON b.idEvento = e.id
+        JOIN Locations l ON e.idLocation = l.id
+        JOIN Tipo t ON b.idClasse = t.nome
+        LEFT JOIN Settore_Biglietti sb ON b.id = sb.idBiglietto
+        LEFT JOIN Settori s ON sb.idSettore = s.id
+        WHERE o.idUtente = ? AND e.Data >= CURDATE()
+        ORDER BY e.Data, e.OraI
+    ");
+    $stmt->execute([$idUtente]);
+    return $stmt->fetchAll();
+}
+
+function getBigliettiUtentePassati(PDO $pdo, int $idUtente): array
+{
+    $stmt = $pdo->prepare("
+        SELECT b.*, e.Nome as EventoNome, e.Data, e.OraI,
+               l.Nome as LocationName,
+               (e.PrezzoNoMod + t.ModificatorePrezzo) * COALESCE(s.MoltiplicatorePrezzo, 1) as PrezzoFinale
+        FROM Biglietti b
+        JOIN Ordine_Biglietti ob ON b.id = ob.idBiglietto
+        JOIN Ordini o ON ob.idOrdine = o.id
+        JOIN Eventi e ON b.idEvento = e.id
+        JOIN Locations l ON e.idLocation = l.id
+        JOIN Tipo t ON b.idClasse = t.nome
+        LEFT JOIN Settore_Biglietti sb ON b.id = sb.idBiglietto
+        LEFT JOIN Settori s ON sb.idSettore = s.id
+        WHERE o.idUtente = ? AND e.Data < CURDATE()
+        ORDER BY e.Data DESC, e.OraI DESC
+    ");
+    $stmt->execute([$idUtente]);
+    return $stmt->fetchAll();
+}
+
+function hasBigliettoPerEvento(PDO $pdo, int $idUtente, int $idEvento): bool
+{
+    $stmt = $pdo->prepare("
+        SELECT COUNT(*) as count
+        FROM Biglietti b
+        JOIN Ordine_Biglietti ob ON b.id = ob.idBiglietto
+        JOIN Ordini o ON ob.idOrdine = o.id
+        WHERE o.idUtente = ? AND b.idEvento = ?
+    ");
+    $stmt->execute([$idUtente, $idEvento]);
+    $result = $stmt->fetch();
+    return $result && $result['count'] > 0;
+}
+
+function esisteBigliettoDuplicato(PDO $pdo, int $idEvento, string $nome, string $cognome): bool
+{
+    $stmt = $pdo->prepare("
+        SELECT COUNT(*) as count
+        FROM Biglietti
+        WHERE idEvento = ?
+          AND LOWER(TRIM(Nome)) = LOWER(TRIM(?))
+          AND LOWER(TRIM(Cognome)) = LOWER(TRIM(?))
+    ");
+    $stmt->execute([$idEvento, $nome, $cognome]);
+    $result = $stmt->fetch();
+    return $result && $result['count'] > 0;
+}

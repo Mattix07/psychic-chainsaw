@@ -1,47 +1,55 @@
 <?php
 /**
- * Lista completa degli eventi
+ * Lista completa degli eventi con card grid
  */
 $eventi = $_SESSION['eventi'] ?? [];
+$categoriaNome = $_SESSION['categoria_nome'] ?? 'Tutti gli Eventi';
 ?>
 
-<h1>Tutti gli Eventi</h1>
+<div class="events-page">
+    <div class="events-header">
+        <h1><?= e($categoriaNome) ?></h1>
+        <span class="events-count"><?= count($eventi) ?> eventi trovati</span>
+    </div>
 
-<?php if (empty($eventi)): ?>
-    <p class="no-data">Nessun evento disponibile.</p>
-<?php else: ?>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Nome</th>
-                <th>Manifestazione</th>
-                <th>Data</th>
-                <th>Orario</th>
-                <th>Luogo</th>
-                <th>Prezzo Base</th>
-                <th>Azioni</th>
-            </tr>
-        </thead>
-        <tbody>
+    <?php if (empty($eventi)): ?>
+        <div class="no-data-container">
+            <i class="fas fa-calendar-times"></i>
+            <p>Nessun evento disponibile in questa categoria.</p>
+            <a href="index.php" class="btn btn-primary">Torna alla Home</a>
+        </div>
+    <?php else: ?>
+        <div class="events-grid">
             <?php foreach ($eventi as $evento): ?>
-                <tr>
-                    <td><?= e($evento['Nome']) ?></td>
-                    <td><?= e($evento['ManifestazioneName']) ?></td>
-                    <td><?= formatDate($evento['Data']) ?></td>
-                    <td><?= formatTime($evento['OraI']) ?> - <?= formatTime($evento['OraF']) ?></td>
-                    <td><?= e($evento['LocationName']) ?></td>
-                    <td><?= formatPrice($evento['PrezzoNoMod']) ?></td>
-                    <td>
-                        <a href="index.php?action=view_evento&id=<?= $evento['id'] ?>" class="btn btn-small">
-                            Dettagli
-                        </a>
-                    </td>
-                </tr>
+            <article class="event-card" onclick="window.location='index.php?action=view_evento&id=<?= $evento['id'] ?>'">
+                <div class="event-card-poster">
+                    <img src="img/events/<?= $evento['id'] ?>.jpg"
+                         alt="<?= e($evento['Nome']) ?>"
+                         onerror="this.src='https://picsum.photos/250/375?random=<?= $evento['id'] ?>'">
+                    <span class="event-card-badge"><?= e($evento['ManifestazioneName'] ?? 'Evento') ?></span>
+                    <div class="event-card-overlay">
+                        <div class="event-card-actions">
+                            <button class="card-action-btn primary" onclick="event.stopPropagation(); addToCart(<?= $evento['id'] ?>, 1, '<?= e($evento['Nome']) ?>', 'Standard', <?= $evento['PrezzoNoMod'] ?>, '<?= formatDate($evento['Data']) ?>', 'img/events/<?= $evento['id'] ?>.jpg')">
+                                <i class="fas fa-cart-plus"></i>
+                            </button>
+                            <button class="card-action-btn" onclick="event.stopPropagation();">
+                                <i class="fas fa-heart"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="event-card-info">
+                    <h3 class="event-card-title"><?= e($evento['Nome']) ?></h3>
+                    <div class="event-card-meta">
+                        <span class="event-card-date"><?= formatDate($evento['Data']) ?></span>
+                        <span class="event-card-price">da <?= formatPrice($evento['PrezzoNoMod']) ?></span>
+                    </div>
+                    <div class="event-card-location">
+                        <i class="fas fa-map-marker-alt"></i> <?= e($evento['LocationName']) ?>
+                    </div>
+                </div>
+            </article>
             <?php endforeach; ?>
-        </tbody>
-    </table>
-<?php endif; ?>
-
-<p>
-    <a href="index.php" class="btn btn-secondary">Torna alla Home</a>
-</p>
+        </div>
+    <?php endif; ?>
+</div>

@@ -56,6 +56,12 @@ function acquistaBiglietto(PDO $pdo): void
         redirect('index.php?action=view_evento&id=' . $idEvento, null, 'Sesso non valido');
     }
 
+    // Verifica biglietto duplicato (stessa persona per stesso evento)
+    if (esisteBigliettoDuplicato($pdo, $idEvento, $nome, $cognome)) {
+        redirect('index.php?action=view_evento&id=' . $idEvento, null,
+            'Esiste già un biglietto intestato a ' . $nome . ' ' . $cognome . ' per questo evento');
+    }
+
     // Verifica disponibilita' posti
     $postiDisponibili = getPostiDisponibiliSettore($pdo, $idSettore, $idEvento);
     if ($postiDisponibili <= 0) {

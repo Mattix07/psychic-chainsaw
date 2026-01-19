@@ -140,7 +140,7 @@ function searchEventiByQuery(PDO $pdo, string $query): array
 {
     $search = "%{$query}%";
     $stmt = $pdo->prepare("
-        SELECT e.*, e.id as id, m.Nome as ManifestazioneName, m.Tipo as ManifestazioneTipo,
+        SELECT e.*, e.id as id, m.Nome as ManifestazioneName, e.Categoria,
                l.Nome as LocationName
         FROM Eventi e
         JOIN Manifestazioni m ON e.idManifestazione = m.id
@@ -157,12 +157,12 @@ function searchEventiByQuery(PDO $pdo, string $query): array
 function getEventiByTipo(PDO $pdo, string $tipo): array
 {
     $stmt = $pdo->prepare("
-        SELECT e.*, e.id as id, m.Nome as ManifestazioneName, m.Tipo as ManifestazioneTipo,
+        SELECT e.*, e.id as id, m.Nome as ManifestazioneName, e.Categoria,
                l.Nome as LocationName
         FROM Eventi e
         JOIN Manifestazioni m ON e.idManifestazione = m.id
         JOIN Locations l ON e.idLocation = l.id
-        WHERE m.Tipo = ?
+        WHERE e.Categoria = ?
         ORDER BY e.Data, e.OraI
     ");
     $stmt->execute([$tipo]);

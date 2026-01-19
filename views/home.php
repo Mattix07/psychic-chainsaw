@@ -53,16 +53,17 @@ $categorie = [
 
 <!-- CATEGORY SHORTCUTS -->
 <div class="category-shortcuts">
-    <button class="category-btn active"><i class="fas fa-fire"></i> Tutti</button>
-    <button class="category-btn"><i class="fas fa-music"></i> Concerti</button>
-    <button class="category-btn"><i class="fas fa-theater-masks"></i> Teatro</button>
-    <button class="category-btn"><i class="fas fa-futbol"></i> Sport</button>
-    <button class="category-btn"><i class="fas fa-laugh"></i> Comedy</button>
-    <button class="category-btn"><i class="fas fa-film"></i> Cinema</button>
-    <button class="category-btn"><i class="fas fa-child"></i> Famiglia</button>
+    <a href="index.php" class="category-btn active"><i class="fas fa-fire"></i> Tutti</a>
+    <a href="index.php?action=category&cat=concerti" class="category-btn"><i class="fas fa-music"></i> Concerti</a>
+    <a href="index.php?action=category&cat=teatro" class="category-btn"><i class="fas fa-theater-masks"></i> Teatro</a>
+    <a href="index.php?action=category&cat=sport" class="category-btn"><i class="fas fa-futbol"></i> Sport</a>
+    <a href="index.php?action=category&cat=comedy" class="category-btn"><i class="fas fa-laugh"></i> Comedy</a>
+    <a href="index.php?action=category&cat=cinema" class="category-btn"><i class="fas fa-film"></i> Cinema</a>
+    <a href="index.php?action=category&cat=famiglia" class="category-btn"><i class="fas fa-child"></i> Famiglia</a>
 </div>
 
 <!-- CAROUSEL: In Evidenza (Locandine Grandi) -->
+<?php if (!empty($tuttiEventi)): ?>
 <section class="row-section">
     <div class="row-header">
         <h2 class="row-title">
@@ -73,17 +74,16 @@ $categorie = [
     <div class="carousel-container">
         <button class="carousel-nav prev" data-carousel="featured"><i class="fas fa-chevron-left"></i></button>
         <div class="carousel" id="featured">
-            <?php foreach ($eventiProssimi as $evento): ?>
+            <?php foreach ($tuttiEventi as $evento): ?>
             <article class="event-card large" onclick="window.location='index.php?action=view_evento&id=<?= $evento['id'] ?>'">
                 <div class="event-card-poster">
                     <img src="img/events/<?= $evento['id'] ?>.jpg"
                          alt="<?= e($evento['Nome']) ?>"
-                         onerror="this.src='https://picsum.photos/400/225?random=<?= $evento['id'] ?>'">
+                         onerror="this.src='https://picsum.photos/400/600?random=<?= $evento['id'] ?>'">
                     <span class="event-card-badge">In vendita</span>
                     <div class="event-card-overlay">
                         <div class="event-card-actions">
-                            <button class="card-action-btn primary"><i class="fas fa-play"></i></button>
-                            <button class="card-action-btn"><i class="fas fa-plus"></i></button>
+                            <button class="card-action-btn primary" onclick="event.stopPropagation(); addToCart(<?= $evento['id'] ?>, 1, '<?= e($evento['Nome']) ?>', 'Standard', <?= $evento['PrezzoNoMod'] ?>, '<?= formatDate($evento['Data']) ?>', 'img/events/<?= $evento['id'] ?>.jpg')"><i class="fas fa-cart-plus"></i></button>
                             <button class="card-action-btn"><i class="fas fa-heart"></i></button>
                         </div>
                     </div>
@@ -102,6 +102,7 @@ $categorie = [
         <button class="carousel-nav next" data-carousel="featured"><i class="fas fa-chevron-right"></i></button>
     </div>
 </section>
+<?php endif; ?>
 
 <!-- CAROUSEL: Prossimi Eventi -->
 <section class="row-section">
@@ -197,9 +198,11 @@ if (empty($eventiManifestazione)) continue;
 
 <!-- GRID: Potrebbe Interessarti -->
 <section class="grid-section">
-    <h2 class="row-title">
-        <i class="fas fa-lightbulb"></i> Potrebbe Interessarti
-    </h2>
+    <div class="row-header">
+        <h2 class="row-title">
+            <i class="fas fa-lightbulb"></i> Potrebbe Interessarti
+        </h2>
+    </div>
     <div class="events-grid">
         <?php
         $eventiRandom = array_slice($tuttiEventi, 0, 6);

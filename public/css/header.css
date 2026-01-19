@@ -250,3 +250,267 @@
     font-size: 0.9rem;
     color: white;
 }
+
+/* ============================================
+   USER DROPDOWN MENU
+   ============================================ */
+.user-dropdown {
+    position: relative;
+}
+
+.user-dropdown-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 6px 12px 6px 6px;
+    border-radius: var(--radius);
+    transition: var(--transition);
+    color: var(--text-primary);
+}
+
+.user-dropdown-toggle:hover {
+    background: var(--bg-tertiary);
+}
+
+.user-dropdown-toggle .user-name {
+    font-weight: 500;
+    font-size: 0.9rem;
+    max-width: 100px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-dropdown-toggle i.fa-chevron-down {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    transition: var(--transition);
+}
+
+.user-dropdown.open .user-dropdown-toggle i.fa-chevron-down {
+    transform: rotate(180deg);
+}
+
+.user-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    min-width: 280px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+    z-index: 1001;
+    overflow: hidden;
+}
+
+.user-dropdown.open .user-dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-header {
+    padding: 16px;
+    background: var(--bg-secondary);
+}
+
+.dropdown-user-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.user-avatar-lg {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius);
+    background: var(--gradient-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: white;
+}
+
+.dropdown-user-info > div {
+    flex: 1;
+    min-width: 0;
+}
+
+.dropdown-user-info strong {
+    display: block;
+    font-size: 0.95rem;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dropdown-user-info span {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 8px 0;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    transition: var(--transition);
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+}
+
+.dropdown-item:hover {
+    background: var(--bg-tertiary);
+    color: var(--primary);
+}
+
+.dropdown-item i {
+    width: 18px;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.dropdown-item:hover i {
+    color: var(--primary);
+}
+
+.dropdown-item-danger {
+    color: var(--danger);
+}
+
+.dropdown-item-danger:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+}
+
+.dropdown-item-danger i {
+    color: var(--danger);
+}
+
+/* Admin/Mod/Promoter Links */
+.dropdown-item-admin {
+    color: #ef4444;
+}
+
+.dropdown-item-admin:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.dropdown-item-admin i {
+    color: #ef4444;
+}
+
+.dropdown-item-mod {
+    color: #f59e0b;
+}
+
+.dropdown-item-mod:hover {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+}
+
+.dropdown-item-mod i {
+    color: #f59e0b;
+}
+
+.dropdown-item-promoter {
+    color: #3b82f6;
+}
+
+.dropdown-item-promoter:hover {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+}
+
+.dropdown-item-promoter i {
+    color: #3b82f6;
+}
+
+.dropdown-form {
+    margin: 0;
+}
+
+/* Theme Options in Dropdown */
+.theme-setting {
+    display: flex;
+    justify-content: space-between;
+    cursor: default;
+}
+
+.theme-setting:hover {
+    background: transparent;
+}
+
+.theme-options {
+    display: flex;
+    gap: 4px;
+}
+
+.theme-opt {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    background: var(--bg-secondary);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+}
+
+.theme-opt:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.theme-opt.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .user-dropdown-toggle .user-name {
+        display: none;
+    }
+
+    .user-dropdown-toggle i.fa-chevron-down {
+        display: none;
+    }
+
+    .user-dropdown-menu {
+        right: -10px;
+        min-width: 260px;
+    }
+}
