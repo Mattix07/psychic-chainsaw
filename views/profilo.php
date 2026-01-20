@@ -1,10 +1,21 @@
 <?php
 /**
  * Pagina Profilo Utente
+ *
+ * Mostra e permette la modifica dei dati dell'utente autenticato.
+ *
+ * Sezioni:
+ * - Header: avatar con iniziali, nome completo, email, data iscrizione
+ * - Informazioni Personali: form per modificare nome, cognome, email
+ * - Sicurezza: link a cambio password
+ * - Zona Pericolosa: link a eliminazione account
+ *
+ * I dati utente sono recuperati da $_SESSION['user_data'] impostato dal controller.
  */
 
 $user = $_SESSION['user_data'] ?? null;
 
+// Protezione: la pagina richiede autenticazione
 if (!$user) {
     echo '<div class="no-data-container"><p class="no-data">Devi effettuare il login per vedere il tuo profilo.</p></div>';
     return;

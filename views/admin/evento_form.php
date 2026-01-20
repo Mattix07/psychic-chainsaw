@@ -1,6 +1,17 @@
 <?php
 /**
  * Admin - Form Creazione/Modifica Evento
+ *
+ * Form unificato per creare nuovi eventi o modificare quelli esistenti.
+ * La modalità (crea/modifica) è determinata dalla presenza di $evento in sessione.
+ *
+ * Sezioni del form:
+ * - Informazioni Base: nome, data, ora inizio/fine, programma/descrizione
+ * - Location e Prezzi: location (select), prezzo base, manifestazione (opzionale)
+ * - Immagine: URL immagine evento
+ *
+ * In modalità modifica, l'ID evento viene passato come hidden field.
+ * Location e manifestazioni sono precaricate dal controller via sessione.
  */
 $locations = $_SESSION['admin_locations'] ?? [];
 $manifestazioni = $_SESSION['admin_manifestazioni'] ?? [];

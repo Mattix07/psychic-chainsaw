@@ -1,6 +1,17 @@
 <?php
 /**
  * Admin - Gestione Utenti
+ *
+ * Tabella con tutti gli utenti del sistema con funzionalità di gestione.
+ *
+ * Funzionalità:
+ * - Filtro per ruolo (tutti, admin, mod, promoter, user)
+ * - Visualizzazione: ID, nome, email, ruolo, stato verifica email
+ * - Cambio ruolo tramite select (submit automatico onchange)
+ * - Eliminazione utente con conferma
+ *
+ * Protezione: l'admin non può modificare/eliminare se stesso.
+ * Il ruolo viene aggiornato via form POST con CSRF protection.
  */
 $utenti = $_SESSION['admin_utenti'] ?? [];
 $filter = $_SESSION['admin_filter'] ?? 'all';

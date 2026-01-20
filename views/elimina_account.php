@@ -1,6 +1,16 @@
 <?php
 /**
  * Pagina Elimina Account
+ *
+ * Permette all'utente di eliminare definitivamente il proprio account.
+ * Operazione IRREVERSIBILE che comporta:
+ * - Cancellazione dell'account e dati personali
+ * - Cancellazione di tutti i biglietti acquistati
+ * - Anonimizzazione delle recensioni (rimangono ma senza riferimento utente)
+ *
+ * Per sicurezza richiede:
+ * - Inserimento password corrente
+ * - Checkbox di conferma esplicita
  */
 ?>
 

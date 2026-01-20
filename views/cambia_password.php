@@ -1,6 +1,13 @@
 <?php
 /**
  * Pagina Cambia Password
+ *
+ * Permette all'utente autenticato di modificare la propria password.
+ * Richiede l'inserimento della password attuale per sicurezza,
+ * poi la nuova password deve essere inserita due volte per conferma.
+ *
+ * Requisiti password: minimo 6 caratteri.
+ * Protezione CSRF attiva.
  */
 ?>
 

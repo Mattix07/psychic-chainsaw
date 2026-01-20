@@ -1,6 +1,14 @@
 <?php
 /**
  * Form di Registrazione
+ *
+ * Permette la creazione di un nuovo account utente.
+ * Campi richiesti: nome, cognome, email, password (min 6 caratteri).
+ * La password deve essere confermata per evitare errori di digitazione.
+ *
+ * Dopo la registrazione, viene inviata un'email di verifica
+ * (se il sistema email è configurato in modalità reale).
+ * Protezione CSRF attiva su tutti i form.
  */
 ?>
 

@@ -1,6 +1,19 @@
 <?php
 /**
- * Lista completa degli eventi con card grid
+ * Lista eventi con card grid
+ *
+ * Mostra una griglia di eventi filtrati per categoria.
+ * Usata sia per la lista completa che per le singole categorie
+ * (concerti, teatro, sport, ecc.).
+ *
+ * Dati da sessione:
+ * - $_SESSION['eventi']: array degli eventi da mostrare
+ * - $_SESSION['categoria_nome']: titolo della pagina (es. "Concerti", "Teatro")
+ *
+ * Ogni card evento mostra:
+ * - Immagine con badge manifestazione
+ * - Pulsanti azione rapida (carrello, preferiti) su hover
+ * - Nome, data, prezzo e location
  */
 $eventi = $_SESSION['eventi'] ?? [];
 $categoriaNome = $_SESSION['categoria_nome'] ?? 'Tutti gli Eventi';

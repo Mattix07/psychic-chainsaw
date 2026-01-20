@@ -1,6 +1,20 @@
 <?php
 /**
- * Moderator Dashboard
+ * Dashboard Moderatore
+ *
+ * Pannello di controllo per utenti con ruolo 'mod'.
+ * I moderatori hanno permessi intermedi tra user e admin.
+ *
+ * Sezioni:
+ * - Stats: contatori eventi e recensioni totali
+ * - Azioni Rapide: gestione eventi, creazione nuovo evento
+ * - Strumenti Moderatore: riepilogo permessi (cosa può/non può fare)
+ *
+ * Permessi moderatore:
+ * - Può gestire e moderare tutti gli eventi
+ * - Può creare nuovi eventi
+ * - Può eliminare eventi inappropriati
+ * - NON può gestire gli utenti (riservato agli admin)
  */
 $stats = $_SESSION['mod_stats'] ?? [];
 ?>

@@ -1,6 +1,16 @@
 <?php
 /**
- * Risultati ricerca eventi per manifestazione
+ * Risultati ricerca eventi
+ *
+ * Mostra i risultati della ricerca eventi dalla barra di ricerca header.
+ * La ricerca può essere per nome evento, artista o manifestazione.
+ *
+ * Dati da sessione:
+ * - $_SESSION['eventi_ricerca']: array degli eventi trovati
+ * - $_SESSION['ricerca_nome']: query di ricerca per il titolo
+ *
+ * Layout identico a eventi_lista.php ma con titolo dinamico
+ * che mostra il termine cercato.
  */
 $eventi = $_SESSION['eventi_ricerca'] ?? [];
 $nomeRicerca = $_SESSION['ricerca_nome'] ?? '';

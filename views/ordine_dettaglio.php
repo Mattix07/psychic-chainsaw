@@ -1,9 +1,23 @@
 <?php
 /**
  * Dettaglio Ordine
+ *
+ * Mostra tutti i dettagli di un ordine specifico.
+ *
+ * Informazioni visualizzate:
+ * - Riepilogo: metodo pagamento, numero biglietti, totale ordine
+ * - Lista biglietti con:
+ *   - Nome evento e intestatario
+ *   - Data e ora evento
+ *   - Tipo biglietto
+ *   - Stato validazione (Validato/Da utilizzare)
+ *
+ * L'accesso è protetto: il controller verifica che l'ordine
+ * appartenga all'utente loggato prima di mostrarlo.
  */
 require_once __DIR__ . '/../models/Ordine.php';
 
+// Dati ordine passati dal controller via sessione
 $ordine = $_SESSION['ordine_corrente'] ?? null;
 $biglietti = $_SESSION['biglietti_ordine'] ?? [];
 
@@ -12,6 +26,7 @@ if (!$ordine) {
     return;
 }
 
+// Calcola totale sommando i prezzi finali di tutti i biglietti
 $totale = calcolaTotaleOrdine($pdo, $ordine['id']);
 ?>
 

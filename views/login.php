@@ -1,6 +1,14 @@
 <?php
 /**
  * Form di Login
+ *
+ * Pagina di autenticazione utente con protezione CSRF.
+ * Dopo il login, l'utente viene reindirizzato alla home o alla pagina
+ * da cui proveniva (es. checkout se stava acquistando).
+ *
+ * Link disponibili:
+ * - Recupero password per utenti che hanno dimenticato le credenziali
+ * - Registrazione per nuovi utenti
  */
 ?>
 

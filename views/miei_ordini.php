@@ -1,6 +1,17 @@
 <?php
 /**
  * I Miei Ordini - Storico ordini utente
+ *
+ * Lista di tutti gli ordini effettuati dall'utente.
+ * Un ordine può contenere più biglietti acquistati insieme.
+ *
+ * Per ogni ordine mostra:
+ * - ID ordine
+ * - Metodo di pagamento (Carta, PayPal, Bonifico) con icona
+ * - Numero di biglietti nell'ordine
+ * - Link al dettaglio completo
+ *
+ * Gli ordini sono passati dal controller via $_SESSION['ordini_utente'].
  */
 
 $ordini = $_SESSION['ordini_utente'] ?? [];

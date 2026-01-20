@@ -1,18 +1,30 @@
 <?php
 /**
  * Homepage - Layout Netflix-style con carousel
+ *
+ * Struttura della pagina:
+ * - Hero Billboard: evento in evidenza (il prossimo in programma)
+ * - Category Shortcuts: pulsanti rapidi per filtrare per categoria
+ * - Carousel "In Evidenza": tutti gli eventi con card grandi (locandine)
+ * - Carousel "Prossimi Eventi": eventi ordinati per data
+ * - Banner Promo: call-to-action per newsletter
+ * - Carousel per Manifestazione: un carousel per ogni manifestazione con eventi
+ * - Grid "Potrebbe Interessarti": suggerimenti casuali
+ *
+ * I carousel sono navigabili con pulsanti prev/next gestiti da JavaScript.
  */
 require_once __DIR__ . '/../models/Evento.php';
 require_once __DIR__ . '/../models/Manifestazione.php';
 
+// Recupera dati per i vari carousel
 $eventiProssimi = getEventiProssimi($pdo, 12);
 $manifestazioni = getAllManifestazioni($pdo);
 $tuttiEventi = getAllEventi($pdo);
 
-// Evento in evidenza (il primo prossimo)
+// L'evento hero è il primo evento prossimo (quello più imminente)
 $eventoHero = !empty($eventiProssimi) ? $eventiProssimi[0] : null;
 
-// Categorie per i carousel
+// Mappa categorie per i pulsanti di filtro rapido
 $categorie = [
     'concerti' => 'Concerti',
     'teatro' => 'Teatro',
@@ -22,7 +34,12 @@ $categorie = [
 ];
 ?>
 
-<!-- HERO BILLBOARD -->
+<!--
+    HERO BILLBOARD
+    Sezione a tutto schermo con l'evento in evidenza.
+    L'immagine di sfondo usa l'ID evento per caricare da img/events/{id}.jpg
+    con fallback a un gradiente se l'immagine non esiste.
+-->
 <?php if ($eventoHero): ?>
 <section class="hero-billboard">
     <div class="hero-bg" style="background-image: url('img/events/<?= $eventoHero['id'] ?>.jpg'), linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);"></div>
@@ -51,7 +68,11 @@ $categorie = [
 </section>
 <?php endif; ?>
 
-<!-- CATEGORY SHORTCUTS -->
+<!--
+    CATEGORY SHORTCUTS
+    Pulsanti per navigazione rapida alle categorie di eventi.
+    Il pulsante "Tutti" è attivo di default sulla home.
+-->
 <div class="category-shortcuts">
     <a href="index.php" class="category-btn active"><i class="fas fa-fire"></i> Tutti</a>
     <a href="index.php?action=category&cat=concerti" class="category-btn"><i class="fas fa-music"></i> Concerti</a>
@@ -62,7 +83,12 @@ $categorie = [
     <a href="index.php?action=category&cat=famiglia" class="category-btn"><i class="fas fa-child"></i> Famiglia</a>
 </div>
 
-<!-- CAROUSEL: In Evidenza (Locandine Grandi) -->
+<!--
+    CAROUSEL: In Evidenza
+    Mostra tutti gli eventi con card di dimensione "large" (locandine verticali).
+    Ogni card è cliccabile e porta al dettaglio evento.
+    Il pulsante carrello aggiunge direttamente un biglietto standard.
+-->
 <?php if (!empty($tuttiEventi)): ?>
 <section class="row-section">
     <div class="row-header">
@@ -104,7 +130,11 @@ $categorie = [
 </section>
 <?php endif; ?>
 
-<!-- CAROUSEL: Prossimi Eventi -->
+<!--
+    CAROUSEL: Prossimi Eventi
+    Eventi ordinati per data, i più imminenti per primi.
+    Card di dimensione standard con overlay azioni al hover.
+-->
 <section class="row-section">
     <div class="row-header">
         <h2 class="row-title">
@@ -142,7 +172,11 @@ $categorie = [
     </div>
 </section>
 
-<!-- BANNER PROMO -->
+<!--
+    BANNER PROMO
+    Call-to-action per l'iscrizione alla newsletter.
+    Sfondo con immagine casuale da Picsum per varietà visiva.
+-->
 <div class="banner-card">
     <div class="banner-card-bg" style="background-image: url('https://picsum.photos/1200/300?random=banner');"></div>
     <div class="banner-card-content">
@@ -152,9 +186,15 @@ $categorie = [
     </div>
 </div>
 
-<!-- CAROUSEL: Per Manifestazione -->
+<!--
+    CAROUSEL: Per Manifestazione
+    Genera un carousel per ogni manifestazione che ha eventi associati.
+    Le manifestazioni senza eventi vengono saltate (continue).
+    Permette di esplorare eventi raggruppati per festival/tour/rassegna.
+-->
 <?php foreach ($manifestazioni as $manifestazione): ?>
 <?php
+// Recupera eventi della manifestazione corrente, salta se vuoto
 $eventiManifestazione = getEventiByManifestazione($pdo, $manifestazione['id']);
 if (empty($eventiManifestazione)) continue;
 ?>
@@ -196,7 +236,12 @@ if (empty($eventiManifestazione)) continue;
 </section>
 <?php endforeach; ?>
 
-<!-- GRID: Potrebbe Interessarti -->
+<!--
+    GRID: Potrebbe Interessarti
+    Sezione a griglia con suggerimenti di eventi.
+    Mostra i primi 6 eventi (in futuro potrebbe usare un algoritmo
+    di raccomandazione basato su acquisti/preferenze utente).
+-->
 <section class="grid-section">
     <div class="row-header">
         <h2 class="row-title">
@@ -205,6 +250,7 @@ if (empty($eventiManifestazione)) continue;
     </div>
     <div class="events-grid">
         <?php
+        // Seleziona i primi 6 eventi come suggerimenti
         $eventiRandom = array_slice($tuttiEventi, 0, 6);
         foreach ($eventiRandom as $evento):
         ?>

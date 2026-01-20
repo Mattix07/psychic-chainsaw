@@ -1,6 +1,16 @@
 <?php
 /**
  * Admin - Gestione Eventi
+ *
+ * Tabella con tutti gli eventi del sistema con funzionalità CRUD.
+ *
+ * Funzionalità:
+ * - Lista eventi con ID, nome, manifestazione, data/ora, location, prezzo
+ * - Pulsante creazione nuovo evento
+ * - Azioni per ogni evento: visualizza, modifica, elimina
+ *
+ * Gli eventi passati sono evidenziati con classe 'row-past' (sfondo diverso).
+ * L'eliminazione richiede conferma JavaScript e protezione CSRF.
  */
 $eventi = $_SESSION['admin_eventi'] ?? [];
 ?>

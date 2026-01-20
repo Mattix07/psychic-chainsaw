@@ -1,12 +1,30 @@
 <?php
 /**
  * Dettaglio singolo evento
- * Layout moderno con hero image, aggiunta al carrello semplificata
+ *
+ * Pagina completa per la visualizzazione di un evento con tutte le informazioni
+ * necessarie per l'acquisto dei biglietti.
+ *
+ * Struttura:
+ * - Hero Section: immagine di sfondo, titolo, data/ora, location, rating medio
+ * - Info Cards: prezzo base, location, data, orario
+ * - Programma: descrizione dettagliata dell'evento (se presente)
+ * - Intrattenitori: lista artisti con mestiere e orario esibizione
+ * - Recensioni: lista recensioni utenti + form per aggiungerne una
+ * - Sidebar: selettore biglietti con calcolo prezzo dinamico
+ * - Eventi Correlati: altri eventi della stessa manifestazione
+ *
+ * Il prezzo finale viene calcolato in JavaScript considerando:
+ * - Prezzo base dell'evento
+ * - Modificatore del tipo biglietto (Standard, VIP, ecc.)
+ * - Moltiplicatore del settore
+ * - Quantità selezionata
  */
 require_once __DIR__ . '/../models/Location.php';
 require_once __DIR__ . '/../models/Biglietto.php';
 require_once __DIR__ . '/../models/Evento.php';
 
+// Dati evento passati dal controller via sessione
 $evento = $_SESSION['evento_corrente'] ?? null;
 $intrattenitori = $_SESSION['intrattenitori_evento'] ?? [];
 $recensioni = $_SESSION['recensioni_evento'] ?? [];
@@ -17,19 +35,23 @@ if (!$evento) {
     return;
 }
 
+// Dati per il selettore biglietti
 $settori = getSettoriByLocation($pdo, $evento['idLocation']);
 $tipi = getAllTipiBiglietto($pdo);
 
-// Carica eventi correlati della stessa manifestazione
+// Eventi correlati: altri eventi della stessa manifestazione (escludendo quello corrente)
 $eventiCorrelati = [];
 if (!empty($evento['idManifestazione'])) {
     $eventiCorrelati = getEventiByManifestazione($pdo, $evento['idManifestazione']);
-    // Rimuovi l'evento corrente dalla lista
     $eventiCorrelati = array_filter($eventiCorrelati, fn($e) => $e['id'] !== $evento['id']);
 }
 ?>
 
-<!-- HERO SECTION -->
+<!--
+    HERO SECTION
+    Banner a tutto schermo con immagine evento, overlay gradient e info principali.
+    Mostra: manifestazione, titolo, data/ora, location, rating medio.
+-->
 <section class="evento-hero">
     <div class="evento-hero-bg" style="background-image: url('<?= e($evento['Immagine'] ?? 'public/img/placeholder.jpg') ?>')"></div>
     <div class="evento-hero-overlay"></div>
@@ -58,10 +80,13 @@ if (!empty($evento['idManifestazione'])) {
     </div>
 </section>
 
-<!-- CONTENUTO PRINCIPALE -->
+<!--
+    CONTENUTO PRINCIPALE
+    Layout a due colonne: main (info, intrattenitori, recensioni) + sidebar (acquisto).
+-->
 <div class="evento-content">
     <div class="evento-main">
-        <!-- Info Evento -->
+        <!-- Info Evento: card con prezzo, location, data, orario + programma -->
         <section class="evento-section">
             <h2><i class="fas fa-info-circle"></i> Informazioni</h2>
             <div class="info-cards">
@@ -103,7 +128,11 @@ if (!empty($evento['idManifestazione'])) {
             <?php endif; ?>
         </section>
 
-        <!-- Intrattenitori -->
+        <!--
+            Intrattenitori
+            Lista degli artisti/performer che partecipano all'evento.
+            Dati dalla tabella Esibizioni che collega Intrattenitori a Eventi.
+        -->
         <?php if (!empty($intrattenitori)): ?>
         <section class="evento-section">
             <h2><i class="fas fa-users"></i> Artisti & Intrattenitori</h2>
@@ -124,7 +153,11 @@ if (!empty($evento['idManifestazione'])) {
         </section>
         <?php endif; ?>
 
-        <!-- Recensioni -->
+        <!--
+            Recensioni
+            Lista delle recensioni esistenti + form per aggiungerne una nuova.
+            Il form appare solo se l'utente è loggato e non ha già recensito.
+        -->
         <section class="evento-section">
             <h2><i class="fas fa-star"></i> Recensioni</h2>
             <?php if (empty($recensioni)): ?>
@@ -184,7 +217,12 @@ if (!empty($evento['idManifestazione'])) {
         </section>
     </div>
 
-    <!-- SIDEBAR - Acquisto Biglietti -->
+    <!--
+        SIDEBAR - Acquisto Biglietti
+        Form per selezionare tipo biglietto, settore e quantità.
+        Il prezzo totale viene calcolato in tempo reale via JavaScript.
+        I dati del partecipante vengono richiesti al checkout.
+    -->
     <aside class="evento-sidebar">
         <div class="ticket-selector">
             <h3><i class="fas fa-ticket-alt"></i> Acquista Biglietti</h3>
@@ -249,7 +287,11 @@ if (!empty($evento['idManifestazione'])) {
     </aside>
 </div>
 
-<!-- EVENTI CORRELATI -->
+<!--
+    EVENTI CORRELATI
+    Carousel con altri eventi della stessa manifestazione.
+    Utile per cross-selling e navigazione tra date di un tour/festival.
+-->
 <?php if (!empty($eventiCorrelati)): ?>
 <section class="related-events">
     <div class="row-header">
@@ -289,7 +331,10 @@ if (!empty($evento['idManifestazione'])) {
 <?php endif; ?>
 
 <script>
-// Calcolo prezzo dinamico
+/**
+ * Calcola e aggiorna il prezzo totale in base alle selezioni.
+ * Formula: (prezzoBase + modificatoreTipo) * moltiplicatoreSettore * quantità
+ */
 function updatePrice() {
     const form = document.getElementById('add-to-cart-form');
     const prezzoBase = parseFloat(form.querySelector('[name="prezzoBase"]').value);
@@ -306,6 +351,10 @@ function updatePrice() {
     document.getElementById('totalPrice').textContent = '€' + totale.toFixed(2);
 }
 
+/**
+ * Modifica la quantità di biglietti (min 1, max 10)
+ * @param {number} delta - Incremento (+1) o decremento (-1)
+ */
 function changeQty(delta) {
     const input = document.getElementById('quantita');
     let val = parseInt(input.value) + delta;
@@ -314,6 +363,12 @@ function changeQty(delta) {
     updatePrice();
 }
 
+/**
+ * Aggiunge i biglietti selezionati al carrello (localStorage).
+ * Crea un oggetto per ogni biglietto con ID univoco timestamp-based.
+ * I dati del partecipante (nome, cognome, sesso) sono vuoti e
+ * verranno compilati al checkout.
+ */
 function addEventToCart() {
     const form = document.getElementById('add-to-cart-form');
     const formData = new FormData(form);
@@ -363,11 +418,15 @@ function addEventToCart() {
     }
 }
 
-// Inizializza listeners
+// Aggiorna prezzo quando cambiano tipo o settore
 document.getElementById('idClasse').addEventListener('change', updatePrice);
 document.getElementById('idSettore').addEventListener('change', updatePrice);
 
-// Toast notification
+/**
+ * Mostra una notifica toast temporanea
+ * @param {string} message - Messaggio da mostrare
+ * @param {string} type - Tipo: 'info', 'success', 'error'
+ */
 function showToast(message, type = 'info') {
     const toast = document.createElement('div');
     toast.className = 'toast toast-' + type;

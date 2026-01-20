@@ -1,9 +1,21 @@
 <?php
 /**
  * I Miei Biglietti - Biglietti acquistati per eventi futuri
+ *
+ * Mostra solo i biglietti per eventi non ancora avvenuti.
+ * I biglietti passati sono visibili nello storico ordini.
+ *
+ * Per ogni biglietto mostra:
+ * - Tipo (Standard, VIP, ecc.) e settore
+ * - Nome evento e intestatario biglietto
+ * - Data, ora e location dell'evento
+ * - Prezzo finale e ID biglietto
+ *
+ * Il filtro su eventi futuri evita di mostrare biglietti inutilizzabili.
  */
 require_once __DIR__ . '/../models/Biglietto.php';
 
+// Recupera solo biglietti per eventi con data >= oggi
 $biglietti = getBigliettiUtenteFuturi($pdo, $_SESSION['user_id']);
 ?>
 

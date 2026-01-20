@@ -1,6 +1,14 @@
 <?php
 /**
  * Pagina Recupero Password - Richiesta
+ *
+ * Prima fase del processo di reset password.
+ * L'utente inserisce la propria email e riceve un link
+ * con token univoco per reimpostare la password.
+ *
+ * Il token ha una validità limitata nel tempo (configurabile).
+ * Per sicurezza, il messaggio di conferma è sempre lo stesso
+ * indipendentemente dall'esistenza dell'email nel sistema.
  */
 ?>
 

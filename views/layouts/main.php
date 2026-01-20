@@ -1,3 +1,21 @@
+<?php
+/**
+ * Layout principale dell'applicazione
+ *
+ * Questo file funge da template master per tutte le pagine del sito.
+ * Include: header con navigazione, area contenuto dinamico, newsletter,
+ * footer, carrello laterale e modali. La pagina specifica viene caricata
+ * dinamicamente in base alla variabile di sessione $_SESSION['page'].
+ *
+ * Struttura:
+ * - Header: logo, navigazione principale, barra di ricerca, azioni utente
+ * - Main: messaggi flash (successo/errore) + contenuto pagina dinamico
+ * - Newsletter: form iscrizione
+ * - Footer: link informativi e social
+ * - Cart Sidebar: carrello laterale con gestione JavaScript
+ * - Modal: gestione duplicati carrello al login
+ */
+?>
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -9,7 +27,11 @@
 </head>
 <body>
 
-<!-- HEADER -->
+<!--
+    HEADER
+    Contiene: logo, navigazione categorie, barra ricerca, toggle tema,
+    carrello e menu utente (con dropdown per azioni account e ruoli admin/mod/promoter)
+-->
 <header class="header" id="header">
     <div class="container">
         <!-- Logo -->
@@ -131,8 +153,14 @@
     </div>
 </header>
 
-<!-- MAIN CONTENT -->
+<!--
+    MAIN CONTENT
+    Area principale dove viene iniettato il contenuto della pagina corrente.
+    I messaggi flash (successo/errore) vengono mostrati prima del contenuto.
+    La pagina da caricare è determinata da $_SESSION['page'] (default: 'home').
+-->
 <main class="main">
+    <!-- Messaggi flash di successo -->
     <?php if ($msg ?? null): ?>
         <div class="alert alert-success">
             <i class="fas fa-check-circle"></i>
@@ -140,6 +168,7 @@
         </div>
     <?php endif; ?>
 
+    <!-- Messaggi flash di errore -->
     <?php if ($error ?? null): ?>
         <div class="alert alert-error">
             <i class="fas fa-exclamation-circle"></i>
@@ -148,12 +177,18 @@
     <?php endif; ?>
 
     <?php
+    // Carica dinamicamente la view corrispondente alla pagina corrente
+    // Il controller imposta $_SESSION['page'] prima di includere questo layout
     $page = $_SESSION['page'] ?? 'home';
     require __DIR__ . "/../{$page}.php";
     ?>
 </main>
 
-<!-- NEWSLETTER -->
+<!--
+    NEWSLETTER
+    Sezione per l'iscrizione alla newsletter con protezione CSRF.
+    L'azione 'subscribe_newsletter' viene gestita dal controller.
+-->
 <section class="newsletter-section">
     <div class="newsletter-content">
         <div class="newsletter-text">
@@ -169,7 +204,11 @@
     </div>
 </section>
 
-<!-- FOOTER -->
+<!--
+    FOOTER
+    Link informativi (chi siamo, supporto, legale) e collegamenti social.
+    L'anno del copyright viene generato dinamicamente.
+-->
 <footer class="footer">
     <div class="footer-content">
         <div class="footer-section">
@@ -207,7 +246,12 @@
     </div>
 </footer>
 
-<!-- CART SIDEBAR -->
+<!--
+    CART SIDEBAR
+    Pannello laterale del carrello, gestito interamente via JavaScript.
+    Mostra gli articoli nel carrello (localStorage) e permette il checkout.
+    Il comportamento cambia in base allo stato di login dell'utente.
+-->
 <div class="cart-sidebar" id="cartSidebar">
     <div class="cart-header">
         <h3><i class="fas fa-shopping-cart"></i> Il tuo carrello</h3>
@@ -237,7 +281,12 @@
 </div>
 <div class="cart-overlay" id="cartOverlay"></div>
 
-<!-- MODAL DUPLICATI CARRELLO -->
+<!--
+    MODAL DUPLICATI CARRELLO
+    Appare quando l'utente effettua il login e ha biglietti nel carrello locale
+    che sono già presenti nel carrello salvato sul server. Offre la scelta
+    tra mantenere il carrello locale o unire i due carrelli.
+-->
 <div class="modal" id="cartMergeModal">
     <div class="modal-content">
         <div class="modal-header">
@@ -259,7 +308,14 @@
 </div>
 
 <script>
-    // Pass PHP data to JavaScript
+    /**
+     * Configurazione globale JavaScript
+     * Passa dati PHP al frontend per la gestione del carrello e dell'autenticazione.
+     * - isLoggedIn: stato login per comportamenti condizionali
+     * - userId: ID utente per sincronizzazione carrello
+     * - csrfToken: token per richieste AJAX protette
+     * - redirectAfterLogin: URL di redirect post-login (es. checkout)
+     */
     window.EventsMaster = {
         isLoggedIn: <?= isLoggedIn() ? 'true' : 'false' ?>,
         userId: <?= isLoggedIn() ? ($_SESSION['user_id'] ?? 'null') : 'null' ?>,

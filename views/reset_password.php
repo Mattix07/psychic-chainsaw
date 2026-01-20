@@ -1,6 +1,14 @@
 <?php
 /**
  * Pagina Reset Password - Form nuova password
+ *
+ * Seconda fase del processo di reset password.
+ * L'utente arriva qui cliccando il link ricevuto via email.
+ * Il token viene passato come parametro GET e validato dal controller.
+ *
+ * Se il token è valido e non scaduto, l'utente può inserire
+ * la nuova password (minimo 6 caratteri, da confermare).
+ * Dopo il reset, il token viene invalidato.
  */
 $token = $_GET['token'] ?? '';
 ?>

@@ -1,6 +1,19 @@
 <?php
 /**
- * Promoter Dashboard
+ * Dashboard Promoter
+ *
+ * Pannello di controllo per utenti con ruolo 'promoter'.
+ * I promoter possono creare e visualizzare i propri eventi.
+ *
+ * Funzionalità:
+ * - Pulsante per creare nuovo evento
+ * - Griglia dei propri eventi con:
+ *   - Data e stato (Passato/In arrivo)
+ *   - Nome, location, orario
+ *   - Prezzo e link al dettaglio
+ *
+ * Gli eventi passati sono visualmente differenziati con classe 'past'.
+ * A differenza degli admin, i promoter vedono solo i propri eventi.
  */
 $eventi = $_SESSION['promoter_eventi'] ?? [];
 ?>

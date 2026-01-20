@@ -1,6 +1,16 @@
 <?php
 /**
- * Admin Dashboard
+ * Dashboard Amministratore
+ *
+ * Pannello di controllo principale per utenti con ruolo 'admin'.
+ * Fornisce una panoramica del sistema e accesso rapido alle funzionalità.
+ *
+ * Sezioni:
+ * - Stats Cards: contatori per utenti, eventi totali/futuri, ordini
+ * - Azioni Rapide: link a gestione utenti, eventi, creazione evento
+ * - Utenti per Ruolo: breakdown utenti per ruolo (admin, mod, promoter, user)
+ *
+ * Accessibile solo agli admin (verificato dal controller).
  */
 $stats = $_SESSION['admin_stats'] ?? [];
 $utentiCount = $stats['utenti'] ?? [];
