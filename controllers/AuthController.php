@@ -37,7 +37,7 @@ function handleAuth(PDO $pdo, string $action): void
  */
 function loginAction(PDO $pdo): void
 {
-    if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
+    if (!verifyCsrf()) {
         redirect('index.php?action=show_login', null, 'Richiesta non valida');
     }
 
@@ -78,7 +78,7 @@ function loginAction(PDO $pdo): void
  */
 function registerAction(PDO $pdo): void
 {
-    if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
+    if (!verifyCsrf()) {
         redirect('index.php?action=show_register', null, 'Richiesta non valida');
     }
 

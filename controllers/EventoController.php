@@ -89,7 +89,7 @@ function listEventi(PDO $pdo): void
  */
 function searchEventi(PDO $pdo): void
 {
-    if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
+    if (!verifyCsrf()) {
         redirect('index.php', null, 'Richiesta non valida');
     }
 
@@ -131,7 +131,7 @@ function listByCategory(PDO $pdo, string $category): void
  */
 function createEventoAction(PDO $pdo): void
 {
-    if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
+    if (!verifyCsrf()) {
         redirect('index.php', null, 'Richiesta non valida');
     }
 
@@ -160,7 +160,7 @@ function createEventoAction(PDO $pdo): void
  */
 function updateEventoAction(PDO $pdo): void
 {
-    if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
+    if (!verifyCsrf()) {
         redirect('index.php', null, 'Richiesta non valida');
     }
 
@@ -190,7 +190,7 @@ function updateEventoAction(PDO $pdo): void
  */
 function deleteEventoAction(PDO $pdo): void
 {
-    if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
+    if (!verifyCsrf()) {
         redirect('index.php', null, 'Richiesta non valida');
     }
 

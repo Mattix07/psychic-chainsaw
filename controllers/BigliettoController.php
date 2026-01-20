@@ -46,7 +46,7 @@ function acquistaBiglietto(PDO $pdo): void
 {
     requireAuth();
 
-    if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
+    if (!verifyCsrf()) {
         redirect('index.php', null, 'Richiesta non valida');
     }
 
@@ -125,7 +125,7 @@ function acquistaBiglietto(PDO $pdo): void
  */
 function validaBigliettoAction(PDO $pdo): void
 {
-    if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
+    if (!verifyCsrf()) {
         redirect('index.php', null, 'Richiesta non valida');
     }
 

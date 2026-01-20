@@ -59,6 +59,17 @@ function verifyCsrfToken(string $token): bool
 }
 
 /**
+ * Verifica CSRF semplificata per form POST
+ * Wrapper che estrae automaticamente il token da $_POST
+ *
+ * @return bool True se il token CSRF è valido
+ */
+function verifyCsrf(): bool
+{
+    return isset($_POST['csrf_token']) && verifyCsrfToken($_POST['csrf_token']);
+}
+
+/**
  * Genera un campo input hidden con il token CSRF
  * Da includere in tutti i form POST
  *

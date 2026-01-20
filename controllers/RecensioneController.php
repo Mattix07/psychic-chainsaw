@@ -39,7 +39,7 @@ function addRecensioneAction(PDO $pdo): void
 {
     requireAuth();
 
-    if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
+    if (!verifyCsrf()) {
         redirect('index.php', null, 'Richiesta non valida');
     }
 
@@ -80,7 +80,7 @@ function updateRecensioneAction(PDO $pdo): void
 {
     requireAuth();
 
-    if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
+    if (!verifyCsrf()) {
         redirect('index.php', null, 'Richiesta non valida');
     }
 
@@ -110,7 +110,7 @@ function deleteRecensioneAction(PDO $pdo): void
 {
     requireAuth();
 
-    if (!isset($_POST['csrf_token']) || !verifyCsrfToken($_POST['csrf_token'])) {
+    if (!verifyCsrf()) {
         redirect('index.php', null, 'Richiesta non valida');
     }
 
