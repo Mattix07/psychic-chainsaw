@@ -293,39 +293,39 @@ if (!empty($evento['idManifestazione'])) {
     Utile per cross-selling e navigazione tra date di un tour/festival.
 -->
 <?php if (!empty($eventiCorrelati)): ?>
-<section class="related-events">
+<section class="row-section">
     <div class="row-header">
         <h2><i class="fas fa-calendar-alt"></i> Altri eventi di <?= e($evento['ManifestazioneName']) ?></h2>
     </div>
-    <div class="carousel-wrapper">
-        <button class="carousel-btn prev" onclick="scrollCarousel(this, -1)">
-            <i class="fas fa-chevron-left"></i>
-        </button>
-        <div class="carousel-row">
-            <?php foreach ($eventiCorrelati as $e): ?>
-            <article class="event-card" onclick="window.location='index.php?action=view_evento&id=<?= $e['id'] ?>'">
-                <div class="card-poster">
-                    <img src="<?= e($e['Immagine'] ?? 'public/img/placeholder.jpg') ?>" alt="<?= e($e['Nome']) ?>">
-                    <div class="card-overlay">
-                        <span class="card-date"><?= formatDate($e['Data']) ?></span>
-                        <div class="card-actions">
-                            <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); window.location='index.php?action=view_evento&id=<?= $e['id'] ?>'">
-                                <i class="fas fa-eye"></i> Dettagli
-                            </button>
+    <div class="carousel-container">
+        <button class="carousel-nav prev" data-carousel="featured"><i class="fas fa-chevron-left"></i></button>
+        <div class="carousel" id="featured">
+            <?php foreach ($eventiCorrelati as $evento): ?>
+            <article class="event-card large" onclick="window.location='index.php?action=view_evento&id=<?= $evento['id'] ?>'">
+                <div class="event-card-poster">
+                    <img src="img/events/<?= $evento['id'] ?>.jpg"
+                         alt="<?= e($evento['Nome']) ?>"
+                         onerror="this.src='https://picsum.photos/400/600?random=<?= $evento['id'] ?>'">
+                    <span class="event-card-badge">In vendita</span>
+                    <div class="event-card-overlay">
+                        <div class="event-card-actions">
+                            <button class="card-action-btn primary" onclick="event.stopPropagation(); addToCart(<?= $evento['id'] ?>, 1, '<?= e($evento['Nome']) ?>', 'Standard', <?= $evento['PrezzoNoMod'] ?>, '<?= formatDate($evento['Data']) ?>', 'img/events/<?= $evento['id'] ?>.jpg')"><i class="fas fa-cart-plus"></i></button>
+                            <button class="card-action-btn"><i class="fas fa-heart"></i></button>
                         </div>
                     </div>
                 </div>
-                <div class="card-info">
-                    <h3><?= e($e['Nome']) ?></h3>
-                    <p class="card-location"><i class="fas fa-map-marker-alt"></i> <?= e($e['LocationName']) ?></p>
-                    <p class="card-price"><?= formatPrice($e['PrezzoNoMod']) ?></p>
+                <div class="event-card-info">
+                    <h3 class="event-card-title"><?= e($evento['Nome']) ?></h3>
+                    <div class="event-card-meta">
+                        <span class="event-card-date"><?= formatDate($evento['Data']) ?></span>
+                        <span><?= e($evento['LocationName']) ?></span>
+                        <span class="event-card-price">da <?= formatPrice($evento['PrezzoNoMod']) ?></span>
+                    </div>
                 </div>
             </article>
             <?php endforeach; ?>
         </div>
-        <button class="carousel-btn next" onclick="scrollCarousel(this, 1)">
-            <i class="fas fa-chevron-right"></i>
-        </button>
+        <button class="carousel-nav next" data-carousel="featured"><i class="fas fa-chevron-right"></i></button>
     </div>
 </section>
 <?php endif; ?>
