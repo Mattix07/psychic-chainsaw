@@ -461,7 +461,11 @@ const Cart = {
     get() {
         try {
             const cart = localStorage.getItem(this.STORAGE_KEY);
-            return cart ? JSON.parse(cart) : [];
+            if (!cart) return [];
+
+            const parsed = JSON.parse(cart);
+            // Filtra elementi corrotti (senza eventoId o eventName)
+            return parsed.filter(item => item && item.eventoId && item.eventName);
         } catch (e) {
             console.error('Error reading cart:', e);
             return [];
@@ -800,24 +804,27 @@ const Cart = {
 // ==========================================
 // ADD TO CART FUNCTION (Global)
 // ==========================================
-function addToCart(eventoId, tipoId, eventName, ticketType, price, eventDate, image) {
-    Cart.add({
-        eventoId,
-        tipoId,
-        eventName,
-        ticketType,
-        price: parseFloat(price),
-        eventDate,
-        image
-    });
-}
+// Supporta sia chiamata con parametri separati che con oggetto singolo
+window.addToCart = function(eventoIdOrItem, tipoId, eventName, ticketType, price, eventDate, image) {
+    let item;
 
-// Expose addToCart to window for inline event handlers
-window.addToCart = function(item) {
-    let cart = JSON.parse(localStorage.getItem('em_cart') || '[]');
-    cart.push(item);
-    localStorage.setItem('em_cart', JSON.stringify(cart));
-    Cart.updateUI();
+    // Se il primo parametro è un oggetto, usalo direttamente
+    if (typeof eventoIdOrItem === 'object') {
+        item = eventoIdOrItem;
+    } else {
+        // Altrimenti costruisci l'oggetto dai parametri
+        item = {
+            eventoId: eventoIdOrItem,
+            tipoId: tipoId,
+            eventName: eventName,
+            ticketType: ticketType,
+            price: parseFloat(price),
+            eventDate: eventDate,
+            image: image
+        };
+    }
+
+    Cart.add(item);
 };
 
 // Update cart count badge

@@ -323,6 +323,6 @@
         redirectAfterLogin: '<?= $_GET['redirect'] ?? '' ?>'
     };
 </script>
-<script src="public/script.js"></script>
+<script src="public/script.js?v=<?= time() ?>"></script>
 </body>
 </html>
