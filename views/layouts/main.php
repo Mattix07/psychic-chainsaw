@@ -37,7 +37,7 @@
         <!-- Logo -->
         <a href="index.php" class="logo">
             <img src="img/logo.png" alt="EventsMaster" onerror="this.style.display='none'">
-            <span>Events</span>
+            <span>EventsMaster</span>
         </a>
 
         <!-- Navigation principale -->
