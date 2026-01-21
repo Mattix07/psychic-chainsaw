@@ -173,20 +173,6 @@ $categorie = [
 </section>
 
 <!--
-    BANNER PROMO
-    Call-to-action per l'iscrizione alla newsletter.
-    Sfondo con immagine casuale da Picsum per varietà visiva.
--->
-<div class="banner-card">
-    <div class="banner-card-bg" style="background-image: url('https://picsum.photos/1200/300?random=banner');"></div>
-    <div class="banner-card-content">
-        <h3 class="banner-card-title">Non perdere gli eventi del momento!</h3>
-        <p class="banner-card-text">Iscriviti alla newsletter per ricevere offerte esclusive e anteprime sui biglietti.</p>
-        <a href="#" class="btn btn-primary"><i class="fas fa-envelope"></i> Iscriviti Ora</a>
-    </div>
-</div>
-
-<!--
     CAROUSEL: Per Manifestazione
     Genera un carousel per ogni manifestazione che ha eventi associati.
     Le manifestazioni senza eventi vengono saltate (continue).
