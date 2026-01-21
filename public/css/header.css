@@ -9,7 +9,7 @@
     left: 0;
     right: 0;
     z-index: 1000;
-    padding: 15px 4%;
+    padding: 17px 1%;
     background: var(--header-bg);
     transition: background 0.4s ease, box-shadow 0.3s ease;
 }
@@ -19,12 +19,13 @@
     box-shadow: var(--shadow);
 }
 
-.header .container {
+.header > .container {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     max-width: 100%;
+    width: 100%;
     padding: 0;
+    gap: 20px;
 }
 
 /* Logo */
@@ -50,7 +51,6 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-left: 40px;
 }
 
 .nav-main a {
@@ -131,12 +131,12 @@
 .nav-actions {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-left: 20px;
+    gap: 8px;
+    flex-shrink: 0;
 }
 
-.nav-actions a,
-.nav-actions button {
+.nav-actions > a,
+.nav-actions > button {
     color: var(--text-secondary);
     background: transparent;
     border: none;
@@ -146,13 +146,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: var(--radius);
+    width: 42px;
+    height: 42px;
+    border-radius: var(--radius-full);
 }
 
-.nav-actions a:hover,
-.nav-actions button:hover {
+.nav-actions > a:hover,
+.nav-actions > button:hover {
     color: var(--primary);
     background: var(--bg-tertiary);
 }
@@ -257,19 +257,22 @@
    ============================================ */
 .user-dropdown {
     position: relative;
+    display: flex;
+    align-items: center;
 }
 
 .user-dropdown-toggle {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     background: transparent;
     border: none;
     cursor: pointer;
-    padding: 6px 12px 6px 6px;
+    padding: 4px 10px 4px 4px;
     border-radius: var(--radius);
     transition: var(--transition);
     color: var(--text-primary);
+    height: 42px;
 }
 
 .user-dropdown-toggle:hover {
