@@ -42,7 +42,7 @@ $categorie = [
 -->
 <?php if ($eventoHero): ?>
 <section class="hero-billboard">
-    <div class="hero-bg" style="background-image: url('img/events/<?= $eventoHero['id'] ?>.jpg'), linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);"></div>
+    <div class="hero-bg" style="background-image: url('img/events/<?= $eventoHero['id'] ?>.jpg'), url('https://picsum.photos/1920/800?random=<?= $eventoHero['id'] ?>'), linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);"></div>
     <div class="hero-content">
         <span class="hero-tag"><?= e($eventoHero['ManifestazioneName']) ?></span>
         <h1 class="hero-title"><?= e($eventoHero['Nome']) ?></h1>
