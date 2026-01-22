@@ -753,3 +753,948 @@
         gap: 12px;
     }
 }
+
+/* ============================================
+   CHECKOUT PAGE
+   ============================================ */
+.checkout-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.checkout-container {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 30px;
+    align-items: start;
+}
+
+/* Header sezione biglietti */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.section-header h2 {
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+}
+
+.section-header h2 i {
+    color: var(--primary);
+}
+
+.ticket-counter {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    background: var(--bg-secondary);
+    padding: 6px 12px;
+    border-radius: var(--radius-full);
+}
+
+.ticket-counter .complete-count {
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.checkout-tickets-section .section-hint {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.checkout-tickets-section .section-hint i {
+    color: var(--primary);
+}
+
+.checkout-tickets {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Card biglietto stile carrello */
+.checkout-card {
+    display: flex;
+    gap: 14px;
+    padding: 14px;
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    border: 2px solid var(--primary);
+    position: relative;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
+}
+
+.checkout-card.incomplete {
+    border-color: var(--border-color);
+    background: var(--bg-secondary);
+    filter: grayscale(0.5);
+    opacity: 0.75;
+    box-shadow: none;
+}
+
+.checkout-card.incomplete:hover,
+.checkout-card.incomplete.focused {
+    filter: grayscale(0);
+    opacity: 1;
+    border-color: var(--warning);
+    box-shadow: 0 2px 12px rgba(245, 158, 11, 0.15);
+}
+
+.checkout-card.complete {
+    border-color: var(--primary);
+}
+
+.checkout-card.focused.complete {
+    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.2);
+    transform: translateY(-2px);
+}
+
+/* Badge status */
+.checkout-card-status {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    z-index: 1;
+}
+
+.status-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    box-shadow: var(--shadow);
+}
+
+.status-badge.complete {
+    background: var(--primary);
+    color: white;
+}
+
+.status-badge.incomplete {
+    background: var(--warning);
+    color: white;
+}
+
+/* Immagine card */
+.checkout-card-image {
+    width: 70px;
+    height: 90px;
+    flex-shrink: 0;
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.checkout-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.checkout-card:hover .checkout-card-image img {
+    transform: scale(1.05);
+}
+
+/* Body card */
+.checkout-card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+}
+
+.checkout-card-info h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.checkout-card-type,
+.checkout-card-date {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 2px;
+}
+
+.checkout-card-type i,
+.checkout-card-date i {
+    color: var(--primary);
+    width: 14px;
+    font-size: 0.75rem;
+}
+
+/* Form inline */
+.checkout-card-form {
+    display: flex;
+    gap: 8px;
+}
+
+.input-group {
+    flex: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-group i {
+    position: absolute;
+    left: 10px;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    pointer-events: none;
+    transition: color 0.2s ease;
+}
+
+.checkout-input {
+    width: 100%;
+    padding: 8px 10px 8px 32px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.checkout-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+    background: var(--bg-card);
+}
+
+.checkout-input:focus + i,
+.input-group:focus-within i {
+    color: var(--primary);
+}
+
+.checkout-input::placeholder {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+/* Prezzo */
+.checkout-card-price {
+    display: flex;
+    align-items: center;
+    padding-left: 12px;
+    border-left: 1px solid var(--border-color);
+}
+
+.price-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--primary);
+    white-space: nowrap;
+}
+
+.ticket-status {
+    font-size: 0.8rem;
+    text-align: right;
+}
+
+.status-complete {
+    color: var(--primary);
+}
+
+.status-complete i {
+    margin-right: 4px;
+}
+
+.status-incomplete {
+    color: var(--warning);
+}
+
+.status-incomplete i {
+    margin-right: 4px;
+}
+
+/* Gruppo biglietti stesso evento */
+.checkout-group {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    border: 2px solid var(--border-color);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.checkout-group.complete {
+    border-color: var(--primary);
+    box-shadow: 0 2px 12px rgba(16, 185, 129, 0.1);
+}
+
+.checkout-group-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.checkout-group-image {
+    width: 60px;
+    height: 60px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.checkout-group-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.checkout-group-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.checkout-group-info h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.checkout-group-info p {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 2px;
+}
+
+.checkout-group-info p i {
+    color: var(--primary);
+    width: 14px;
+    font-size: 0.75rem;
+}
+
+.checkout-group-counter {
+    flex-shrink: 0;
+}
+
+/* Azioni gruppo */
+.checkout-group-actions {
+    display: flex;
+    gap: 6px;
+    margin-right: 12px;
+}
+
+.group-action-btn {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    background: var(--bg-secondary);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.group-action-btn:hover {
+    background: var(--bg-tertiary);
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+.group-action-btn.danger:hover {
+    color: var(--danger);
+    border-color: var(--danger);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* Azioni card singola */
+.checkout-card-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 0 10px;
+}
+
+.checkout-card-actions.grouped {
+    padding: 0;
+    justify-content: center;
+}
+
+.card-action-btn {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    background: var(--bg-secondary);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-size: 0.85rem;
+}
+
+.card-action-btn:hover {
+    background: var(--bg-tertiary);
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+.card-action-btn.danger:hover {
+    color: var(--danger);
+    border-color: var(--danger);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.card-action-btn.mini {
+    width: 26px;
+    height: 26px;
+    font-size: 0.75rem;
+}
+
+.group-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 12px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-full);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.group-badge.complete {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+.checkout-group-tickets {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Card raggruppata (senza immagine) */
+.checkout-card.grouped {
+    border-width: 1px;
+    padding: 12px;
+    background: var(--bg-card);
+}
+
+.checkout-card.grouped .checkout-card-body {
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+}
+
+.ticket-number {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    white-space: nowrap;
+    min-width: 90px;
+}
+
+.checkout-card.grouped .checkout-card-form {
+    flex: 1;
+}
+
+.checkout-card.grouped.complete .ticket-number {
+    color: var(--primary);
+}
+
+/* Sidebar checkout */
+.checkout-sidebar {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    padding: 24px;
+    position: sticky;
+    top: 100px;
+}
+
+/* Warning checkout */
+.checkout-warning {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--warning);
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px;
+    background: rgba(245, 158, 11, 0.1);
+    border-radius: var(--radius);
+}
+
+.checkout-warning i {
+    color: var(--warning);
+}
+
+.checkout-section {
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.checkout-section:last-of-type {
+    border-bottom: none;
+    margin-bottom: 20px;
+}
+
+.checkout-section h3 {
+    font-size: 1rem;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.checkout-section h3 i {
+    color: var(--primary);
+}
+
+.section-hint {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+}
+
+.payment-methods {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.payment-method {
+    cursor: pointer;
+}
+
+.payment-method input {
+    display: none;
+}
+
+.payment-method-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    transition: var(--transition);
+}
+
+.payment-method-content i {
+    font-size: 1.2rem;
+    color: var(--text-muted);
+    width: 24px;
+    text-align: center;
+}
+
+.payment-method input:checked + .payment-method-content {
+    border-color: var(--primary);
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.payment-method input:checked + .payment-method-content i {
+    color: var(--primary);
+}
+
+.checkout-summary {
+    background: var(--bg-secondary);
+    border-radius: var(--radius);
+    padding: 16px;
+    border: none;
+    margin-bottom: 20px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.summary-total {
+    border-top: 1px solid var(--border-color);
+    margin-top: 8px;
+    padding-top: 12px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.summary-total span:last-child {
+    color: var(--primary);
+}
+
+.btn-lg {
+    padding: 16px 24px;
+    font-size: 1rem;
+}
+
+.checkout-disclaimer {
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.checkout-disclaimer i {
+    color: var(--primary);
+}
+
+@media (max-width: 1024px) {
+    .checkout-container {
+        grid-template-columns: 1fr;
+    }
+
+    .checkout-sidebar {
+        position: static;
+        order: -1;
+    }
+}
+
+@media (max-width: 700px) {
+    .checkout-card {
+        flex-wrap: wrap;
+    }
+
+    .checkout-card-body {
+        width: calc(100% - 84px);
+    }
+
+    .checkout-card-price {
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid var(--border-color);
+        padding-left: 0;
+        padding-top: 12px;
+        margin-top: 8px;
+        justify-content: flex-end;
+    }
+
+    .checkout-card-form {
+        flex-direction: column;
+    }
+
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+}
+
+@media (max-width: 500px) {
+    .checkout-card {
+        flex-direction: column;
+        padding: 12px;
+    }
+
+    .checkout-card-image {
+        width: 100%;
+        height: 120px;
+    }
+
+    .checkout-card-body {
+        width: 100%;
+    }
+
+    .checkout-card-status {
+        top: 8px;
+        right: 8px;
+    }
+}
+
+/* ============================================
+   CHECKOUT MODALS
+   ============================================ */
+.checkout-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.checkout-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+}
+
+.checkout-modal-content {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-lg);
+    animation: modalSlideIn 0.2s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.checkout-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.checkout-modal-header h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.modal-close {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: var(--bg-secondary);
+    border-radius: var(--radius);
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+
+.checkout-modal-body {
+    padding: 24px;
+}
+
+/* Opzioni modal (Solo uno, Tutti, Seleziona) */
+.modal-options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.modal-option-btn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    padding: 16px 20px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.modal-option-btn i {
+    width: 20px;
+    font-size: 1rem;
+    color: var(--primary);
+    text-align: center;
+}
+
+.modal-option-btn span {
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.modal-option-btn:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--primary);
+}
+
+.modal-option-btn.danger:hover {
+    border-color: var(--danger);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.modal-option-btn.danger i {
+    color: var(--danger);
+}
+
+/* Lista selezione biglietti (radio/checkbox) */
+.ticket-select-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 20px;
+}
+
+.ticket-select-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ticket-select-item:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--primary);
+}
+
+.ticket-select-item input[type="radio"],
+.ticket-select-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+
+.ticket-select-item label {
+    flex: 1;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.ticket-select-item .ticket-label-main {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.ticket-select-item .ticket-label-sub {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* Azioni modal (bottoni Annulla/Conferma) */
+.checkout-modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+    margin-top: 16px;
+}
+
+.checkout-modal-actions .btn {
+    min-width: 100px;
+}
+
+/* Form group dentro modal */
+.checkout-modal-body .form-group {
+    margin-bottom: 16px;
+}
+
+.checkout-modal-body .form-group:last-of-type {
+    margin-bottom: 0;
+}
+
+.checkout-modal-body .form-control {
+    width: 100%;
+    padding: 12px 14px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.checkout-modal-body .form-control:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+/* Responsive modals */
+@media (max-width: 500px) {
+    .checkout-modal {
+        padding: 16px;
+    }
+
+    .checkout-modal-content {
+        max-width: 100%;
+    }
+
+    .checkout-modal-header {
+        padding: 16px 20px;
+    }
+
+    .checkout-modal-body {
+        padding: 20px;
+    }
+
+    .modal-option-btn {
+        padding: 14px 16px;
+    }
+
+    .ticket-select-list {
+        max-height: 250px;
+    }
+}

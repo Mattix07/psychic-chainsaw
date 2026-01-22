@@ -39,7 +39,8 @@ function handleBiglietto(PDO $pdo, string $action): void
 }
 
 /**
- * Gestisce l'acquisto di un biglietto
+ * Gestisce l'acquisto di biglietti dal carrello
+ * Supporta sia biglietti da DB (utenti loggati) che da localStorage
  * Esegue tutte le operazioni in una transazione per garantire consistenza
  */
 function acquistaBiglietto(PDO $pdo): void
@@ -47,75 +48,166 @@ function acquistaBiglietto(PDO $pdo): void
     requireAuth();
 
     if (!verifyCsrf()) {
-        redirect('index.php', null, 'Richiesta non valida');
+        redirect('index.php?action=checkout', null, 'Richiesta non valida');
     }
 
-    $idEvento = (int) $_POST['idEvento'];
-    $idClasse = sanitize($_POST['idClasse']);
-    $idSettore = (int) $_POST['idSettore'];
-    $metodo = sanitize($_POST['metodo']);
-    $nome = sanitize($_POST['nome']);
-    $cognome = sanitize($_POST['cognome']);
-    $sesso = sanitize($_POST['sesso']);
-
-    // Validazione dati intestatario
-    if (empty($nome) || empty($cognome) || empty($sesso)) {
-        redirect('index.php?action=view_evento&id=' . $idEvento, null, 'Compila tutti i campi');
-    }
+    $metodo = sanitize($_POST['metodo'] ?? '');
+    $cartData = json_decode($_POST['cart_data'] ?? '[]', true);
 
     // Validazione metodo pagamento
-    if (!in_array($metodo, ['Carta', 'PayPal', 'Bonifico'])) {
-        redirect('index.php?action=view_evento&id=' . $idEvento, null, 'Metodo di pagamento non valido');
+    $metodiValidi = ['Carta di credito', 'PayPal', 'Bonifico'];
+    if (!in_array($metodo, $metodiValidi)) {
+        redirect('index.php?action=checkout', null, 'Metodo di pagamento non valido');
     }
 
-    if (!in_array($sesso, ['M', 'F', 'Altro'])) {
-        redirect('index.php?action=view_evento&id=' . $idEvento, null, 'Sesso non valido');
+    // Verifica se i dati vengono dal server (biglietti gia nel DB)
+    $fromServer = isset($cartData['fromServer']) && $cartData['fromServer'] === true;
+
+    if ($fromServer) {
+        // Acquisto da carrello DB
+        acquistaFromServerCart($pdo, $cartData, $metodo);
+    } else {
+        // Acquisto da localStorage (vecchio metodo)
+        acquistaFromLocalCart($pdo, $cartData, $metodo);
+    }
+}
+
+/**
+ * Acquista biglietti gia presenti nel DB (carrello server-side)
+ */
+function acquistaFromServerCart(PDO $pdo, array $cartData, string $metodo): void
+{
+    $tickets = $cartData['tickets'] ?? [];
+
+    if (empty($tickets)) {
+        redirect('index.php?action=checkout', null, 'Nessun biglietto da acquistare');
     }
 
-    // Previene acquisti duplicati per stessa persona
-    if (esisteBigliettoDuplicato($pdo, $idEvento, $nome, $cognome)) {
-        redirect('index.php?action=view_evento&id=' . $idEvento, null,
-            'Esiste già un biglietto intestato a ' . $nome . ' ' . $cognome . ' per questo evento');
-    }
-
-    // Verifica disponibilita posti nel settore
-    $postiDisponibili = getPostiDisponibiliSettore($pdo, $idSettore, $idEvento);
-    if ($postiDisponibili <= 0) {
-        redirect('index.php?action=view_evento&id=' . $idEvento, null, 'Posti esauriti nel settore selezionato');
+    // Valida che tutti i biglietti abbiano i dati completi
+    foreach ($tickets as $ticket) {
+        if (empty($ticket['nome']) || empty($ticket['cognome'])) {
+            redirect('index.php?action=checkout', null, 'Compila i dati di tutti i biglietti');
+        }
     }
 
     try {
         $pdo->beginTransaction();
 
-        // Crea il biglietto con QR code automatico
-        $idBiglietto = createBiglietto($pdo, [
-            'idEvento' => $idEvento,
-            'idClasse' => $idClasse,
-            'Nome' => $nome,
-            'Cognome' => $cognome,
-            'Sesso' => $sesso
-        ]);
+        // Aggiorna i dati dei biglietti e conferma l'acquisto
+        $bigliettiIds = [];
+        foreach ($tickets as $ticket) {
+            $idBiglietto = (int) $ticket['bigliettoId'];
+            if ($idBiglietto <= 0) continue;
 
-        // Assegnazione posto semplificata (fila A, numero progressivo)
-        $fila = 'A';
-        $numero = $postiDisponibili;
-        assegnaPosto($pdo, $idBiglietto, $idSettore, $fila, $numero);
+            // Verifica che il biglietto esista e sia nel carrello dell'utente
+            $stmt = $pdo->prepare("SELECT id FROM Biglietti WHERE id = ? AND idUtente = ? AND Stato = 'carrello'");
+            $stmt->execute([$idBiglietto, $_SESSION['user_id']]);
+            if (!$stmt->fetch()) {
+                throw new Exception("Biglietto non valido: " . $idBiglietto);
+            }
 
-        // Crea ordine e associa biglietto e utente
+            // Aggiorna dati intestatario
+            $stmt = $pdo->prepare("UPDATE Biglietti SET Nome = ?, Cognome = ?, Sesso = ? WHERE id = ?");
+            $stmt->execute([
+                sanitize($ticket['nome']),
+                sanitize($ticket['cognome']),
+                sanitize($ticket['sesso'] ?? 'Altro'),
+                $idBiglietto
+            ]);
+
+            $bigliettiIds[] = $idBiglietto;
+        }
+
+        // Conferma l'acquisto (cambia stato da 'carrello' a 'acquistato')
+        if (!empty($bigliettiIds)) {
+            confirmPurchase($pdo, $bigliettiIds);
+            // Assegna automaticamente un posto a ogni biglietto
+            assegnaPostiAutomatici($pdo, $bigliettiIds);
+        }
+
+        // Crea ordine e associa biglietti
         $idOrdine = createOrdine($pdo, $metodo);
-        associaOrdineBiglietto($pdo, $idOrdine, $idBiglietto);
+        foreach ($bigliettiIds as $idBiglietto) {
+            associaOrdineBiglietto($pdo, $idOrdine, $idBiglietto);
+        }
         associaOrdineUtente($pdo, $idOrdine, $_SESSION['user_id']);
 
         $pdo->commit();
 
-        $prezzo = calcolaPrezzoFinale($pdo, $idEvento, $idClasse, $idSettore);
         redirect('index.php?action=view_ordine&id=' . $idOrdine,
-            'Biglietto acquistato con successo! Totale: ' . formatPrice($prezzo));
+            count($bigliettiIds) . ' bigliett' . (count($bigliettiIds) > 1 ? 'i acquistati' : 'o acquistato') . ' con successo!');
 
     } catch (Exception $e) {
         $pdo->rollBack();
-        logError("Errore acquisto biglietto: " . $e->getMessage());
-        redirect('index.php?action=view_evento&id=' . $idEvento, null, 'Errore durante l\'acquisto');
+        logError("Errore acquisto biglietti: " . $e->getMessage());
+        redirect('index.php?action=checkout', null, 'Errore durante l\'acquisto: ' . $e->getMessage());
+    }
+}
+
+/**
+ * Acquista biglietti da localStorage (vecchio metodo per utenti non loggati)
+ */
+function acquistaFromLocalCart(PDO $pdo, array $cartData, string $metodo): void
+{
+    if (empty($cartData)) {
+        redirect('index.php?action=checkout', null, 'Nessun biglietto da acquistare');
+    }
+
+    // Valida che tutti i biglietti abbiano i dati completi
+    foreach ($cartData as $ticket) {
+        if (empty($ticket['nome']) || empty($ticket['cognome'])) {
+            redirect('index.php?action=checkout', null, 'Compila i dati di tutti i biglietti');
+        }
+    }
+
+    try {
+        $pdo->beginTransaction();
+
+        $bigliettiIds = [];
+        foreach ($cartData as $ticket) {
+            $idEvento = (int) ($ticket['eventoId'] ?? 0);
+            $idClasse = sanitize($ticket['tipoId'] ?? $ticket['ticketType'] ?? 'Standard');
+            $nome = sanitize($ticket['nome']);
+            $cognome = sanitize($ticket['cognome']);
+            $sesso = sanitize($ticket['sesso'] ?? 'Altro');
+
+            if ($idEvento <= 0) continue;
+
+            // Crea il biglietto con stato 'acquistato'
+            $idBiglietto = createBiglietto($pdo, [
+                'idEvento' => $idEvento,
+                'idClasse' => $idClasse,
+                'Nome' => $nome,
+                'Cognome' => $cognome,
+                'Sesso' => $sesso,
+                'Stato' => 'acquistato',
+                'idUtente' => $_SESSION['user_id']
+            ]);
+
+            $bigliettiIds[] = $idBiglietto;
+        }
+
+        // Assegna automaticamente un posto a ogni biglietto
+        if (!empty($bigliettiIds)) {
+            assegnaPostiAutomatici($pdo, $bigliettiIds);
+        }
+
+        // Crea ordine e associa biglietti
+        $idOrdine = createOrdine($pdo, $metodo);
+        foreach ($bigliettiIds as $idBiglietto) {
+            associaOrdineBiglietto($pdo, $idOrdine, $idBiglietto);
+        }
+        associaOrdineUtente($pdo, $idOrdine, $_SESSION['user_id']);
+
+        $pdo->commit();
+
+        redirect('index.php?action=view_ordine&id=' . $idOrdine,
+            count($bigliettiIds) . ' bigliett' . (count($bigliettiIds) > 1 ? 'i acquistati' : 'o acquistato') . ' con successo!');
+
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        logError("Errore acquisto biglietti: " . $e->getMessage());
+        redirect('index.php?action=checkout', null, 'Errore durante l\'acquisto');
     }
 }
 

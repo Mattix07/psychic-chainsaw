@@ -452,27 +452,41 @@ function showToast(message, type = 'info') {
 }
 
 // ==========================================
-// CART MANAGEMENT (localStorage)
+// CART MANAGEMENT (Server API + localStorage fallback)
 // ==========================================
 const Cart = {
     STORAGE_KEY: 'em_cart',
+    _cache: null, // Cache per carrello server
 
-    // Get cart from localStorage
+    // Check if user is logged in
+    isLoggedIn() {
+        return window.EventsMaster?.isLoggedIn === true;
+    },
+
+    // Get CSRF token
+    getCsrfToken() {
+        return window.EventsMaster?.csrfToken || document.querySelector('meta[name="csrf-token"]')?.content || '';
+    },
+
+    // Get cart (from server if logged in, localStorage otherwise)
     get() {
+        if (this.isLoggedIn() && this._cache !== null) {
+            return this._cache;
+        }
+
         try {
             const cart = localStorage.getItem(this.STORAGE_KEY);
             if (!cart) return [];
 
             const parsed = JSON.parse(cart);
-            // Filtra elementi corrotti (senza eventoId o eventName)
-            return parsed.filter(item => item && item.eventoId && item.eventName);
+            return parsed.filter(item => item && (item.eventoId || item.idEvento));
         } catch (e) {
             console.error('Error reading cart:', e);
             return [];
         }
     },
 
-    // Save cart to localStorage
+    // Save cart to localStorage (for guest)
     save(cart) {
         try {
             localStorage.setItem(this.STORAGE_KEY, JSON.stringify(cart));
@@ -483,15 +497,20 @@ const Cart = {
     },
 
     // Add item to cart
-    add(item) {
+    async add(item) {
+        if (this.isLoggedIn()) {
+            return await this.addToServer(item);
+        }
+
+        // Guest: use localStorage
         const cart = this.get();
-        // Check if same ticket type for same event already exists
         const existingIndex = cart.findIndex(i =>
-            i.eventoId === item.eventoId && i.tipoId === item.tipoId
+            (i.eventoId || i.idEvento) === (item.eventoId || item.idEvento) &&
+            (i.tipoId || i.idClasse) === (item.tipoId || item.idClasse)
         );
 
         if (existingIndex >= 0) {
-            cart[existingIndex].quantity += item.quantity || 1;
+            cart[existingIndex].quantity = (cart[existingIndex].quantity || 1) + (item.quantity || 1);
         } else {
             cart.push({
                 ...item,
@@ -505,17 +524,110 @@ const Cart = {
         return cart;
     },
 
+    // Add to server cart (for logged in users)
+    async addToServer(item) {
+        try {
+            const formData = new FormData();
+            formData.append('idEvento', item.eventoId || item.idEvento);
+            formData.append('idClasse', item.tipoId || item.idClasse || 'Standard');
+            formData.append('quantita', item.quantity || 1);
+            formData.append('csrf_token', this.getCsrfToken());
+
+            const response = await fetch('index.php?action=cart_add', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                this._cache = result.cart;
+                showToast(result.message, 'success');
+                this.updateUI();
+                return result.cart;
+            } else {
+                showToast(result.error || 'Errore nell\'aggiunta al carrello', 'error');
+                return null;
+            }
+        } catch (e) {
+            console.error('Error adding to server cart:', e);
+            showToast('Errore di connessione', 'error');
+            return null;
+        }
+    },
+
     // Remove item from cart
-    remove(index) {
+    async remove(indexOrId) {
+        if (this.isLoggedIn()) {
+            return await this.removeFromServer(indexOrId);
+        }
+
         const cart = this.get();
-        if (index >= 0 && index < cart.length) {
-            cart.splice(index, 1);
+        if (indexOrId >= 0 && indexOrId < cart.length) {
+            cart.splice(indexOrId, 1);
             this.save(cart);
         }
         return cart;
     },
 
-    // Update item quantity
+    // Remove from server cart
+    async removeFromServer(idBiglietto) {
+        try {
+            const formData = new FormData();
+            formData.append('idBiglietto', idBiglietto);
+            formData.append('csrf_token', this.getCsrfToken());
+
+            const response = await fetch('index.php?action=cart_remove', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                this._cache = result.cart;
+                this.updateUI();
+                showToast(result.message, 'success');
+            }
+            return result.cart;
+        } catch (e) {
+            console.error('Error removing from server cart:', e);
+            return null;
+        }
+    },
+
+    // Update item (for server cart: update ticket data)
+    async updateItem(idBiglietto, data) {
+        if (!this.isLoggedIn()) return;
+
+        try {
+            const formData = new FormData();
+            formData.append('idBiglietto', idBiglietto);
+            formData.append('csrf_token', this.getCsrfToken());
+
+            if (data.nome !== undefined) formData.append('nome', data.nome);
+            if (data.cognome !== undefined) formData.append('cognome', data.cognome);
+            if (data.sesso !== undefined) formData.append('sesso', data.sesso);
+            if (data.idClasse !== undefined) formData.append('idClasse', data.idClasse);
+
+            const response = await fetch('index.php?action=cart_update', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                this._cache = result.cart;
+            }
+            return result;
+        } catch (e) {
+            console.error('Error updating cart item:', e);
+            return null;
+        }
+    },
+
+    // Update item quantity (for localStorage cart)
     updateQuantity(index, quantity) {
         const cart = this.get();
         if (index >= 0 && index < cart.length) {
@@ -529,7 +641,22 @@ const Cart = {
     },
 
     // Clear cart
-    clear() {
+    async clear() {
+        if (this.isLoggedIn()) {
+            try {
+                const formData = new FormData();
+                formData.append('csrf_token', this.getCsrfToken());
+
+                await fetch('index.php?action=cart_clear', {
+                    method: 'POST',
+                    body: formData
+                });
+                this._cache = [];
+            } catch (e) {
+                console.error('Error clearing server cart:', e);
+            }
+        }
+
         localStorage.removeItem(this.STORAGE_KEY);
         this.updateUI();
     },
@@ -537,13 +664,43 @@ const Cart = {
     // Get total price
     getTotal() {
         const cart = this.get();
-        return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+        return cart.reduce((total, item) => {
+            const price = item.price || item.prezzo || 0;
+            const qty = item.quantity || 1;
+            return total + (price * qty);
+        }, 0);
     },
 
     // Get total items count
     getCount() {
         const cart = this.get();
-        return cart.reduce((count, item) => count + item.quantity, 0);
+        return cart.reduce((count, item) => count + (item.quantity || 1), 0);
+    },
+
+    // Load cart from server
+    async loadFromServer() {
+        if (!this.isLoggedIn()) return;
+
+        try {
+            const response = await fetch('index.php?action=cart_get');
+            const result = await response.json();
+
+            this._cache = result.cart || [];
+            this.updateUI();
+        } catch (e) {
+            console.error('Error loading cart from server:', e);
+        }
+    },
+
+    // Check availability before adding
+    async checkAvailability(idEvento, quantita = 1) {
+        try {
+            const response = await fetch(`index.php?action=check_availability&idEvento=${idEvento}&quantita=${quantita}`);
+            return await response.json();
+        } catch (e) {
+            console.error('Error checking availability:', e);
+            return { disponibile: true, illimitati: true };
+        }
     },
 
     // Update UI elements
@@ -573,29 +730,43 @@ const Cart = {
                 cartEmpty.style.display = 'none';
                 cartFooter.style.display = 'block';
 
-                cartItems.innerHTML = cart.map((item, index) => `
-                    <div class="cart-item" data-index="${index}">
+                cartItems.innerHTML = cart.map((item, index) => {
+                    const eventName = item.eventName || item.eventoNome || 'Evento';
+                    const ticketType = item.ticketType || item.idClasse || 'Standard';
+                    const eventDate = item.eventDate || item.eventoData || '';
+                    const price = item.price || item.prezzo || 0;
+                    const qty = item.quantity || 1;
+                    const itemId = item.id || index;
+
+                    return `
+                    <div class="cart-item" data-index="${index}" data-id="${itemId}">
                         <div class="cart-item-image">
-                            <img src="${item.image || 'public/img/placeholder-event.jpg'}" alt="${item.eventName}">
+                            <img src="${item.image || 'public/img/placeholder-event.jpg'}" alt="${eventName}">
                         </div>
                         <div class="cart-item-info">
-                            <h4>${item.eventName}</h4>
-                            <p class="cart-item-type">${item.ticketType}</p>
-                            <p class="cart-item-date">${item.eventDate}</p>
-                            <div class="cart-item-price">${formatPrice(item.price)}</div>
+                            <h4>${eventName}</h4>
+                            <p class="cart-item-type">${ticketType}</p>
+                            <p class="cart-item-date">${eventDate}</p>
+                            <div class="cart-item-price">${formatPrice(price)}</div>
                         </div>
                         <div class="cart-item-actions">
+                            ${this.isLoggedIn() ? `
+                            <button class="cart-item-remove" data-id="${itemId}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            ` : `
                             <div class="quantity-control">
                                 <button class="qty-btn minus" data-index="${index}">-</button>
-                                <span class="qty-value">${item.quantity}</span>
+                                <span class="qty-value">${qty}</span>
                                 <button class="qty-btn plus" data-index="${index}">+</button>
                             </div>
                             <button class="cart-item-remove" data-index="${index}">
                                 <i class="fas fa-trash"></i>
                             </button>
+                            `}
                         </div>
                     </div>
-                `).join('');
+                `}).join('');
 
                 // Bind events
                 this.bindCartItemEvents();
@@ -613,129 +784,51 @@ const Cart = {
         // Remove buttons
         document.querySelectorAll('.cart-item-remove').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const index = parseInt(e.currentTarget.dataset.index);
-                this.remove(index);
+                if (this.isLoggedIn()) {
+                    const id = parseInt(e.currentTarget.dataset.id);
+                    this.remove(id);
+                } else {
+                    const index = parseInt(e.currentTarget.dataset.index);
+                    this.remove(index);
+                }
             });
         });
 
-        // Quantity buttons
-        document.querySelectorAll('.qty-btn.minus').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const index = parseInt(e.currentTarget.dataset.index);
-                const cart = this.get();
-                this.updateQuantity(index, cart[index].quantity - 1);
+        // Quantity buttons (solo per guest)
+        if (!this.isLoggedIn()) {
+            document.querySelectorAll('.qty-btn.minus').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const index = parseInt(e.currentTarget.dataset.index);
+                    const cart = this.get();
+                    this.updateQuantity(index, (cart[index].quantity || 1) - 1);
+                });
             });
-        });
 
-        document.querySelectorAll('.qty-btn.plus').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const index = parseInt(e.currentTarget.dataset.index);
-                const cart = this.get();
-                this.updateQuantity(index, cart[index].quantity + 1);
+            document.querySelectorAll('.qty-btn.plus').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const index = parseInt(e.currentTarget.dataset.index);
+                    const cart = this.get();
+                    this.updateQuantity(index, (cart[index].quantity || 1) + 1);
+                });
             });
-        });
+        }
     },
 
     // Merge local cart with server cart (after login)
     async mergeWithServer() {
         const localCart = this.get();
-        if (localCart.length === 0 || !window.EventsMaster?.isLoggedIn) return;
+        if (localCart.length === 0 || !this.isLoggedIn()) return;
 
-        try {
-            const response = await fetch('index.php?action=get_server_cart', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': window.EventsMaster.csrfToken
-                }
-            });
-
-            const serverCart = await response.json();
-
-            if (serverCart.length === 0) {
-                // No server cart, just save local to server
-                await this.saveToServer(localCart);
-                return;
-            }
-
-            // Check for duplicates
-            const duplicates = localCart.filter(localItem =>
-                serverCart.some(serverItem =>
-                    serverItem.eventoId === localItem.eventoId &&
-                    serverItem.tipoId === localItem.tipoId
-                )
-            );
-
-            if (duplicates.length > 0) {
-                // Show merge modal
-                this.showMergeModal(localCart, serverCart, duplicates);
-            } else {
-                // No duplicates, merge directly
-                const merged = [...serverCart, ...localCart];
-                await this.saveToServer(merged);
-                this.clear();
-            }
-        } catch (e) {
-            console.error('Error merging cart:', e);
+        // Add each local item to server cart
+        for (const item of localCart) {
+            await this.addToServer(item);
         }
-    },
 
-    // Show merge modal for duplicates
-    showMergeModal(localCart, serverCart, duplicates) {
-        const modal = document.getElementById('cartMergeModal');
-        const duplicatesList = document.getElementById('duplicatesList');
+        // Clear local cart
+        localStorage.removeItem(this.STORAGE_KEY);
 
-        if (!modal || !duplicatesList) return;
-
-        duplicatesList.innerHTML = duplicates.map(item => `
-            <div class="duplicate-item">
-                <strong>${item.eventName}</strong> - ${item.ticketType}
-            </div>
-        `).join('');
-
-        modal.classList.add('active');
-
-        // Keep local button
-        document.getElementById('keepLocal')?.addEventListener('click', async () => {
-            await this.saveToServer(localCart);
-            this.clear();
-            modal.classList.remove('active');
-        }, { once: true });
-
-        // Merge button
-        document.getElementById('mergeCart')?.addEventListener('click', async () => {
-            // Merge by summing quantities for duplicates
-            const merged = [...serverCart];
-            localCart.forEach(localItem => {
-                const existingIndex = merged.findIndex(i =>
-                    i.eventoId === localItem.eventoId && i.tipoId === localItem.tipoId
-                );
-                if (existingIndex >= 0) {
-                    merged[existingIndex].quantity += localItem.quantity;
-                } else {
-                    merged.push(localItem);
-                }
-            });
-            await this.saveToServer(merged);
-            this.clear();
-            modal.classList.remove('active');
-        }, { once: true });
-    },
-
-    // Save cart to server
-    async saveToServer(cart) {
-        try {
-            await fetch('index.php?action=save_cart', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': window.EventsMaster.csrfToken
-                },
-                body: JSON.stringify({ cart })
-            });
-        } catch (e) {
-            console.error('Error saving cart to server:', e);
-        }
+        // Reload from server
+        await this.loadFromServer();
     }
 };
 
@@ -792,12 +885,18 @@ const Cart = {
         }
     });
 
-    // Initialize cart UI
-    Cart.updateUI();
-
-    // Check for cart merge after login
-    if (window.EventsMaster?.isLoggedIn && window.EventsMaster?.redirectAfterLogin) {
-        Cart.mergeWithServer();
+    // Initialize cart
+    if (Cart.isLoggedIn()) {
+        // Carica carrello dal server
+        Cart.loadFromServer().then(() => {
+            // Se c'è un carrello locale, uniscilo
+            const localCart = JSON.parse(localStorage.getItem(Cart.STORAGE_KEY) || '[]');
+            if (localCart.length > 0) {
+                Cart.mergeWithServer();
+            }
+        });
+    } else {
+        Cart.updateUI();
     }
 })();
 
@@ -805,7 +904,7 @@ const Cart = {
 // ADD TO CART FUNCTION (Global)
 // ==========================================
 // Supporta sia chiamata con parametri separati che con oggetto singolo
-window.addToCart = function(eventoIdOrItem, tipoId, eventName, ticketType, price, eventDate, image) {
+window.addToCart = async function(eventoIdOrItem, tipoId, eventName, ticketType, price, eventDate, image, quantity = 1) {
     let item;
 
     // Se il primo parametro è un oggetto, usalo direttamente
@@ -815,16 +914,35 @@ window.addToCart = function(eventoIdOrItem, tipoId, eventName, ticketType, price
         // Altrimenti costruisci l'oggetto dai parametri
         item = {
             eventoId: eventoIdOrItem,
+            idEvento: eventoIdOrItem,
             tipoId: tipoId,
+            idClasse: tipoId,
             eventName: eventName,
             ticketType: ticketType,
             price: parseFloat(price),
             eventDate: eventDate,
-            image: image
+            image: image,
+            quantity: quantity
         };
     }
 
-    Cart.add(item);
+    // Verifica disponibilità se loggato
+    if (Cart.isLoggedIn()) {
+        const availability = await Cart.checkAvailability(
+            item.eventoId || item.idEvento,
+            item.quantity || 1
+        );
+
+        if (!availability.disponibile) {
+            const msg = availability.illimitati
+                ? 'Errore nel controllo disponibilità'
+                : `Solo ${availability.rimanenti} biglietti disponibili`;
+            showToast(msg, 'error');
+            return null;
+        }
+    }
+
+    return await Cart.add(item);
 };
 
 // Update cart count badge

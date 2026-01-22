@@ -1,13 +1,14 @@
 /* EventsMaster - Main CSS Import File
    This file imports all modular CSS files in the correct order
+   Cache busting: v2
 */
 
-@import url('variables.css');
-@import url('base.css');
-@import url('header.css');
-@import url('components.css');
-@import url('cart.css');
-@import url('forms.css');
-@import url('admin.css');
-@import url('footer.css');
-@import url('responsive.css');
+@import url('variables.css?v=2');
+@import url('base.css?v=2');
+@import url('header.css?v=2');
+@import url('components.css?v=3');
+@import url('cart.css?v=2');
+@import url('forms.css?v=4');
+@import url('admin.css?v=2');
+@import url('footer.css?v=2');
+@import url('responsive.css?v=2');

@@ -673,6 +673,49 @@
     color: var(--primary);
 }
 
+/* Disponibilità biglietti */
+.ticket-availability {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: var(--radius);
+    margin-bottom: 16px;
+    font-size: 0.85rem;
+    color: var(--primary);
+}
+
+.ticket-availability i {
+    color: var(--primary);
+}
+
+/* Biglietti esauriti */
+.ticket-soldout {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 40px 20px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: var(--radius);
+    text-align: center;
+}
+
+.ticket-soldout i {
+    font-size: 2.5rem;
+    color: var(--danger);
+}
+
+.ticket-soldout span {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--danger);
+}
+
 .ticket-type {
     display: flex;
     justify-content: space-between;

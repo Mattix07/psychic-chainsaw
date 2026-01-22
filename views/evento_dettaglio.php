@@ -223,20 +223,40 @@ if (!empty($evento['idManifestazione'])) {
         Il prezzo totale viene calcolato in tempo reale via JavaScript.
         I dati del partecipante vengono richiesti al checkout.
     -->
+    <?php
+    // Calcola disponibilità biglietti
+    $disponibili = getBigliettiDisponibili($pdo, $evento['id']);
+    $esaurito = $disponibili !== null && $disponibili <= 0;
+    ?>
     <aside class="evento-sidebar">
         <div class="ticket-selector">
             <h3><i class="fas fa-ticket-alt"></i> Acquista Biglietti</h3>
+
+            <?php if ($esaurito): ?>
+            <div class="ticket-soldout">
+                <i class="fas fa-ban"></i>
+                <span>Biglietti esauriti</span>
+            </div>
+            <?php else: ?>
 
             <div class="ticket-price-display">
                 <span class="label">A partire da</span>
                 <span class="price"><?= formatPrice($evento['PrezzoNoMod']) ?></span>
             </div>
 
+            <?php if ($disponibili !== null): ?>
+            <div class="ticket-availability">
+                <i class="fas fa-ticket-alt"></i>
+                <span id="ticketAvailability"><?= $disponibili ?> biglietti disponibili</span>
+            </div>
+            <?php endif; ?>
+
             <form id="add-to-cart-form" class="ticket-form">
                 <input type="hidden" name="idEvento" value="<?= $evento['id'] ?>">
                 <input type="hidden" name="eventoNome" value="<?= e($evento['Nome']) ?>">
                 <input type="hidden" name="eventoData" value="<?= $evento['Data'] ?>">
                 <input type="hidden" name="prezzoBase" value="<?= $evento['PrezzoNoMod'] ?>">
+                <input type="hidden" name="maxBiglietti" value="<?= $disponibili ?? '' ?>">
 
                 <div class="form-group">
                     <label for="idClasse">Tipo Biglietto</label>
@@ -264,7 +284,7 @@ if (!empty($evento['idManifestazione'])) {
                     <label>Quantità</label>
                     <div class="quantity-selector">
                         <button type="button" class="qty-btn" onclick="changeQty(-1)">-</button>
-                        <input type="number" id="quantita" name="quantita" value="1" min="1" max="10" readonly>
+                        <input type="number" id="quantita" name="quantita" value="1" min="1" max="<?= $disponibili ? min(10, $disponibili) : 10 ?>" readonly>
                         <button type="button" class="qty-btn" onclick="changeQty(1)">+</button>
                     </div>
                 </div>
@@ -274,7 +294,7 @@ if (!empty($evento['idManifestazione'])) {
                     <span class="total-price" id="totalPrice"><?= formatPrice($evento['PrezzoNoMod']) ?></span>
                 </div>
 
-                <button type="button" class="btn btn-primary btn-block btn-large" onclick="addEventToCart()">
+                <button type="button" class="btn btn-primary btn-block btn-large" onclick="addEventToCart()" id="addToCartBtn">
                     <i class="fas fa-cart-plus"></i> Aggiungi al Carrello
                 </button>
             </form>
@@ -283,6 +303,7 @@ if (!empty($evento['idManifestazione'])) {
                 <i class="fas fa-info-circle"></i>
                 I dati del partecipante verranno richiesti al momento del checkout.
             </p>
+            <?php endif; ?>
         </div>
     </aside>
 </div>
@@ -364,14 +385,13 @@ function changeQty(delta) {
 }
 
 /**
- * Aggiunge i biglietti selezionati al carrello (localStorage).
- * Crea un oggetto per ogni biglietto con ID univoco timestamp-based.
- * I dati del partecipante (nome, cognome, sesso) sono vuoti e
- * verranno compilati al checkout.
+ * Aggiunge i biglietti selezionati al carrello.
+ * Usa le API server se l'utente è loggato, localStorage altrimenti.
  */
-function addEventToCart() {
+async function addEventToCart() {
     const form = document.getElementById('add-to-cart-form');
     const formData = new FormData(form);
+    const btn = document.getElementById('addToCartBtn');
 
     const tipoSelect = document.getElementById('idClasse');
     const settoreSelect = document.getElementById('idSettore');
@@ -382,40 +402,56 @@ function addEventToCart() {
     const multPrezzo = parseFloat(settoreSelect.options[settoreSelect.selectedIndex].dataset.mult) || 1;
     const prezzoUnitario = (prezzoBase + modPrezzo) * multPrezzo;
 
-    // Aggiungi n biglietti al carrello
-    for (let i = 0; i < quantita; i++) {
-        const item = {
-            id: Date.now() + '_' + i,
-            idEvento: formData.get('idEvento'),
-            eventoNome: formData.get('eventoNome'),
-            eventoData: formData.get('eventoData'),
-            idClasse: formData.get('idClasse'),
-            idSettore: formData.get('idSettore'),
-            settoreNome: settoreSelect.options[settoreSelect.selectedIndex].text,
-            prezzo: prezzoUnitario,
-            // Dati partecipante da compilare al checkout
-            nome: '',
-            cognome: '',
-            sesso: ''
-        };
+    // Disabilita bottone durante l'operazione
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Aggiunta...';
 
-        if (typeof window.addToCart === 'function') {
-            window.addToCart(item);
-        } else {
-            // Fallback se la funzione non è disponibile
-            let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-            cart.push(item);
-            localStorage.setItem('cart', JSON.stringify(cart));
+    const item = {
+        eventoId: formData.get('idEvento'),
+        idEvento: formData.get('idEvento'),
+        eventName: formData.get('eventoNome'),
+        eventoNome: formData.get('eventoNome'),
+        eventDate: formData.get('eventoData'),
+        eventoData: formData.get('eventoData'),
+        tipoId: formData.get('idClasse'),
+        idClasse: formData.get('idClasse'),
+        ticketType: formData.get('idClasse'),
+        idSettore: formData.get('idSettore'),
+        settoreNome: settoreSelect.options[settoreSelect.selectedIndex].text,
+        price: prezzoUnitario,
+        prezzo: prezzoUnitario,
+        quantity: quantita
+    };
+
+    try {
+        const result = await window.addToCart(item);
+
+        if (result) {
+            // Aggiorna disponibilità mostrata
+            const availabilityEl = document.getElementById('ticketAvailability');
+            if (availabilityEl && typeof Cart !== 'undefined' && Cart.isLoggedIn()) {
+                const availability = await Cart.checkAvailability(item.idEvento);
+                if (!availability.illimitati) {
+                    availabilityEl.textContent = availability.rimanenti + ' biglietti disponibili';
+
+                    // Aggiorna max quantità
+                    const qtyInput = document.getElementById('quantita');
+                    qtyInput.max = Math.min(10, availability.rimanenti);
+                    if (parseInt(qtyInput.value) > availability.rimanenti) {
+                        qtyInput.value = Math.max(1, availability.rimanenti);
+                        updatePrice();
+                    }
+                }
+            }
         }
+    } catch (e) {
+        console.error('Error adding to cart:', e);
+        showToast('Errore durante l\'aggiunta al carrello', 'error');
     }
 
-    // Mostra feedback
-    showToast(quantita + ' bigliett' + (quantita > 1 ? 'i aggiunti' : 'o aggiunto') + ' al carrello!', 'success');
-
-    // Aggiorna counter carrello
-    if (typeof window.updateCartCount === 'function') {
-        window.updateCartCount();
-    }
+    // Riabilita bottone
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-cart-plus"></i> Aggiungi al Carrello';
 }
 
 // Aggiorna prezzo quando cambiano tipo o settore

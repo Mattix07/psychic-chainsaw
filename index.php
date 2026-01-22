@@ -73,8 +73,32 @@ switch ($action) {
         break;
 
     // ==========================================
-    // BIGLIETTI
+    // CARRELLO (API)
     // ==========================================
+    case 'cart_add':
+    case 'cart_get':
+    case 'cart_update':
+    case 'cart_remove':
+    case 'cart_clear':
+    case 'cart_count':
+    case 'check_availability':
+    case 'get_settori':
+    case 'cart_update_settore':
+        require_once 'controllers/CartController.php';
+        handleCart($pdo, $action);
+        exit; // Le API non renderizzano il layout
+
+    // ==========================================
+    // CHECKOUT E BIGLIETTI
+    // ==========================================
+    case 'checkout':
+        require_once 'controllers/PageController.php';
+        if (!isLoggedIn()) {
+            redirect('index.php?action=show_login&redirect=checkout', null, 'Effettua il login per completare l\'acquisto.');
+        }
+        setPage('checkout');
+        break;
+
     case 'acquista':
     case 'valida':
     case 'view_biglietto':
