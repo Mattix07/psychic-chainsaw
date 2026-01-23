@@ -26,9 +26,9 @@ function getAllEventi(PDO $pdo): array
 function getEventoById(PDO $pdo, int $id): ?array
 {
     $stmt = $pdo->prepare("
-        SELECT e.*, m.Nome as ManifestazioneName, l.Nome as LocationName
+        SELECT e.*, COALESCE(m.Nome, 'indipendente') AS ManifestazioneName, l.Nome as LocationName
         FROM Eventi e
-        JOIN Manifestazioni m ON e.idManifestazione = m.id
+        LEFT JOIN Manifestazioni m ON e.idManifestazione = m.id
         JOIN Locations l ON e.idLocation = l.id
         WHERE e.id = ?
     ");
@@ -169,11 +169,10 @@ function deleteEvento(PDO $pdo, int $id): bool
 function getIntrattenitoriEvento(PDO $pdo, int $idEvento): array
 {
     $stmt = $pdo->prepare("
-        SELECT i.*, es.OraI, es.OraF
-        FROM Intrattenitori i
-        JOIN Esibizioni es ON i.id = es.idIntrattenitore
+        SELECT i.*, e.OraI, e.OraF
+        FROM Intrattenitore i, eventi e, evento_intrattenitore es 
         WHERE es.idEvento = ?
-        ORDER BY es.OraI
+        ORDER BY e.OraI
     ");
     $stmt->execute([$idEvento]);
     return $stmt->fetchAll();
