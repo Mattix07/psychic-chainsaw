@@ -348,7 +348,8 @@ function getSettoriApi(PDO $pdo): void
         'settori' => array_map(function($s) {
             return [
                 'id' => $s['id'],
-                'posti' => $s['Posti'],
+                'nome' => $s['Nome'],
+                'posti' => $s['PostiDisponibili'],
                 'moltiplicatore' => (float) $s['MoltiplicatorePrezzo']
             ];
         }, $settori)
@@ -441,7 +442,7 @@ function formatCartForJs(array $cart): array
             'cognome' => $item['Cognome'],
             'sesso' => $item['Sesso'],
             'dataCarrello' => $item['DataCarrello'],
-            'image' => $item['Locandina'] ? 'data:image/jpeg;base64,' . base64_encode($item['Locandina']) : null
+            'image' => $item['Immagine'] ? 'data:image/jpeg;base64,' . base64_encode($item['Immagine']) : null
         ];
     }, $cart);
 }

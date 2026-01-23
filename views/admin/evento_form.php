@@ -17,6 +17,17 @@ $locations = $_SESSION['admin_locations'] ?? [];
 $manifestazioni = $_SESSION['admin_manifestazioni'] ?? [];
 $evento = $_SESSION['admin_evento'] ?? null;
 $isEdit = !empty($evento);
+
+// Carica settori disponibili
+require_once __DIR__ . '/../../models/Settore.php';
+$settoriDisponibili = getAllSettori($pdo);
+
+// Se in modifica, carica settori già associati
+$settoriSelezionati = [];
+if ($isEdit) {
+    require_once __DIR__ . '/../../models/EventoSettori.php';
+    $settoriSelezionati = getEventoSettori($pdo, $evento['id']);
+}
 ?>
 
 <div class="admin-page">
@@ -94,6 +105,26 @@ $isEdit = !empty($evento);
                             </option>
                         <?php endforeach; ?>
                     </select>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Settori Disponibili</h3>
+                <p class="form-hint">Seleziona i settori disponibili per questo evento. Se non selezioni nessun settore, saranno disponibili tutti i settori della location.</p>
+
+                <div class="settori-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">
+                    <?php foreach ($settoriDisponibili as $settore): ?>
+                        <?php
+                        $isSelected = in_array($settore['id'], array_column($settoriSelezionati, 'idSettore'));
+                        ?>
+                        <label class="checkbox-card" style="display: flex; align-items: center; padding: 12px; border: 1px solid #ddd; border-radius: 6px; cursor: pointer;">
+                            <input type="checkbox" name="settori[]" value="<?= $settore['id'] ?>" <?= $isSelected ? 'checked' : '' ?> style="margin-right: 8px;">
+                            <div>
+                                <strong><?= e($settore['Nome']) ?></strong>
+                                <small style="display: block; color: #666;">Posti: <?= $settore['PostiDisponibili'] ?> | ×<?= $settore['MoltiplicatorePrezzo'] ?></small>
+                            </div>
+                        </label>
+                    <?php endforeach; ?>
                 </div>
             </div>
 

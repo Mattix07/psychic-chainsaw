@@ -138,11 +138,71 @@ function hasAcquistatoBiglietto(PDO $pdo, int $idEvento, int $idUtente): bool
 
 /**
  * Verifica se l'utente puo recensire un evento
- * Requisiti: aver acquistato un biglietto e non aver gia recensito
+ * Requisiti:
+ * - Aver acquistato un biglietto
+ * - Non aver gia recensito
+ * - L'evento deve essere terminato
+ * - Devono essere passati meno di 14 giorni dalla data dell'evento
  *
  * @return bool True se l'utente puo scrivere una recensione
  */
 function canRecensire(PDO $pdo, int $idEvento, int $idUtente): bool
 {
-    return hasAcquistatoBiglietto($pdo, $idEvento, $idUtente) && !hasRecensito($pdo, $idEvento, $idUtente);
+    // Verifica acquisto biglietto e recensione esistente
+    if (!hasAcquistatoBiglietto($pdo, $idEvento, $idUtente) || hasRecensito($pdo, $idEvento, $idUtente)) {
+        return false;
+    }
+
+    // Verifica periodo di validità (solo nelle 2 settimane post evento)
+    return isEventoRecensibile($pdo, $idEvento);
+}
+
+/**
+ * Verifica se un evento è recensibile (nelle 2 settimane post evento)
+ *
+ * @return bool True se l'evento è recensibile
+ */
+function isEventoRecensibile(PDO $pdo, int $idEvento): bool
+{
+    $stmt = $pdo->prepare("
+        SELECT Data FROM Eventi WHERE id = ?
+    ");
+    $stmt->execute([$idEvento]);
+    $evento = $stmt->fetch();
+
+    if (!$evento) {
+        return false;
+    }
+
+    $dataEvento = strtotime($evento['Data']);
+    $now = time();
+
+    // L'evento deve essere passato
+    if ($dataEvento > $now) {
+        return false;
+    }
+
+    // Devono essere passati meno di 14 giorni
+    $giorniPassati = ($now - $dataEvento) / (60 * 60 * 24);
+    return $giorniPassati <= 14;
+}
+
+/**
+ * Recupera recensioni visibili di un evento (solo quelle nelle 2 settimane)
+ *
+ * @return array Lista recensioni
+ */
+function getRecensioniVisibili(PDO $pdo, int $idEvento): array
+{
+    $stmt = $pdo->prepare("
+        SELECT r.*, u.Nome, u.Cognome
+        FROM Recensioni r
+        JOIN Utenti u ON r.idUtente = u.id
+        JOIN Eventi e ON r.idEvento = e.id
+        WHERE r.idEvento = ?
+        AND DATEDIFF(CURDATE(), e.Data) <= 14
+        ORDER BY r.created_at DESC
+    ");
+    $stmt->execute([$idEvento]);
+    return $stmt->fetchAll();
 }

@@ -70,16 +70,16 @@ function getSettoriByLocation(PDO $pdo, int $idLocation): array
 function createLocation(PDO $pdo, array $data): int
 {
     $stmt = $pdo->prepare("
-        INSERT INTO Locations (Nome, Stato, Regione, CAP, Città, civico)
+        INSERT INTO Locations (Nome, Indirizzo, Citta, CAP, Regione, Capienza)
         VALUES (?, ?, ?, ?, ?, ?)
     ");
     $stmt->execute([
         $data['Nome'],
-        $data['Stato'],
-        $data['Regione'],
-        $data['CAP'],
-        $data['Città'],
-        $data['civico'] ?? null
+        $data['Indirizzo'] ?? '',
+        $data['Citta'] ?? '',
+        $data['CAP'] ?? '',
+        $data['Regione'] ?? '',
+        $data['Capienza'] ?? 0
     ]);
     return (int) $pdo->lastInsertId();
 }
@@ -94,20 +94,20 @@ function updateLocation(PDO $pdo, int $id, array $data): bool
     $stmt = $pdo->prepare("
         UPDATE Locations SET
             Nome = ?,
-            Stato = ?,
-            Regione = ?,
+            Indirizzo = ?,
+            Citta = ?,
             CAP = ?,
-            Città = ?,
-            civico = ?
+            Regione = ?,
+            Capienza = ?
         WHERE id = ?
     ");
     return $stmt->execute([
         $data['Nome'],
-        $data['Stato'],
-        $data['Regione'],
-        $data['CAP'],
-        $data['Città'],
-        $data['civico'] ?? null,
+        $data['Indirizzo'] ?? '',
+        $data['Citta'] ?? '',
+        $data['CAP'] ?? '',
+        $data['Regione'] ?? '',
+        $data['Capienza'] ?? 0,
         $id
     ]);
 }
@@ -125,6 +125,33 @@ function deleteLocation(PDO $pdo, int $id): bool
 }
 
 /**
+ * Alias per compatibilità con il controller
+ */
+function deleteLocationById(PDO $pdo, int $id): bool
+{
+    return deleteLocation($pdo, $id);
+}
+
+/**
+ * Recupera le location create da un utente specifico
+ * Solo per promoter
+ *
+ * @return array Lista location create dall'utente
+ */
+function getLocationsByCreator(PDO $pdo, int $userId): array
+{
+    $stmt = $pdo->prepare("
+        SELECT l.*
+        FROM Locations l
+        INNER JOIN CreatoriLocations cl ON l.id = cl.idLocation
+        WHERE cl.idUtente = ?
+        ORDER BY l.Nome
+    ");
+    $stmt->execute([$userId]);
+    return $stmt->fetchAll();
+}
+
+/**
  * Calcola i posti ancora disponibili in un settore per un evento
  * Sottrae dal totale posti i biglietti gia venduti per quel settore
  *
@@ -133,7 +160,7 @@ function deleteLocation(PDO $pdo, int $id): bool
 function getPostiDisponibiliSettore(PDO $pdo, int $idSettore, int $idEvento): int
 {
     $stmt = $pdo->prepare("
-        SELECT s.Posti - COUNT(sb.idBiglietto) as disponibili
+        SELECT s.PostiDisponibili - COUNT(sb.idBiglietto) as disponibili
         FROM Settori s
         LEFT JOIN Settore_Biglietti sb ON s.id = sb.idSettore
         LEFT JOIN Biglietti b ON sb.idBiglietto = b.id AND b.idEvento = ?

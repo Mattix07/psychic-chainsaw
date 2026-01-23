@@ -345,7 +345,7 @@ function resendVerification(PDO $pdo): void
     }
 
     // Non reinviare se gia verificata
-    if (!empty($user['email_verified'])) {
+    if (!empty($user['verificato'])) {
         $_SESSION['msg'] = 'La tua email è già verificata.';
         header('Location: index.php?action=profilo');
         exit;

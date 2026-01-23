@@ -260,6 +260,91 @@ switch ($action) {
         break;
 
     // ==========================================
+    // NUOVE FUNZIONALITÀ ADMIN/MOD
+    // ==========================================
+    case 'delete_biglietti_evento':
+        require_once 'controllers/AdminController.php';
+        deleteBigliettiEventoApi($pdo);
+        exit; // API JSON
+        break;
+
+    case 'delete_location':
+        require_once 'controllers/AdminController.php';
+        deleteLocationApi($pdo);
+        exit; // API JSON
+        break;
+
+    case 'delete_manifestazione':
+        require_once 'controllers/AdminController.php';
+        deleteManifestazioneApi($pdo);
+        exit; // API JSON
+        break;
+
+    case 'delete_recensione':
+        require_once 'controllers/AdminController.php';
+        deleteRecensioneApi($pdo);
+        exit; // API JSON
+        break;
+
+    case 'verify_account':
+        require_once 'controllers/AdminController.php';
+        verifyAccountApi($pdo);
+        exit; // API JSON
+        break;
+
+    case 'get_unverified_accounts':
+        require_once 'controllers/AdminController.php';
+        getUnverifiedAccountsApi($pdo);
+        exit; // API JSON
+        break;
+
+    // ==========================================
+    // COLLABORAZIONE EVENTI
+    // ==========================================
+    case 'invite_collaborator':
+        require_once 'controllers/CollaborazioneController.php';
+        inviteCollaboratorApi($pdo);
+        exit; // API JSON
+        break;
+
+    case 'accept_collaboration':
+        require_once 'controllers/CollaborazioneController.php';
+        acceptCollaborationApi($pdo);
+        break;
+
+    case 'decline_collaboration':
+        require_once 'controllers/CollaborazioneController.php';
+        declineCollaborationApi($pdo);
+        break;
+
+    case 'get_collaborators':
+        require_once 'controllers/CollaborazioneController.php';
+        getCollaboratorsApi($pdo);
+        exit; // API JSON
+        break;
+
+    // ==========================================
+    // AVATAR UTENTE
+    // ==========================================
+    case 'upload_avatar':
+        require_once 'controllers/AvatarController.php';
+        uploadAvatarApi($pdo);
+        exit; // API JSON
+        break;
+
+    case 'get_avatar':
+        require_once 'controllers/AvatarController.php';
+        getAvatarApi($pdo);
+        exit; // Image output
+        break;
+
+    case 'delete_avatar':
+        require_once 'controllers/AvatarController.php';
+        deleteAvatarApi($pdo);
+        exit; // API JSON
+        break;
+
+    // ==========================================
     // DASHBOARD PROMOTER E MODERATORE
     // ==========================================
     case 'promoter_dashboard':
@@ -272,6 +357,68 @@ switch ($action) {
         require_once 'controllers/PageController.php';
         require_once 'controllers/AdminController.php';
         showModDashboard($pdo);
+        break;
+
+    // ==========================================
+    // GESTIONE LOCATION (Promoter/Admin/Mod)
+    // ==========================================
+    case 'list_locations':
+        require_once 'controllers/PageController.php';
+        require_once 'controllers/LocationController.php';
+        listLocations($pdo);
+        break;
+
+    case 'create_location':
+        require_once 'controllers/PageController.php';
+        require_once 'controllers/LocationController.php';
+        showCreateLocation($pdo);
+        break;
+
+    case 'edit_location':
+        require_once 'controllers/PageController.php';
+        require_once 'controllers/LocationController.php';
+        showEditLocation($pdo);
+        break;
+
+    case 'save_location':
+        require_once 'controllers/LocationController.php';
+        saveLocation($pdo);
+        break;
+
+    case 'delete_location_form':
+        require_once 'controllers/LocationController.php';
+        deleteLocation($pdo);
+        break;
+
+    // ==========================================
+    // GESTIONE MANIFESTAZIONI (Promoter/Admin/Mod)
+    // ==========================================
+    case 'list_manifestazioni':
+        require_once 'controllers/PageController.php';
+        require_once 'controllers/ManifestazioneController.php';
+        listManifestazioni($pdo);
+        break;
+
+    case 'create_manifestazione':
+        require_once 'controllers/PageController.php';
+        require_once 'controllers/ManifestazioneController.php';
+        showCreateManifestazione($pdo);
+        break;
+
+    case 'edit_manifestazione':
+        require_once 'controllers/PageController.php';
+        require_once 'controllers/ManifestazioneController.php';
+        showEditManifestazione($pdo);
+        break;
+
+    case 'save_manifestazione':
+        require_once 'controllers/ManifestazioneController.php';
+        saveManifestazione($pdo);
+        break;
+
+    case 'delete_manifestazione_form':
+        require_once 'controllers/ManifestazioneController.php';
+        deleteManifestazione($pdo);
         break;
 
     // ==========================================

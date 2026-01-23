@@ -47,6 +47,12 @@ function acquistaBiglietto(PDO $pdo): void
 {
     requireAuth();
 
+    // Blocca acquisto per promoter/admin/mod
+    $ruolo = $_SESSION['user_ruolo'] ?? 'user';
+    if (in_array($ruolo, ['admin', 'mod', 'promoter'])) {
+        redirect('index.php?action=checkout', null, 'Gli organizzatori non possono acquistare biglietti');
+    }
+
     if (!verifyCsrf()) {
         redirect('index.php?action=checkout', null, 'Richiesta non valida');
     }

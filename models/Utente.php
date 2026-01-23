@@ -140,9 +140,8 @@ function updateUtentePassword(PDO $pdo, int $id, string $newPassword): bool
  */
 function setVerificationToken(PDO $pdo, int $id, string $token): bool
 {
-    $expiry = date('Y-m-d H:i:s', strtotime('+24 hours'));
-    $stmt = $pdo->prepare("UPDATE Utenti SET verification_token = ?, token_expiry = ? WHERE id = ?");
-    return $stmt->execute([$token, $expiry, $id]);
+    $stmt = $pdo->prepare("UPDATE Utenti SET email_verification_token = ? WHERE id = ?");
+    return $stmt->execute([$token, $id]);
 }
 
 /**
@@ -154,9 +153,8 @@ function verifyEmailToken(PDO $pdo, string $token): ?array
 {
     $stmt = $pdo->prepare("
         SELECT * FROM Utenti
-        WHERE verification_token = ?
-          AND token_expiry > NOW()
-          AND email_verified = 0
+        WHERE email_verification_token = ?
+          AND verificato = 0
     ");
     $stmt->execute([$token]);
     return $stmt->fetch() ?: null;
@@ -170,7 +168,7 @@ function markEmailVerified(PDO $pdo, int $id): bool
 {
     $stmt = $pdo->prepare("
         UPDATE Utenti
-        SET email_verified = 1, verification_token = NULL, token_expiry = NULL
+        SET verificato = 1, email_verification_token = NULL
         WHERE id = ?
     ");
     return $stmt->execute([$id]);
@@ -186,7 +184,7 @@ function setResetToken(PDO $pdo, string $email, string $token): bool
     $expiry = date('Y-m-d H:i:s', strtotime('+1 hour'));
     $stmt = $pdo->prepare("
         UPDATE Utenti
-        SET reset_token = ?, reset_expiry = ?
+        SET reset_token = ?, reset_token_expiry = ?
         WHERE Email = ?
     ");
     return $stmt->execute([$token, $expiry, $email]);
@@ -201,7 +199,7 @@ function verifyResetToken(PDO $pdo, string $token): ?array
     $stmt = $pdo->prepare("
         SELECT * FROM Utenti
         WHERE reset_token = ?
-          AND reset_expiry > NOW()
+          AND reset_token_expiry > NOW()
     ");
     $stmt->execute([$token]);
     return $stmt->fetch() ?: null;
@@ -213,7 +211,7 @@ function verifyResetToken(PDO $pdo, string $token): ?array
  */
 function clearResetToken(PDO $pdo, int $id): bool
 {
-    $stmt = $pdo->prepare("UPDATE Utenti SET reset_token = NULL, reset_expiry = NULL WHERE id = ?");
+    $stmt = $pdo->prepare("UPDATE Utenti SET reset_token = NULL, reset_token_expiry = NULL WHERE id = ?");
     return $stmt->execute([$id]);
 }
 
@@ -232,7 +230,7 @@ function resetPasswordWithToken(PDO $pdo, string $token, string $newPassword): b
     $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
     $stmt = $pdo->prepare("
         UPDATE Utenti
-        SET Password = ?, reset_token = NULL, reset_expiry = NULL
+        SET Password = ?, reset_token = NULL, reset_token_expiry = NULL
         WHERE id = ?
     ");
     return $stmt->execute([$hashedPassword, $user['id']]);

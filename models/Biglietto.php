@@ -225,7 +225,7 @@ function getBigliettiUtenteFuturi(PDO $pdo, int $idUtente): array
 {
     $stmt = $pdo->prepare("
         SELECT DISTINCT b.*, e.Nome as EventoNome, e.Data, e.OraI, e.OraF,
-               e.Locandina as EventoLocandina,
+               e.Immagine as EventoImmagine,
                l.Nome as LocationName,
                sb.idSettore, sb.Fila, sb.Numero as PostoNumero,
                o.id as idOrdine,
@@ -260,7 +260,7 @@ function getBigliettiUtentePassati(PDO $pdo, int $idUtente): array
 {
     $stmt = $pdo->prepare("
         SELECT DISTINCT b.*, e.Nome as EventoNome, e.Data, e.OraI,
-               e.Locandina as EventoLocandina,
+               e.Immagine as EventoImmagine,
                l.Nome as LocationName,
                sb.idSettore, sb.Fila, sb.Numero as PostoNumero,
                o.id as idOrdine,
@@ -368,7 +368,7 @@ function addBigliettoToCart(PDO $pdo, int $idEvento, string $idClasse, ?int $idU
 function assegnaPostoInSettore(PDO $pdo, int $idBiglietto, int $idEvento, int $idSettore): bool
 {
     // Recupera info settore
-    $stmt = $pdo->prepare("SELECT Posti FROM Settori WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT PostiDisponibili FROM Settori WHERE id = ?");
     $stmt->execute([$idSettore]);
     $settore = $stmt->fetch();
 
@@ -376,7 +376,7 @@ function assegnaPostoInSettore(PDO $pdo, int $idBiglietto, int $idEvento, int $i
         return false;
     }
 
-    $postiTotali = $settore['Posti'];
+    $postiTotali = $settore['PostiDisponibili'];
 
     // Trova i posti già occupati per questo settore e questo evento
     $stmt = $pdo->prepare("
@@ -425,7 +425,7 @@ function assegnaPostoInSettore(PDO $pdo, int $idBiglietto, int $idEvento, int $i
 function getCartByUtente(PDO $pdo, int $idUtente): array
 {
     $stmt = $pdo->prepare("
-        SELECT b.*, e.Nome as EventoNome, e.Data, e.OraI, e.PrezzoNoMod, e.Locandina,
+        SELECT b.*, e.Nome as EventoNome, e.Data, e.OraI, e.PrezzoNoMod, e.Immagine,
                t.ModificatorePrezzo,
                sb.idSettore, sb.Fila, sb.Numero as PostoNumero,
                s.MoltiplicatorePrezzo,
@@ -568,17 +568,16 @@ function countBigliettiEvento(PDO $pdo, int $idEvento, bool $includiCarrello = t
  */
 function checkDisponibilitaBiglietti(PDO $pdo, int $idEvento, int $quantita = 1): bool
 {
-    // Recupera limite evento
-    $stmt = $pdo->prepare("SELECT MaxBiglietti FROM Eventi WHERE id = ?");
-    $stmt->execute([$idEvento]);
-    $evento = $stmt->fetch();
+    // Usa i settori per calcolare la disponibilità
+    require_once __DIR__ . '/EventoSettori.php';
+    $maxBiglietti = calcolaBigliettiDisponibili($pdo, $idEvento);
 
-    if (!$evento || $evento['MaxBiglietti'] === null) {
-        return true; // Nessun limite
+    if ($maxBiglietti === 0) {
+        return true; // Nessun limite (nessun settore configurato)
     }
 
     $attuali = countBigliettiEvento($pdo, $idEvento, true);
-    return ($attuali + $quantita) <= $evento['MaxBiglietti'];
+    return ($attuali + $quantita) <= $maxBiglietti;
 }
 
 /**
@@ -588,16 +587,16 @@ function checkDisponibilitaBiglietti(PDO $pdo, int $idEvento, int $quantita = 1)
  */
 function getBigliettiDisponibili(PDO $pdo, int $idEvento): ?int
 {
-    $stmt = $pdo->prepare("SELECT MaxBiglietti FROM Eventi WHERE id = ?");
-    $stmt->execute([$idEvento]);
-    $evento = $stmt->fetch();
+    // Usa i settori per calcolare la disponibilità
+    require_once __DIR__ . '/EventoSettori.php';
+    $maxBiglietti = calcolaBigliettiDisponibili($pdo, $idEvento);
 
-    if (!$evento || $evento['MaxBiglietti'] === null) {
-        return null; // Illimitati
+    if ($maxBiglietti === 0) {
+        return null; // Illimitati (nessun settore configurato)
     }
 
     $venduti = countBigliettiEvento($pdo, $idEvento, true);
-    return max(0, $evento['MaxBiglietti'] - $venduti);
+    return max(0, $maxBiglietti - $venduti);
 }
 
 /**
@@ -676,7 +675,7 @@ function assegnaPostoAutomatico(PDO $pdo, int $idBiglietto): bool
     $idLocation = $info['idLocation'];
 
     // Recupera i settori della location (ordinati per prezzo decrescente)
-    $stmt = $pdo->prepare("SELECT id, Posti FROM Settori WHERE idLocation = ? ORDER BY MoltiplicatorePrezzo DESC");
+    $stmt = $pdo->prepare("SELECT id, PostiDisponibili FROM Settori WHERE idLocation = ? ORDER BY MoltiplicatorePrezzo DESC");
     $stmt->execute([$idLocation]);
     $settori = $stmt->fetchAll();
 
@@ -687,7 +686,7 @@ function assegnaPostoAutomatico(PDO $pdo, int $idBiglietto): bool
     // Per ogni settore, cerca un posto disponibile
     foreach ($settori as $settore) {
         $idSettore = $settore['id'];
-        $postiTotali = $settore['Posti'];
+        $postiTotali = $settore['PostiDisponibili'];
 
         // Trova i posti già occupati per questo settore e questo evento
         $stmt = $pdo->prepare("

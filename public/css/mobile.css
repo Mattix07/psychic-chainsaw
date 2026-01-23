@@ -1,0 +1,649 @@
+/**
+ * Mobile Optimization CSS
+ * Ottimizzazioni responsive per smartphone e tablet
+ */
+
+/* ==================================================
+   MOBILE GENERALE (< 768px)
+   ================================================== */
+
+@media (max-width: 768px) {
+
+    /* Typography - Dimensioni ridotte ma leggibili */
+    body {
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    h1 {
+        font-size: 24px;
+        margin: 12px 0;
+    }
+
+    h2 {
+        font-size: 20px;
+        margin: 10px 0;
+    }
+
+    h3 {
+        font-size: 18px;
+        margin: 8px 0;
+    }
+
+    h4 {
+        font-size: 16px;
+        margin: 6px 0;
+    }
+
+    /* Layout Container */
+    .container {
+        padding: 8px;
+        max-width: 100%;
+    }
+
+    /* Header e Navigation */
+    header {
+        padding: 10px 0;
+    }
+
+    .nav-menu {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .nav-menu a {
+        display: block;
+        padding: 12px;
+        text-align: center;
+    }
+
+    /* Card Eventi */
+    .evento-card {
+        padding: 12px;
+        margin: 8px 0;
+        border-radius: 8px;
+    }
+
+    .evento-card img,
+    .evento-card-image img {
+        max-height: 150px;
+        width: 100%;
+        object-fit: cover;
+    }
+
+    .evento-card-body {
+        padding: 10px;
+    }
+
+    .evento-card-title {
+        font-size: 16px;
+        margin-bottom: 6px;
+    }
+
+    .evento-card-info {
+        font-size: 13px;
+    }
+
+    /* Pulsanti - Touch friendly */
+    .btn,
+    button {
+        min-height: 44px; /* iOS touch target minimum */
+        padding: 12px 16px;
+        font-size: 16px;
+        border-radius: 6px;
+        width: 100%; /* Full width on mobile */
+        margin: 6px 0;
+    }
+
+    .btn-group {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .btn-small {
+        min-height: 38px;
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+
+    /* Form Elements */
+    input,
+    select,
+    textarea {
+        font-size: 16px !important; /* Previene zoom automatico su iOS */
+        padding: 12px;
+        border-radius: 6px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .input-group {
+        margin-bottom: 12px;
+    }
+
+    .input-group label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    /* Checkout */
+    .checkout-container {
+        padding: 8px;
+    }
+
+    .checkout-card {
+        padding: 10px;
+        margin: 8px 0;
+        font-size: 13px;
+    }
+
+    .checkout-card-image {
+        display: none; /* Nascondi immagini in checkout mobile */
+    }
+
+    .checkout-card-body {
+        width: 100%;
+    }
+
+    .checkout-card-actions {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .checkout-card-actions button {
+        width: 100%;
+    }
+
+    .checkout-summary {
+        position: static; /* Non sticky su mobile */
+        margin-top: 20px;
+        width: 100%;
+    }
+
+    /* Checkout Group */
+    .checkout-group {
+        margin: 10px 0;
+    }
+
+    .checkout-group-header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 10px;
+    }
+
+    .checkout-group-image img {
+        max-width: 60px;
+        max-height: 60px;
+    }
+
+    .checkout-group-info h3 {
+        font-size: 16px;
+    }
+
+    .checkout-group-info p {
+        font-size: 12px;
+    }
+
+    /* Grid layouts -> Stack */
+    .grid-2,
+    .grid-3,
+    .grid-4 {
+        grid-template-columns: 1fr !important;
+        gap: 10px;
+    }
+
+    .flex-row {
+        flex-direction: column;
+    }
+
+    /* Modal */
+    .modal-content {
+        width: 95%;
+        max-width: 95%;
+        margin: 10px auto;
+        padding: 15px;
+    }
+
+    .modal-header h2 {
+        font-size: 18px;
+    }
+
+    .modal-body {
+        font-size: 14px;
+    }
+
+    /* Biglietti Modal */
+    .ticket-modal .evento-image {
+        max-height: 200px;
+    }
+
+    .qr-code {
+        max-width: 200px;
+    }
+
+    /* Tables */
+    table {
+        font-size: 13px;
+    }
+
+    table th,
+    table td {
+        padding: 8px 6px;
+    }
+
+    /* Responsive table - Stack su mobile */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Hero / Billboard */
+    .hero {
+        padding: 20px 10px;
+        min-height: auto;
+    }
+
+    .hero h1 {
+        font-size: 26px;
+    }
+
+    .hero p {
+        font-size: 15px;
+    }
+
+    /* Footer */
+    footer {
+        padding: 15px 8px;
+        font-size: 12px;
+    }
+
+    .footer-links {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    /* User Avatar */
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+    }
+
+    /* Badge / Tags */
+    .badge {
+        font-size: 11px;
+        padding: 3px 6px;
+    }
+
+    /* Categoria Filters */
+    .categoria-filter {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .categoria-filter button {
+        flex: 1 1 calc(50% - 6px);
+        min-width: auto;
+    }
+
+    /* Recensioni */
+    .recensione-card {
+        padding: 10px;
+        font-size: 13px;
+    }
+
+    .recensione-voto {
+        font-size: 16px;
+    }
+
+    /* Alert / Messages */
+    .alert {
+        padding: 10px;
+        font-size: 14px;
+        margin: 8px 0;
+    }
+
+    /* Pagination */
+    .pagination {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .pagination a,
+    .pagination span {
+        padding: 8px 12px;
+        font-size: 14px;
+    }
+
+    /* Dashboard Cards */
+    .dashboard-card {
+        margin: 10px 0;
+        padding: 12px;
+    }
+
+    .stat-number {
+        font-size: 24px;
+    }
+
+    .stat-label {
+        font-size: 12px;
+    }
+}
+
+/* ==================================================
+   SMALL MOBILE (< 480px)
+   ================================================== */
+
+@media (max-width: 480px) {
+
+    body {
+        font-size: 13px;
+    }
+
+    h1 {
+        font-size: 20px;
+    }
+
+    h2 {
+        font-size: 18px;
+    }
+
+    h3 {
+        font-size: 16px;
+    }
+
+    .container {
+        padding: 6px;
+    }
+
+    .btn {
+        padding: 10px 12px;
+        font-size: 15px;
+    }
+
+    .evento-card {
+        padding: 8px;
+    }
+
+    .checkout-card {
+        padding: 8px;
+        font-size: 12px;
+    }
+
+    input,
+    select,
+    textarea {
+        padding: 10px;
+        font-size: 15px !important;
+    }
+
+    .modal-content {
+        width: 98%;
+        padding: 12px;
+    }
+
+    /* Categoria filter - 1 column */
+    .categoria-filter button {
+        flex: 1 1 100%;
+    }
+}
+
+/* ==================================================
+   LANDSCAPE PHONE (altezza < 500px)
+   ================================================== */
+
+@media (max-height: 500px) and (orientation: landscape) {
+
+    /* Header più compatto */
+    header {
+        padding: 6px 0;
+    }
+
+    .nav-menu {
+        font-size: 13px;
+    }
+
+    /* Hero ridotto */
+    .hero {
+        padding: 15px 10px;
+        min-height: auto;
+    }
+
+    .hero h1 {
+        font-size: 20px;
+    }
+
+    /* Modal scrollabile */
+    .modal-content {
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    /* Form più compatti */
+    input,
+    select,
+    button {
+        padding: 8px;
+    }
+
+    .btn {
+        min-height: 36px;
+    }
+
+    /* Checkout summary sticky rimossa */
+    .checkout-summary {
+        position: static;
+    }
+}
+
+/* ==================================================
+   TABLET (768px - 1024px)
+   ================================================== */
+
+@media (min-width: 768px) and (max-width: 1024px) {
+
+    .container {
+        padding: 15px;
+    }
+
+    /* Grid 2 colonne su tablet */
+    .grid-3,
+    .grid-4 {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    .evento-card-image img {
+        max-height: 200px;
+    }
+
+    /* Checkout - layout intermedio */
+    .checkout-card {
+        padding: 12px;
+    }
+
+    .checkout-card-image {
+        display: block;
+        flex: 0 0 80px;
+    }
+
+    .btn {
+        width: auto;
+        min-width: 120px;
+    }
+}
+
+/* ==================================================
+   UTILITIES MOBILE
+   ================================================== */
+
+@media (max-width: 768px) {
+
+    /* Hide on mobile */
+    .hide-mobile {
+        display: none !important;
+    }
+
+    /* Show only on mobile */
+    .show-mobile {
+        display: block !important;
+    }
+
+    /* Text alignment */
+    .text-center-mobile {
+        text-align: center !important;
+    }
+
+    /* Full width */
+    .full-width-mobile {
+        width: 100% !important;
+    }
+
+    /* Stack items */
+    .stack-mobile {
+        flex-direction: column !important;
+    }
+
+    /* No padding */
+    .no-padding-mobile {
+        padding: 0 !important;
+    }
+
+    /* Reduce margins */
+    .reduce-margin-mobile {
+        margin: 8px 0 !important;
+    }
+}
+
+/* ==================================================
+   TOUCH OPTIMIZATIONS
+   ================================================== */
+
+@media (hover: none) and (pointer: coarse) {
+
+    /* Rimuovi hover effects su touch */
+    .btn:hover,
+    .card:hover,
+    a:hover {
+        transform: none;
+        box-shadow: none;
+    }
+
+    /* Attiva active states */
+    .btn:active {
+        transform: scale(0.98);
+        opacity: 0.8;
+    }
+
+    /* Link più spaziati */
+    a {
+        padding: 4px 0;
+    }
+
+    /* Dropdown touch friendly */
+    select {
+        appearance: none;
+        -webkit-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        padding-right: 32px;
+    }
+}
+
+/* ==================================================
+   PRINT STYLES (Mobile PDF)
+   ================================================== */
+
+@media print {
+
+    /* Nascondi elementi UI */
+    header,
+    nav,
+    .nav-menu,
+    button,
+    .btn,
+    .no-print {
+        display: none !important;
+    }
+
+    /* Ottimizza per stampa */
+    body {
+        font-size: 12pt;
+        color: #000;
+        background: #fff;
+    }
+
+    .ticket-modal {
+        width: 100%;
+        box-shadow: none;
+        border: 1px solid #000;
+    }
+
+    .qr-code {
+        max-width: 300px;
+        page-break-inside: avoid;
+    }
+
+    /* Forza stampa background */
+    * {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}
+
+/* ==================================================
+   ACCESSIBILITY - Mobile
+   ================================================== */
+
+@media (max-width: 768px) {
+
+    /* Aumenta contrasto */
+    @media (prefers-contrast: high) {
+        body {
+            font-weight: 500;
+        }
+
+        .btn {
+            border: 2px solid currentColor;
+        }
+    }
+
+    /* Riduci movimento */
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+
+    /* Dark mode hint */
+    @media (prefers-color-scheme: dark) {
+        /* Il dark mode può essere implementato qui se necessario */
+    }
+
+    /* Focus visibile */
+    *:focus {
+        outline: 3px solid #4A90E2;
+        outline-offset: 2px;
+    }
+
+    /* Skip links per screenreader */
+    .skip-link {
+        position: absolute;
+        top: -40px;
+        left: 0;
+        background: #000;
+        color: #fff;
+        padding: 8px;
+        z-index: 100;
+    }
+
+    .skip-link:focus {
+        top: 0;
+    }
+}

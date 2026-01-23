@@ -100,8 +100,8 @@ function getEventiProssimi(PDO $pdo, int $limit = 10): array
 function createEvento(PDO $pdo, array $data): int
 {
     $stmt = $pdo->prepare("
-        INSERT INTO Eventi (idManifestazione, idLocation, Nome, PrezzoNoMod, Data, OraI, OraF, Programma, Locandina, Categoria, MaxBiglietti)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO Eventi (idManifestazione, idLocation, Nome, PrezzoNoMod, Data, OraI, OraF, Programma, Immagine, Categoria)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     $stmt->execute([
         $data['idManifestazione'],
@@ -112,9 +112,8 @@ function createEvento(PDO $pdo, array $data): int
         $data['OraI'],
         $data['OraF'],
         $data['Programma'] ?? null,
-        $data['Locandina'] ?? null,
-        $data['Categoria'] ?? 'eventi',
-        $data['MaxBiglietti'] ?? null
+        $data['Immagine'] ?? null,
+        $data['Categoria'] ?? 'famiglia'
     ]);
     return (int) $pdo->lastInsertId();
 }
@@ -135,8 +134,7 @@ function updateEvento(PDO $pdo, int $id, array $data): bool
             OraI = ?,
             OraF = ?,
             Programma = ?,
-            Categoria = ?,
-            MaxBiglietti = ?
+            Categoria = ?
         WHERE id = ?
     ");
     return $stmt->execute([
@@ -148,8 +146,7 @@ function updateEvento(PDO $pdo, int $id, array $data): bool
         $data['OraI'],
         $data['OraF'],
         $data['Programma'] ?? null,
-        $data['Categoria'] ?? 'eventi',
-        $data['MaxBiglietti'] ?? null,
+        $data['Categoria'] ?? 'famiglia',
         $id
     ]);
 }

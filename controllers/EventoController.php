@@ -106,13 +106,13 @@ function searchEventi(PDO $pdo): void
 
 /**
  * Filtra eventi per categoria
- * Le categorie valide sono: concerti, teatro, sport, eventi
+ * Le categorie valide sono: concerti, teatro, sport, comedy, cinema, famiglia
  *
  * @param string $category Categoria da filtrare
  */
 function listByCategory(PDO $pdo, string $category): void
 {
-    $validCategories = ['concerti', 'teatro', 'sport', 'eventi'];
+    $validCategories = ['concerti', 'teatro', 'sport', 'comedy', 'cinema', 'famiglia'];
     $categoria = strtolower($category);
 
     if (in_array($categoria, $validCategories)) {

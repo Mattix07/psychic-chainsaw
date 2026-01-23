@@ -10,6 +10,8 @@
 require_once __DIR__ . '/../models/Utente.php';
 require_once __DIR__ . '/../models/Evento.php';
 require_once __DIR__ . '/../models/Ordine.php';
+require_once __DIR__ . '/../models/Permessi.php';
+require_once __DIR__ . '/../lib/EmailService.php';
 
 /**
  * Middleware di controllo accesso basato su ruolo
@@ -191,11 +193,30 @@ function adminCreateEvent(PDO $pdo): void
         }
 
         try {
-            createEvento($pdo, $data);
+            require_once __DIR__ . '/../models/EventoSettori.php';
+            require_once __DIR__ . '/../models/Permessi.php';
+
+            $pdo->beginTransaction();
+
+            // Crea l'evento
+            $eventoId = createEvento($pdo, $data);
+
+            // Registra il creatore dell'evento
+            registerEventoCreator($pdo, $eventoId, $_SESSION['user_id']);
+
+            // Salva i settori selezionati
+            $settori = $_POST['settori'] ?? [];
+            if (!empty($settori)) {
+                setEventoSettori($pdo, $eventoId, array_map('intval', $settori));
+            }
+
+            $pdo->commit();
+
             $_SESSION['msg'] = 'Evento creato con successo.';
             header('Location: index.php?action=admin_events');
         } catch (Exception $e) {
-            $_SESSION['error'] = 'Errore durante la creazione dell\'evento.';
+            $pdo->rollBack();
+            $_SESSION['error'] = 'Errore durante la creazione dell\'evento: ' . $e->getMessage();
             header('Location: index.php?action=admin_create_event');
         }
         exit;
@@ -332,4 +353,210 @@ function getAllEventiAdmin(PDO $pdo): array
         LEFT JOIN Manifestazioni m ON e.idManifestazione = m.id
         ORDER BY e.Data DESC
     ")->fetchAll();
+}
+
+// ==========================================
+// NUOVE FUNZIONALITÀ ADMIN
+// ==========================================
+
+/**
+ * ADMIN: Elimina biglietti di un evento specifico
+ * POST: idEvento
+ */
+function deleteBigliettiEventoApi(PDO $pdo): void
+{
+    if (!isLoggedIn() || !hasRole(ROLE_ADMIN)) {
+        jsonResponse(['error' => 'Accesso negato'], 403);
+        return;
+    }
+
+    if (!verifyCsrf()) {
+        jsonResponse(['error' => 'Token CSRF non valido'], 403);
+        return;
+    }
+
+    $idEvento = (int)($_POST['idEvento'] ?? 0);
+    if (!$idEvento) {
+        jsonResponse(['error' => 'ID evento mancante'], 400);
+        return;
+    }
+
+    try {
+        $stmt = $pdo->prepare("DELETE FROM Biglietti WHERE idEvento = ?");
+        $stmt->execute([$idEvento]);
+        $count = $stmt->rowCount();
+
+        jsonResponse(['success' => true, 'message' => "$count biglietti eliminati"]);
+    } catch (Exception $e) {
+        jsonResponse(['error' => 'Errore: ' . $e->getMessage()], 500);
+    }
+}
+
+/**
+ * ADMIN: Elimina location
+ * POST: idLocation
+ */
+function deleteLocationApi(PDO $pdo): void
+{
+    if (!isLoggedIn() || !hasRole(ROLE_ADMIN)) {
+        jsonResponse(['error' => 'Accesso negato'], 403);
+        return;
+    }
+
+    if (!verifyCsrf()) {
+        jsonResponse(['error' => 'Token CSRF non valido'], 403);
+        return;
+    }
+
+    $idLocation = (int)($_POST['idLocation'] ?? 0);
+    if (!$idLocation) {
+        jsonResponse(['error' => 'ID location mancante'], 400);
+        return;
+    }
+
+    try {
+        $stmt = $pdo->prepare("DELETE FROM Locations WHERE id = ?");
+        $stmt->execute([$idLocation]);
+        jsonResponse(['success' => true, 'message' => 'Location eliminata']);
+    } catch (Exception $e) {
+        jsonResponse(['error' => 'Impossibile eliminare: ci sono eventi associati'], 400);
+    }
+}
+
+/**
+ * ADMIN: Elimina manifestazione
+ * POST: idManifestazione
+ */
+function deleteManifestazioneApi(PDO $pdo): void
+{
+    if (!isLoggedIn() || !hasRole(ROLE_ADMIN)) {
+        jsonResponse(['error' => 'Accesso negato'], 403);
+        return;
+    }
+
+    if (!verifyCsrf()) {
+        jsonResponse(['error' => 'Token CSRF non valido'], 403);
+        return;
+    }
+
+    $idManifestazione = (int)($_POST['idManifestazione'] ?? 0);
+    if (!$idManifestazione) {
+        jsonResponse(['error' => 'ID manifestazione mancante'], 400);
+        return;
+    }
+
+    try {
+        $stmt = $pdo->prepare("DELETE FROM Manifestazioni WHERE id = ?");
+        $stmt->execute([$idManifestazione]);
+        jsonResponse(['success' => true, 'message' => 'Manifestazione eliminata']);
+    } catch (Exception $e) {
+        jsonResponse(['error' => 'Impossibile eliminare: ci sono eventi associati'], 400);
+    }
+}
+
+/**
+ * MOD: Elimina recensione
+ * POST: idEvento, idUtente
+ */
+function deleteRecensioneApi(PDO $pdo): void
+{
+    if (!isLoggedIn() || !hasRole(ROLE_MOD)) {
+        jsonResponse(['error' => 'Accesso negato'], 403);
+        return;
+    }
+
+    if (!verifyCsrf()) {
+        jsonResponse(['error' => 'Token CSRF non valido'], 403);
+        return;
+    }
+
+    $idEvento = (int)($_POST['idEvento'] ?? 0);
+    $idUtente = (int)($_POST['idUtente'] ?? 0);
+
+    if (!$idEvento || !$idUtente) {
+        jsonResponse(['error' => 'Dati mancanti'], 400);
+        return;
+    }
+
+    try {
+        $stmt = $pdo->prepare("DELETE FROM Recensioni WHERE idEvento = ? AND idUtente = ?");
+        $stmt->execute([$idEvento, $idUtente]);
+
+        if ($stmt->rowCount() > 0) {
+            jsonResponse(['success' => true, 'message' => 'Recensione eliminata']);
+        } else {
+            jsonResponse(['error' => 'Recensione non trovata'], 404);
+        }
+    } catch (Exception $e) {
+        jsonResponse(['error' => 'Errore: ' . $e->getMessage()], 500);
+    }
+}
+
+/**
+ * ADMIN/MOD: Verifica account utente
+ * POST: idUtente
+ */
+function verifyAccountApi(PDO $pdo): void
+{
+    if (!isLoggedIn() || !hasRole(ROLE_MOD)) {
+        jsonResponse(['error' => 'Accesso negato'], 403);
+        return;
+    }
+
+    if (!verifyCsrf()) {
+        jsonResponse(['error' => 'Token CSRF non valido'], 403);
+        return;
+    }
+
+    $idUtente = (int)($_POST['idUtente'] ?? 0);
+    if (!$idUtente) {
+        jsonResponse(['error' => 'ID utente mancante'], 400);
+        return;
+    }
+
+    try {
+        $stmt = $pdo->prepare("UPDATE Utenti SET verificato = 1, email_verification_token = NULL WHERE id = ?");
+        $stmt->execute([$idUtente]);
+
+        $emailService = new EmailService($pdo, false);
+        $emailService->sendAccountVerifiedNotification($idUtente, $_SESSION['user_id']);
+
+        jsonResponse(['success' => true, 'message' => 'Account verificato']);
+    } catch (Exception $e) {
+        jsonResponse(['error' => 'Errore: ' . $e->getMessage()], 500);
+    }
+}
+
+/**
+ * ADMIN/MOD: Ottieni lista account non verificati
+ */
+function getUnverifiedAccountsApi(PDO $pdo): void
+{
+    if (!isLoggedIn() || !hasRole(ROLE_MOD)) {
+        jsonResponse(['error' => 'Accesso negato'], 403);
+        return;
+    }
+
+    try {
+        $stmt = $pdo->prepare("
+            SELECT id, Nome, Cognome, Email, ruolo, DataRegistrazione
+            FROM Utenti
+            WHERE verificato = 0
+            ORDER BY DataRegistrazione DESC
+        ");
+        $stmt->execute();
+        $accounts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        jsonResponse(['success' => true, 'accounts' => $accounts]);
+    } catch (Exception $e) {
+        jsonResponse(['error' => 'Errore: ' . $e->getMessage()], 500);
+    }
+}
+
+function jsonResponse(array $data, int $statusCode = 200): void
+{
+    http_response_code($statusCode);
+    header('Content-Type: application/json');
+    echo json_encode($data);
+    exit;
 }

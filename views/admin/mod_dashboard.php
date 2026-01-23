@@ -55,6 +55,14 @@ $stats = $_SESSION['mod_stats'] ?? [];
                 <i class="fas fa-plus-circle"></i>
                 <span>Nuovo Evento</span>
             </a>
+            <a href="index.php?action=list_locations" class="action-card">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>Gestisci Location</span>
+            </a>
+            <a href="index.php?action=list_manifestazioni" class="action-card">
+                <i class="fas fa-calendar-check"></i>
+                <span>Gestisci Manifestazioni</span>
+            </a>
         </div>
     </div>
 

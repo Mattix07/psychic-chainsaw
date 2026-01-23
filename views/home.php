@@ -13,6 +13,26 @@
  *
  * I carousel sono navigabili con pulsanti prev/next gestiti da JavaScript.
  */
+
+// Redirect basato su ruolo per utenti loggati
+if (isLoggedIn()) {
+    $ruolo = $_SESSION['user_ruolo'] ?? 'user';
+
+    // Admin/Mod/Promoter vengono reindirizzati alla rispettiva dashboard
+    switch ($ruolo) {
+        case 'admin':
+            redirect('index.php?action=admin_dashboard');
+            exit;
+        case 'mod':
+            redirect('index.php?action=mod_dashboard');
+            exit;
+        case 'promoter':
+            redirect('index.php?action=promoter_dashboard');
+            exit;
+    }
+    // User normale continua a vedere la home
+}
+
 require_once __DIR__ . '/../models/Evento.php';
 require_once __DIR__ . '/../models/Manifestazione.php';
 

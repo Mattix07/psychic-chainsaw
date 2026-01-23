@@ -925,6 +925,16 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     async function executeDelete() {
+        // Pop-up conferma eliminazione
+        const count = selectedTicketIndices.length;
+        const confirmMsg = count === 1
+            ? 'Sei sicuro di voler eliminare questo biglietto?'
+            : `Sei sicuro di voler eliminare ${count} biglietti?`;
+
+        if (!confirm(confirmMsg)) {
+            return;
+        }
+
         // Ordina decrescente per non invalidare indici durante rimozione
         const sortedIndices = [...selectedTicketIndices].sort((a, b) => b - a);
 
@@ -992,6 +1002,16 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     window.confirmEdit = async function() {
+        // Pop-up conferma modifica
+        const count = selectedTicketIndices.length;
+        const confirmMsg = count === 1
+            ? 'Sei sicuro di voler modificare questo biglietto?'
+            : `Sei sicuro di voler modificare ${count} biglietti?`;
+
+        if (!confirm(confirmMsg)) {
+            return;
+        }
+
         const newTipo = document.getElementById('editTipo').value;
         const tipoInfo = tipiData.find(t => t.nome === newTipo);
         const settoreSelect = document.getElementById('editSettore');

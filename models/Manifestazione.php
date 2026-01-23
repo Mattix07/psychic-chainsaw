@@ -49,10 +49,26 @@ function getManifestazioneByNome(PDO $pdo, string $nome): ?array
  * @param string $nome Nome della manifestazione
  * @return int ID della nuova manifestazione
  */
-function createManifestazione(PDO $pdo, string $nome): int
+function createManifestazione(PDO $pdo, $data): int
 {
-    $stmt = $pdo->prepare("INSERT INTO Manifestazioni (Nome) VALUES (?)");
-    $stmt->execute([$nome]);
+    // Accetta sia stringa che array per retro-compatibilità
+    if (is_string($data)) {
+        $nome = $data;
+        $descrizione = null;
+        $dataInizio = null;
+        $dataFine = null;
+    } else {
+        $nome = $data['Nome'];
+        $descrizione = $data['Descrizione'] ?? null;
+        $dataInizio = $data['DataInizio'] ?? null;
+        $dataFine = $data['DataFine'] ?? null;
+    }
+
+    $stmt = $pdo->prepare("
+        INSERT INTO Manifestazioni (Nome, Descrizione, DataInizio, DataFine)
+        VALUES (?, ?, ?, ?)
+    ");
+    $stmt->execute([$nome, $descrizione, $dataInizio, $dataFine]);
     return (int) $pdo->lastInsertId();
 }
 
@@ -61,10 +77,30 @@ function createManifestazione(PDO $pdo, string $nome): int
  *
  * @return bool Esito operazione
  */
-function updateManifestazione(PDO $pdo, int $id, string $nome): bool
+function updateManifestazione(PDO $pdo, int $id, $data): bool
 {
-    $stmt = $pdo->prepare("UPDATE Manifestazioni SET Nome = ? WHERE id = ?");
-    return $stmt->execute([$nome, $id]);
+    // Accetta sia stringa che array per retro-compatibilità
+    if (is_string($data)) {
+        $nome = $data;
+        $descrizione = null;
+        $dataInizio = null;
+        $dataFine = null;
+    } else {
+        $nome = $data['Nome'];
+        $descrizione = $data['Descrizione'] ?? null;
+        $dataInizio = $data['DataInizio'] ?? null;
+        $dataFine = $data['DataFine'] ?? null;
+    }
+
+    $stmt = $pdo->prepare("
+        UPDATE Manifestazioni SET
+            Nome = ?,
+            Descrizione = ?,
+            DataInizio = ?,
+            DataFine = ?
+        WHERE id = ?
+    ");
+    return $stmt->execute([$nome, $descrizione, $dataInizio, $dataFine, $id]);
 }
 
 /**
@@ -77,4 +113,31 @@ function deleteManifestazione(PDO $pdo, int $id): bool
 {
     $stmt = $pdo->prepare("DELETE FROM Manifestazioni WHERE id = ?");
     return $stmt->execute([$id]);
+}
+
+/**
+ * Alias per compatibilità con il controller
+ */
+function deleteManifestazioneById(PDO $pdo, int $id): bool
+{
+    return deleteManifestazione($pdo, $id);
+}
+
+/**
+ * Recupera le manifestazioni create da un utente specifico
+ * Solo per promoter
+ *
+ * @return array Lista manifestazioni create dall'utente
+ */
+function getManifestazioniByCreator(PDO $pdo, int $userId): array
+{
+    $stmt = $pdo->prepare("
+        SELECT m.*
+        FROM Manifestazioni m
+        INNER JOIN CreatoriManifestazioni cm ON m.id = cm.idManifestazione
+        WHERE cm.idUtente = ?
+        ORDER BY m.DataInizio DESC, m.Nome
+    ");
+    $stmt->execute([$userId]);
+    return $stmt->fetchAll();
 }
