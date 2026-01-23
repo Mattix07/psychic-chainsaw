@@ -205,20 +205,18 @@ function searchEventiByQuery(PDO $pdo, string $query): array
 
 /**
  * Recupera eventi filtrati per categoria
- * Categorie: concerti, teatro, sport, eventi
+ * Categorie: concerti, teatro, sport, eventi, famiglia
  * @param string $tipo Categoria da filtrare
  * @return array Eventi della categoria
  */
 function getEventiByTipo(PDO $pdo, string $tipo): array
 {
     $stmt = $pdo->prepare("
-        SELECT e.*, e.id as id, m.Nome as ManifestazioneName, e.Categoria,
-               l.Nome as LocationName
+        SELECT e.*, e.id AS id, COALESCE(m.Nome, 'indipendente') AS ManifestazioneName, e.Categoria, l.Nome AS LocationName
         FROM Eventi e
-        JOIN Manifestazioni m ON e.idManifestazione = m.id
+        LEFT JOIN Manifestazioni m ON e.idManifestazione = m.id
         JOIN Locations l ON e.idLocation = l.id
-        WHERE e.Categoria = ?
-        ORDER BY e.Data, e.OraI
+        WHERE e.Categoria = ? ORDER BY e.Data, e.OraI;
     ");
     $stmt->execute([$tipo]);
     return $stmt->fetchAll();
