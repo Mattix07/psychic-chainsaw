@@ -7,6 +7,9 @@
  * che permette di definire orari specifici per ogni performance.
  */
 
+require_once __DIR__ . '/../config/database_schema.php';
+require_once __DIR__ . '/../lib/QueryBuilder.php';
+
 /**
  * Recupera tutti gli intrattenitori ordinati alfabeticamente
  *
@@ -14,7 +17,7 @@
  */
 function getAllIntrattenitori(PDO $pdo): array
 {
-    return $pdo->query("SELECT * FROM Intrattenitori ORDER BY Nome")->fetchAll();
+    return $pdo->query("SELECT * FROM " . TABLE_INTRATTENITORE . " ORDER BY " . COL_INTRATTENITORE_NOME)->fetchAll();
 }
 
 /**
@@ -24,7 +27,7 @@ function getAllIntrattenitori(PDO $pdo): array
  */
 function getIntrattenitoreById(PDO $pdo, int $id): ?array
 {
-    $stmt = $pdo->prepare("SELECT * FROM Intrattenitori WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT * FROM " . TABLE_INTRATTENITORE . " WHERE " . COL_INTRATTENITORE_ID . " = ?");
     $stmt->execute([$id]);
     return $stmt->fetch() ?: null;
 }
@@ -38,7 +41,7 @@ function getIntrattenitoreById(PDO $pdo, int $id): ?array
  */
 function getIntrattenitoriByMestiere(PDO $pdo, string $mestiere): array
 {
-    $stmt = $pdo->prepare("SELECT * FROM Intrattenitori WHERE Mestiere = ? ORDER BY Nome");
+    $stmt = $pdo->prepare("SELECT * FROM " . TABLE_INTRATTENITORE . " WHERE " . COL_INTRATTENITORE_CATEGORIA . " = ? ORDER BY " . COL_INTRATTENITORE_NOME);
     $stmt->execute([$mestiere]);
     return $stmt->fetchAll();
 }
@@ -52,7 +55,7 @@ function getIntrattenitoriByMestiere(PDO $pdo, string $mestiere): array
  */
 function createIntrattenitore(PDO $pdo, string $nome, string $mestiere): int
 {
-    $stmt = $pdo->prepare("INSERT INTO Intrattenitori (Nome, Mestiere) VALUES (?, ?)");
+    $stmt = $pdo->prepare("INSERT INTO " . TABLE_INTRATTENITORE . " (" . COL_INTRATTENITORE_NOME . ", " . COL_INTRATTENITORE_CATEGORIA . ") VALUES (?, ?)");
     $stmt->execute([$nome, $mestiere]);
     return (int) $pdo->lastInsertId();
 }
@@ -64,7 +67,7 @@ function createIntrattenitore(PDO $pdo, string $nome, string $mestiere): int
  */
 function updateIntrattenitore(PDO $pdo, int $id, string $nome, string $mestiere): bool
 {
-    $stmt = $pdo->prepare("UPDATE Intrattenitori SET Nome = ?, Mestiere = ? WHERE id = ?");
+    $stmt = $pdo->prepare("UPDATE " . TABLE_INTRATTENITORE . " SET " . COL_INTRATTENITORE_NOME . " = ?, " . COL_INTRATTENITORE_CATEGORIA . " = ? WHERE " . COL_INTRATTENITORE_ID . " = ?");
     return $stmt->execute([$nome, $mestiere, $id]);
 }
 
@@ -76,7 +79,7 @@ function updateIntrattenitore(PDO $pdo, int $id, string $nome, string $mestiere)
  */
 function deleteIntrattenitore(PDO $pdo, int $id): bool
 {
-    $stmt = $pdo->prepare("DELETE FROM Intrattenitori WHERE id = ?");
+    $stmt = $pdo->prepare("DELETE FROM " . TABLE_INTRATTENITORE . " WHERE " . COL_INTRATTENITORE_ID . " = ?");
     return $stmt->execute([$id]);
 }
 
@@ -89,12 +92,12 @@ function deleteIntrattenitore(PDO $pdo, int $id): bool
 function getEventiIntrattenitore(PDO $pdo, int $idIntrattenitore): array
 {
     $stmt = $pdo->prepare("
-        SELECT e.*, es.OraI as EsibOraI, es.OraF as EsibOraF, m.Nome as ManifestazioneName
-        FROM Eventi e
-        JOIN Esibizioni es ON e.id = es.idEvento
-        JOIN Manifestazioni m ON e.idManifestazione = m.id
+        SELECT e.*, es.OraI as EsibOraI, es.OraF as EsibOraF, m." . COL_MANIFESTAZIONI_NOME . " as ManifestazioneName
+        FROM " . TABLE_EVENTI . " e
+        JOIN " . TABLE_EVENTO_INTRATTENITORE . " es ON e." . COL_EVENTI_ID . " = es.idEvento
+        JOIN " . TABLE_MANIFESTAZIONI . " m ON e." . COL_EVENTI_ID_MANIFESTAZIONE . " = m." . COL_MANIFESTAZIONI_ID . "
         WHERE es.idIntrattenitore = ?
-        ORDER BY e.Data, es.OraI
+        ORDER BY e." . COL_EVENTI_DATA . ", es.OraI
     ");
     $stmt->execute([$idIntrattenitore]);
     return $stmt->fetchAll();
@@ -110,13 +113,9 @@ function getEventiIntrattenitore(PDO $pdo, int $idIntrattenitore): array
  */
 function addEsibizione(PDO $pdo, int $idEvento, int $idIntrattenitore, string $oraI, string $oraF): bool
 {
-    // Inserisce il tempo nella tabella Tempi se non esiste
-    $stmt = $pdo->prepare("INSERT IGNORE INTO Tempi (OraI, OraF) VALUES (?, ?)");
-    $stmt->execute([$oraI, $oraF]);
-
     // Crea l'associazione evento-intrattenitore con orari
     $stmt = $pdo->prepare("
-        INSERT INTO Esibizioni (idEvento, idIntrattenitore, OraI, OraF)
+        INSERT INTO " . TABLE_EVENTO_INTRATTENITORE . " (idEvento, idIntrattenitore, OraI, OraF)
         VALUES (?, ?, ?, ?)
     ");
     return $stmt->execute([$idEvento, $idIntrattenitore, $oraI, $oraF]);
@@ -131,7 +130,7 @@ function addEsibizione(PDO $pdo, int $idEvento, int $idIntrattenitore, string $o
 function removeEsibizione(PDO $pdo, int $idEvento, int $idIntrattenitore, string $oraI, string $oraF): bool
 {
     $stmt = $pdo->prepare("
-        DELETE FROM Esibizioni
+        DELETE FROM " . TABLE_EVENTO_INTRATTENITORE . "
         WHERE idEvento = ? AND idIntrattenitore = ? AND OraI = ? AND OraF = ?
     ");
     return $stmt->execute([$idEvento, $idIntrattenitore, $oraI, $oraF]);

@@ -11,6 +11,10 @@
  * - Eliminazione account con conferma
  */
 
+require_once __DIR__ . '/../config/app_config.php';
+require_once __DIR__ . '/../config/messages.php';
+require_once __DIR__ . '/../lib/Validator.php';
+require_once __DIR__ . '/../lib/QueryBuilder.php';
 require_once __DIR__ . '/../models/Utente.php';
 
 /**
@@ -20,7 +24,7 @@ require_once __DIR__ . '/../models/Utente.php';
 function showProfilo(PDO $pdo): void
 {
     if (!isLoggedIn()) {
-        $_SESSION['error'] = 'Devi effettuare il login.';
+        setErrorMessage(ERR_LOGIN_REQUIRED);
         header('Location: index.php?action=show_login');
         exit;
     }
@@ -37,55 +41,59 @@ function showProfilo(PDO $pdo): void
 function updateProfile(PDO $pdo): void
 {
     if (!isLoggedIn()) {
-        $_SESSION['error'] = 'Devi effettuare il login.';
+        setErrorMessage(ERR_LOGIN_REQUIRED);
         header('Location: index.php?action=show_login');
         exit;
     }
 
     if (!verifyCsrf()) {
-        $_SESSION['error'] = 'Token di sicurezza non valido.';
+        setErrorMessage(ERR_INVALID_CSRF);
         header('Location: index.php?action=profilo');
         exit;
     }
 
-    $nome = trim($_POST['nome'] ?? '');
-    $cognome = trim($_POST['cognome'] ?? '');
-    $email = trim($_POST['email'] ?? '');
+    // Prepara i dati con trim
+    $data = [
+        'nome' => trim($_POST['nome'] ?? ''),
+        'cognome' => trim($_POST['cognome'] ?? ''),
+        'email' => trim($_POST['email'] ?? '')
+    ];
 
-    if (empty($nome) || empty($cognome) || empty($email)) {
-        $_SESSION['error'] = 'Tutti i campi sono obbligatori.';
-        header('Location: index.php?action=profilo');
-        exit;
-    }
+    // Validazione con Validator
+    $validator = validate($data)
+        ->required('nome')
+        ->required('cognome')
+        ->required('email')
+        ->email('email');
 
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $_SESSION['error'] = 'Email non valida.';
+    if ($validator->fails()) {
+        setErrorMessage($validator->firstError());
         header('Location: index.php?action=profilo');
         exit;
     }
 
     // Verifica che la nuova email non sia gia usata da altri utenti
-    $existingUser = getUtenteByEmail($pdo, $email);
+    $existingUser = getUtenteByEmail($pdo, $data['email']);
     if ($existingUser && $existingUser['id'] !== $_SESSION['user_id']) {
-        $_SESSION['error'] = 'Questa email è già registrata.';
+        setErrorMessage(ERR_EMAIL_ALREADY_EXISTS);
         header('Location: index.php?action=profilo');
         exit;
     }
 
     $success = updateUtente($pdo, $_SESSION['user_id'], [
-        'Nome' => $nome,
-        'Cognome' => $cognome,
-        'Email' => $email
+        'Nome' => $data['nome'],
+        'Cognome' => $data['cognome'],
+        'Email' => $data['email']
     ]);
 
     if ($success) {
         // Sincronizza i dati di sessione
-        $_SESSION['user_nome'] = $nome;
-        $_SESSION['user_cognome'] = $cognome;
-        $_SESSION['user_email'] = $email;
-        $_SESSION['msg'] = 'Profilo aggiornato con successo.';
+        $_SESSION['user_nome'] = $data['nome'];
+        $_SESSION['user_cognome'] = $data['cognome'];
+        $_SESSION['user_email'] = $data['email'];
+        setSuccessMessage(MSG_SUCCESS_PROFILE_UPDATE);
     } else {
-        $_SESSION['error'] = 'Errore durante l\'aggiornamento del profilo.';
+        setErrorMessage(ERR_GENERIC);
     }
 
     header('Location: index.php?action=profilo');
@@ -99,54 +107,52 @@ function updateProfile(PDO $pdo): void
 function updatePassword(PDO $pdo): void
 {
     if (!isLoggedIn()) {
-        $_SESSION['error'] = 'Devi effettuare il login.';
+        setErrorMessage(ERR_LOGIN_REQUIRED);
         header('Location: index.php?action=show_login');
         exit;
     }
 
     if (!verifyCsrf()) {
-        $_SESSION['error'] = 'Token di sicurezza non valido.';
+        setErrorMessage(ERR_INVALID_CSRF);
         header('Location: index.php?action=cambia_password');
         exit;
     }
 
-    $currentPassword = $_POST['current_password'] ?? '';
-    $newPassword = $_POST['new_password'] ?? '';
-    $confirmPassword = $_POST['confirm_password'] ?? '';
+    $data = [
+        'current_password' => $_POST['current_password'] ?? '',
+        'new_password' => $_POST['new_password'] ?? '',
+        'confirm_password' => $_POST['confirm_password'] ?? ''
+    ];
 
-    if (empty($currentPassword) || empty($newPassword) || empty($confirmPassword)) {
-        $_SESSION['error'] = 'Tutti i campi sono obbligatori.';
-        header('Location: index.php?action=cambia_password');
-        exit;
-    }
+    // Validazione con Validator
+    $validator = validate($data)
+        ->required('current_password')
+        ->required('new_password')
+        ->min('new_password', PASSWORD_MIN_LENGTH, message(ERR_PASSWORD_TOO_SHORT, PASSWORD_MIN_LENGTH))
+        ->required('confirm_password')
+        ->matches('new_password', 'confirm_password');
 
-    if (strlen($newPassword) < 6) {
-        $_SESSION['error'] = 'La nuova password deve essere di almeno 6 caratteri.';
-        header('Location: index.php?action=cambia_password');
-        exit;
-    }
-
-    if ($newPassword !== $confirmPassword) {
-        $_SESSION['error'] = 'Le password non coincidono.';
+    if ($validator->fails()) {
+        setErrorMessage($validator->firstError());
         header('Location: index.php?action=cambia_password');
         exit;
     }
 
     // Verifica password attuale prima di permettere il cambio
     $user = getUtenteById($pdo, $_SESSION['user_id']);
-    if (!$user || !password_verify($currentPassword, $user['Password'])) {
-        $_SESSION['error'] = 'La password attuale non è corretta.';
+    if (!$user || !password_verify($data['current_password'], $user['Password'])) {
+        setErrorMessage('La password attuale non è corretta.');
         header('Location: index.php?action=cambia_password');
         exit;
     }
 
-    $success = updateUtentePassword($pdo, $_SESSION['user_id'], $newPassword);
+    $success = updateUtentePassword($pdo, $_SESSION['user_id'], $data['new_password']);
 
     if ($success) {
-        $_SESSION['msg'] = 'Password aggiornata con successo.';
+        setSuccessMessage(MSG_SUCCESS_PASSWORD_UPDATE);
         header('Location: index.php?action=profilo');
     } else {
-        $_SESSION['error'] = 'Errore durante l\'aggiornamento della password.';
+        setErrorMessage(ERR_GENERIC);
         header('Location: index.php?action=cambia_password');
     }
     exit;
@@ -159,13 +165,13 @@ function updatePassword(PDO $pdo): void
 function deleteAccount(PDO $pdo): void
 {
     if (!isLoggedIn()) {
-        $_SESSION['error'] = 'Devi effettuare il login.';
+        setErrorMessage(ERR_LOGIN_REQUIRED);
         header('Location: index.php?action=show_login');
         exit;
     }
 
     if (!verifyCsrf()) {
-        $_SESSION['error'] = 'Token di sicurezza non valido.';
+        setErrorMessage(ERR_INVALID_CSRF);
         header('Location: index.php?action=elimina_account');
         exit;
     }
@@ -175,7 +181,7 @@ function deleteAccount(PDO $pdo): void
 
     // Richiede checkbox di conferma esplicita
     if (!$confirmDelete) {
-        $_SESSION['error'] = 'Devi confermare l\'eliminazione dell\'account.';
+        setErrorMessage('Devi confermare l\'eliminazione dell\'account.');
         header('Location: index.php?action=elimina_account');
         exit;
     }
@@ -183,7 +189,7 @@ function deleteAccount(PDO $pdo): void
     // Verifica password per prevenire eliminazioni accidentali
     $user = getUtenteById($pdo, $_SESSION['user_id']);
     if (!$user || !password_verify($password, $user['Password'])) {
-        $_SESSION['error'] = 'Password non corretta.';
+        setErrorMessage('Password non corretta.');
         header('Location: index.php?action=elimina_account');
         exit;
     }
@@ -194,10 +200,10 @@ function deleteAccount(PDO $pdo): void
         // Termina la sessione dopo eliminazione
         session_destroy();
         session_start();
-        $_SESSION['msg'] = 'Account eliminato con successo.';
+        setSuccessMessage('Account eliminato con successo.');
         header('Location: index.php');
     } else {
-        $_SESSION['error'] = 'Errore durante l\'eliminazione dell\'account.';
+        setErrorMessage(ERR_GENERIC);
         header('Location: index.php?action=elimina_account');
     }
     exit;
@@ -217,28 +223,35 @@ function sendResetEmail(PDO $pdo): void
     require_once __DIR__ . '/../config/mail.php';
 
     if (!verifyCsrf()) {
-        $_SESSION['error'] = 'Token di sicurezza non valido.';
+        setErrorMessage(ERR_INVALID_CSRF);
         header('Location: index.php?action=recupera_password');
         exit;
     }
 
-    $email = trim($_POST['email'] ?? '');
+    $data = [
+        'email' => trim($_POST['email'] ?? '')
+    ];
 
-    if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $_SESSION['error'] = 'Inserisci un indirizzo email valido.';
+    // Validazione con Validator
+    $validator = validate($data)
+        ->required('email')
+        ->email('email');
+
+    if ($validator->fails()) {
+        setErrorMessage($validator->firstError());
         header('Location: index.php?action=recupera_password');
         exit;
     }
 
-    $user = getUtenteByEmail($pdo, $email);
+    $user = getUtenteByEmail($pdo, $data['email']);
 
     // Messaggio generico per sicurezza (non rivela se email esiste)
-    $_SESSION['msg'] = 'Se l\'email è registrata, riceverai le istruzioni per reimpostare la password.';
+    setSuccessMessage(MSG_SUCCESS_RESET_EMAIL_SENT);
 
     if ($user) {
         $token = generateToken();
-        setResetToken($pdo, $email, $token);
-        sendPasswordResetEmail($email, $user['Nome'], $token);
+        setResetToken($pdo, $data['email'], $token);
+        sendPasswordResetEmail($data['email'], $user['Nome'], $token);
     }
 
     header('Location: index.php?action=show_login');
@@ -252,40 +265,44 @@ function sendResetEmail(PDO $pdo): void
 function doResetPassword(PDO $pdo): void
 {
     if (!verifyCsrf()) {
-        $_SESSION['error'] = 'Token di sicurezza non valido.';
+        setErrorMessage(ERR_INVALID_CSRF);
         header('Location: index.php?action=show_login');
         exit;
     }
 
     $token = $_POST['token'] ?? '';
-    $password = $_POST['password'] ?? '';
-    $passwordConfirm = $_POST['password_confirm'] ?? '';
 
     if (empty($token)) {
-        $_SESSION['error'] = 'Token non valido o scaduto.';
+        setErrorMessage(ERR_INVALID_TOKEN);
         header('Location: index.php?action=recupera_password');
         exit;
     }
 
-    if (strlen($password) < 6) {
-        $_SESSION['error'] = 'La password deve essere di almeno 6 caratteri.';
+    $data = [
+        'password' => $_POST['password'] ?? '',
+        'password_confirm' => $_POST['password_confirm'] ?? ''
+    ];
+
+    // Validazione con Validator
+    $validator = validate($data)
+        ->required('password')
+        ->min('password', PASSWORD_MIN_LENGTH, message(ERR_PASSWORD_TOO_SHORT, PASSWORD_MIN_LENGTH))
+        ->required('password_confirm')
+        ->matches('password', 'password_confirm');
+
+    if ($validator->fails()) {
+        setErrorMessage($validator->firstError());
         header('Location: index.php?action=reset_password&token=' . urlencode($token));
         exit;
     }
 
-    if ($password !== $passwordConfirm) {
-        $_SESSION['error'] = 'Le password non coincidono.';
-        header('Location: index.php?action=reset_password&token=' . urlencode($token));
-        exit;
-    }
-
-    $success = resetPasswordWithToken($pdo, $token, $password);
+    $success = resetPasswordWithToken($pdo, $token, $data['password']);
 
     if ($success) {
-        $_SESSION['msg'] = 'Password reimpostata con successo. Puoi ora effettuare il login.';
+        setSuccessMessage(MSG_SUCCESS_PASSWORD_RESET);
         header('Location: index.php?action=show_login');
     } else {
-        $_SESSION['error'] = 'Token non valido o scaduto. Richiedi un nuovo link.';
+        setErrorMessage(ERR_INVALID_TOKEN);
         header('Location: index.php?action=recupera_password');
     }
     exit;
@@ -304,7 +321,7 @@ function verifyEmail(PDO $pdo): void
     $token = $_GET['token'] ?? '';
 
     if (empty($token)) {
-        $_SESSION['error'] = 'Token di verifica non valido.';
+        setErrorMessage(ERR_INVALID_TOKEN);
         header('Location: index.php');
         exit;
     }
@@ -313,9 +330,9 @@ function verifyEmail(PDO $pdo): void
 
     if ($user) {
         markEmailVerified($pdo, $user['id']);
-        $_SESSION['msg'] = 'Email verificata con successo! Puoi ora effettuare il login.';
+        setSuccessMessage(MSG_SUCCESS_EMAIL_VERIFIED);
     } else {
-        $_SESSION['error'] = 'Token non valido o scaduto.';
+        setErrorMessage(ERR_INVALID_TOKEN);
     }
 
     header('Location: index.php?action=show_login');
@@ -331,7 +348,7 @@ function resendVerification(PDO $pdo): void
     require_once __DIR__ . '/../config/mail.php';
 
     if (!isLoggedIn()) {
-        $_SESSION['error'] = 'Devi effettuare il login.';
+        setErrorMessage(ERR_LOGIN_REQUIRED);
         header('Location: index.php?action=show_login');
         exit;
     }
@@ -339,14 +356,14 @@ function resendVerification(PDO $pdo): void
     $user = getUtenteById($pdo, $_SESSION['user_id']);
 
     if (!$user) {
-        $_SESSION['error'] = 'Utente non trovato.';
+        setErrorMessage('Utente non trovato.');
         header('Location: index.php');
         exit;
     }
 
     // Non reinviare se gia verificata
     if (!empty($user['verificato'])) {
-        $_SESSION['msg'] = 'La tua email è già verificata.';
+        setSuccessMessage('La tua email è già verificata.');
         header('Location: index.php?action=profilo');
         exit;
     }
@@ -355,7 +372,7 @@ function resendVerification(PDO $pdo): void
     setVerificationToken($pdo, $user['id'], $token);
     sendVerificationEmail($user['Email'], $user['Nome'], $token);
 
-    $_SESSION['msg'] = 'Email di verifica inviata. Controlla la tua casella di posta.';
+    setSuccessMessage('Email di verifica inviata. Controlla la tua casella di posta.');
     header('Location: index.php?action=profilo');
     exit;
 }

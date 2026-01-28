@@ -4,6 +4,9 @@
  * Gestisce operazioni CRUD e query per gli eventi
  */
 
+require_once __DIR__ . '/../config/database_schema.php';
+require_once __DIR__ . '/../lib/QueryBuilder.php';
+
 /**
  * Recupera tutti gli eventi con dati di manifestazione e location
  * @return array Lista eventi ordinati per data e ora
@@ -11,11 +14,11 @@
 function getAllEventi(PDO $pdo): array
 {
     return $pdo->query("
-        SELECT e.*, m.Nome as ManifestazioneName, l.Nome as LocationName
-        FROM Eventi e
-        JOIN Manifestazioni m ON e.idManifestazione = m.id
-        JOIN Locations l ON e.idLocation = l.id
-        ORDER BY e.Data, e.OraI
+        SELECT e.*, m." . COL_MANIFESTAZIONI_NOME . " as ManifestazioneName, l." . COL_LOCATIONS_NOME . " as LocationName
+        FROM " . TABLE_EVENTI . " e
+        JOIN " . TABLE_MANIFESTAZIONI . " m ON e." . COL_EVENTI_ID_MANIFESTAZIONE . " = m." . COL_MANIFESTAZIONI_ID . "
+        JOIN " . TABLE_LOCATIONS . " l ON e." . COL_EVENTI_ID_LOCATION . " = l." . COL_LOCATIONS_ID . "
+        ORDER BY e." . COL_EVENTI_DATA . ", e." . COL_EVENTI_ORA_INIZIO . "
     ")->fetchAll();
 }
 
@@ -26,11 +29,11 @@ function getAllEventi(PDO $pdo): array
 function getEventoById(PDO $pdo, int $id): ?array
 {
     $stmt = $pdo->prepare("
-        SELECT e.*, COALESCE(m.Nome, 'indipendente') AS ManifestazioneName, l.Nome as LocationName
-        FROM Eventi e
-        LEFT JOIN Manifestazioni m ON e.idManifestazione = m.id
-        JOIN Locations l ON e.idLocation = l.id
-        WHERE e.id = ?
+        SELECT e.*, COALESCE(m." . COL_MANIFESTAZIONI_NOME . ", 'indipendente') AS ManifestazioneName, l." . COL_LOCATIONS_NOME . " as LocationName
+        FROM " . TABLE_EVENTI . " e
+        LEFT JOIN " . TABLE_MANIFESTAZIONI . " m ON e." . COL_EVENTI_ID_MANIFESTAZIONE . " = m." . COL_MANIFESTAZIONI_ID . "
+        JOIN " . TABLE_LOCATIONS . " l ON e." . COL_EVENTI_ID_LOCATION . " = l." . COL_LOCATIONS_ID . "
+        WHERE e." . COL_EVENTI_ID . " = ?
     ");
     $stmt->execute([$id]);
     return $stmt->fetch() ?: null;
@@ -44,11 +47,11 @@ function getEventoById(PDO $pdo, int $id): ?array
 function getEventiByManifestazione(PDO $pdo, int $idManifestazione): array
 {
     $stmt = $pdo->prepare("
-        SELECT e.*, l.Nome as LocationName
-        FROM Eventi e
-        JOIN Locations l ON e.idLocation = l.id
-        WHERE e.idManifestazione = ?
-        ORDER BY e.Data, e.OraI
+        SELECT e.*, l." . COL_LOCATIONS_NOME . " as LocationName
+        FROM " . TABLE_EVENTI . " e
+        JOIN " . TABLE_LOCATIONS . " l ON e." . COL_EVENTI_ID_LOCATION . " = l." . COL_LOCATIONS_ID . "
+        WHERE e." . COL_EVENTI_ID_MANIFESTAZIONE . " = ?
+        ORDER BY e." . COL_EVENTI_DATA . ", e." . COL_EVENTI_ORA_INIZIO . "
     ");
     $stmt->execute([$idManifestazione]);
     return $stmt->fetchAll();
@@ -61,12 +64,12 @@ function getEventiByManifestazione(PDO $pdo, int $idManifestazione): array
 function getEventiByManifestazioneNome(PDO $pdo, string $nome): array
 {
     $stmt = $pdo->prepare("
-        SELECT e.Nome as eNome, e.OraI, e.OraF, e.Data, e.PrezzoNoMod, l.Nome as LocationName
-        FROM Eventi e
-        JOIN Manifestazioni m ON e.idManifestazione = m.id
-        JOIN Locations l ON e.idLocation = l.id
-        WHERE m.Nome = ?
-        ORDER BY e.Data, e.OraI ASC
+        SELECT e." . COL_EVENTI_NOME . " as eNome, e." . COL_EVENTI_ORA_INIZIO . ", e." . COL_EVENTI_ORA_FINE . ", e." . COL_EVENTI_DATA . ", e." . COL_EVENTI_PREZZO_NO_MOD . ", l." . COL_LOCATIONS_NOME . " as LocationName
+        FROM " . TABLE_EVENTI . " e
+        JOIN " . TABLE_MANIFESTAZIONI . " m ON e." . COL_EVENTI_ID_MANIFESTAZIONE . " = m." . COL_MANIFESTAZIONI_ID . "
+        JOIN " . TABLE_LOCATIONS . " l ON e." . COL_EVENTI_ID_LOCATION . " = l." . COL_LOCATIONS_ID . "
+        WHERE m." . COL_MANIFESTAZIONI_NOME . " = ?
+        ORDER BY e." . COL_EVENTI_DATA . ", e." . COL_EVENTI_ORA_INIZIO . " ASC
     ");
     $stmt->execute([$nome]);
     return $stmt->fetchAll();
@@ -81,12 +84,12 @@ function getEventiByManifestazioneNome(PDO $pdo, string $nome): array
 function getEventiProssimi(PDO $pdo, int $limit = 10): array
 {
     $stmt = $pdo->prepare("
-        SELECT e.*, m.Nome as ManifestazioneName, l.Nome as LocationName
-        FROM Eventi e
-        JOIN Manifestazioni m ON e.idManifestazione = m.id
-        JOIN Locations l ON e.idLocation = l.id
-        WHERE e.Data >= CURDATE()
-        ORDER BY e.Data, e.OraI
+        SELECT e.*, m." . COL_MANIFESTAZIONI_NOME . " as ManifestazioneName, l." . COL_LOCATIONS_NOME . " as LocationName
+        FROM " . TABLE_EVENTI . " e
+        JOIN " . TABLE_MANIFESTAZIONI . " m ON e." . COL_EVENTI_ID_MANIFESTAZIONE . " = m." . COL_MANIFESTAZIONI_ID . "
+        JOIN " . TABLE_LOCATIONS . " l ON e." . COL_EVENTI_ID_LOCATION . " = l." . COL_LOCATIONS_ID . "
+        WHERE e." . COL_EVENTI_DATA . " >= CURDATE()
+        ORDER BY e." . COL_EVENTI_DATA . ", e." . COL_EVENTI_ORA_INIZIO . "
         LIMIT ?
     ");
     $stmt->execute([$limit]);
@@ -100,7 +103,7 @@ function getEventiProssimi(PDO $pdo, int $limit = 10): array
 function createEvento(PDO $pdo, array $data): int
 {
     $stmt = $pdo->prepare("
-        INSERT INTO Eventi (idManifestazione, idLocation, Nome, PrezzoNoMod, Data, OraI, OraF, Programma, Immagine, Categoria)
+        INSERT INTO " . TABLE_EVENTI . " (" . COL_EVENTI_ID_MANIFESTAZIONE . ", " . COL_EVENTI_ID_LOCATION . ", " . COL_EVENTI_NOME . ", " . COL_EVENTI_PREZZO_NO_MOD . ", " . COL_EVENTI_DATA . ", " . COL_EVENTI_ORA_INIZIO . ", " . COL_EVENTI_ORA_FINE . ", " . COL_EVENTI_PROGRAMMA . ", " . COL_EVENTI_IMMAGINE . ", " . COL_EVENTI_CATEGORIA . ")
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     $stmt->execute([
@@ -113,7 +116,7 @@ function createEvento(PDO $pdo, array $data): int
         $data['OraF'],
         $data['Programma'] ?? null,
         $data['Immagine'] ?? null,
-        $data['Categoria'] ?? 'famiglia'
+        $data['Categoria'] ?? CATEGORIA_FAMIGLIA
     ]);
     return (int) $pdo->lastInsertId();
 }
@@ -125,17 +128,17 @@ function createEvento(PDO $pdo, array $data): int
 function updateEvento(PDO $pdo, int $id, array $data): bool
 {
     $stmt = $pdo->prepare("
-        UPDATE Eventi SET
-            idManifestazione = ?,
-            idLocation = ?,
-            Nome = ?,
-            PrezzoNoMod = ?,
-            Data = ?,
-            OraI = ?,
-            OraF = ?,
-            Programma = ?,
-            Categoria = ?
-        WHERE id = ?
+        UPDATE " . TABLE_EVENTI . " SET
+            " . COL_EVENTI_ID_MANIFESTAZIONE . " = ?,
+            " . COL_EVENTI_ID_LOCATION . " = ?,
+            " . COL_EVENTI_NOME . " = ?,
+            " . COL_EVENTI_PREZZO_NO_MOD . " = ?,
+            " . COL_EVENTI_DATA . " = ?,
+            " . COL_EVENTI_ORA_INIZIO . " = ?,
+            " . COL_EVENTI_ORA_FINE . " = ?,
+            " . COL_EVENTI_PROGRAMMA . " = ?,
+            " . COL_EVENTI_CATEGORIA . " = ?
+        WHERE " . COL_EVENTI_ID . " = ?
     ");
     return $stmt->execute([
         $data['idManifestazione'],
@@ -146,7 +149,7 @@ function updateEvento(PDO $pdo, int $id, array $data): bool
         $data['OraI'],
         $data['OraF'],
         $data['Programma'] ?? null,
-        $data['Categoria'] ?? 'famiglia',
+        $data['Categoria'] ?? CATEGORIA_FAMIGLIA,
         $id
     ]);
 }
@@ -157,7 +160,7 @@ function updateEvento(PDO $pdo, int $id, array $data): bool
  */
 function deleteEvento(PDO $pdo, int $id): bool
 {
-    $stmt = $pdo->prepare("DELETE FROM Eventi WHERE id = ?");
+    $stmt = $pdo->prepare("DELETE FROM " . TABLE_EVENTI . " WHERE " . COL_EVENTI_ID . " = ?");
     return $stmt->execute([$id]);
 }
 
@@ -169,10 +172,10 @@ function deleteEvento(PDO $pdo, int $id): bool
 function getIntrattenitoriEvento(PDO $pdo, int $idEvento): array
 {
     $stmt = $pdo->prepare("
-        SELECT i.*, e.OraI, e.OraF
-        FROM Intrattenitore i, eventi e, evento_intrattenitore es 
+        SELECT i.*, e." . COL_EVENTI_ORA_INIZIO . ", e." . COL_EVENTI_ORA_FINE . "
+        FROM " . TABLE_INTRATTENITORE . " i, " . TABLE_EVENTI . " e, " . TABLE_EVENTO_INTRATTENITORE . " es
         WHERE es.idEvento = ?
-        ORDER BY e.OraI
+        ORDER BY e." . COL_EVENTI_ORA_INIZIO . "
     ");
     $stmt->execute([$idEvento]);
     return $stmt->fetchAll();
@@ -188,15 +191,15 @@ function searchEventiByQuery(PDO $pdo, string $query): array
 {
     $search = "%{$query}%";
     $stmt = $pdo->prepare("
-        SELECT e.*, e.Nome as eNome, e.id as id, m.Nome as ManifestazioneName, e.Categoria,
-               l.Nome as LocationName
-        FROM Eventi e
-        JOIN Manifestazioni m ON e.idManifestazione = m.id
-        JOIN Locations l ON e.idLocation = l.id
-        WHERE e.Nome LIKE ?
-           OR m.Nome LIKE ?
-           OR l.Nome LIKE ?
-        ORDER BY e.Data, e.OraI
+        SELECT e.*, e." . COL_EVENTI_NOME . " as eNome, e." . COL_EVENTI_ID . " as id, m." . COL_MANIFESTAZIONI_NOME . " as ManifestazioneName, e." . COL_EVENTI_CATEGORIA . ",
+               l." . COL_LOCATIONS_NOME . " as LocationName
+        FROM " . TABLE_EVENTI . " e
+        JOIN " . TABLE_MANIFESTAZIONI . " m ON e." . COL_EVENTI_ID_MANIFESTAZIONE . " = m." . COL_MANIFESTAZIONI_ID . "
+        JOIN " . TABLE_LOCATIONS . " l ON e." . COL_EVENTI_ID_LOCATION . " = l." . COL_LOCATIONS_ID . "
+        WHERE e." . COL_EVENTI_NOME . " LIKE ?
+           OR m." . COL_MANIFESTAZIONI_NOME . " LIKE ?
+           OR l." . COL_LOCATIONS_NOME . " LIKE ?
+        ORDER BY e." . COL_EVENTI_DATA . ", e." . COL_EVENTI_ORA_INIZIO . "
     ");
     $stmt->execute([$search, $search, $search]);
     return $stmt->fetchAll();
@@ -211,11 +214,11 @@ function searchEventiByQuery(PDO $pdo, string $query): array
 function getEventiByTipo(PDO $pdo, string $tipo): array
 {
     $stmt = $pdo->prepare("
-        SELECT e.*, e.id AS id, COALESCE(m.Nome, 'indipendente') AS ManifestazioneName, e.Categoria, l.Nome AS LocationName
-        FROM Eventi e
-        LEFT JOIN Manifestazioni m ON e.idManifestazione = m.id
-        JOIN Locations l ON e.idLocation = l.id
-        WHERE e.Categoria = ? ORDER BY e.Data, e.OraI;
+        SELECT e.*, e." . COL_EVENTI_ID . " AS id, COALESCE(m." . COL_MANIFESTAZIONI_NOME . ", 'indipendente') AS ManifestazioneName, e." . COL_EVENTI_CATEGORIA . ", l." . COL_LOCATIONS_NOME . " AS LocationName
+        FROM " . TABLE_EVENTI . " e
+        LEFT JOIN " . TABLE_MANIFESTAZIONI . " m ON e." . COL_EVENTI_ID_MANIFESTAZIONE . " = m." . COL_MANIFESTAZIONI_ID . "
+        JOIN " . TABLE_LOCATIONS . " l ON e." . COL_EVENTI_ID_LOCATION . " = l." . COL_LOCATIONS_ID . "
+        WHERE e." . COL_EVENTI_CATEGORIA . " = ? ORDER BY e." . COL_EVENTI_DATA . ", e." . COL_EVENTI_ORA_INIZIO . ";
     ");
     $stmt->execute([$tipo]);
     return $stmt->fetchAll();

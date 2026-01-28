@@ -4,6 +4,9 @@
  * Gestisce i settori/tribune delle location
  */
 
+require_once __DIR__ . '/../config/database_schema.php';
+require_once __DIR__ . '/../lib/QueryBuilder.php';
+
 /**
  * Recupera tutti i settori disponibili
  *
@@ -13,10 +16,10 @@
 function getAllSettori(PDO $pdo): array
 {
     $stmt = $pdo->query("
-        SELECT s.*, l.Nome as LocationNome
-        FROM Settori s
-        LEFT JOIN Locations l ON s.idLocation = l.id
-        ORDER BY l.Nome, s.Nome
+        SELECT s.*, l." . COL_LOCATIONS_NOME . " as LocationNome
+        FROM " . TABLE_SETTORI . " s
+        LEFT JOIN " . TABLE_LOCATIONS . " l ON s." . COL_SETTORI_ID_LOCATION . " = l." . COL_LOCATIONS_ID . "
+        ORDER BY l." . COL_LOCATIONS_NOME . ", s." . COL_SETTORI_NOME . "
     ");
     return $stmt->fetchAll();
 }
@@ -31,10 +34,10 @@ function getAllSettori(PDO $pdo): array
 function getSettoreById(PDO $pdo, int $id): ?array
 {
     $stmt = $pdo->prepare("
-        SELECT s.*, l.Nome as LocationNome
-        FROM Settori s
-        LEFT JOIN Locations l ON s.idLocation = l.id
-        WHERE s.id = ?
+        SELECT s.*, l." . COL_LOCATIONS_NOME . " as LocationNome
+        FROM " . TABLE_SETTORI . " s
+        LEFT JOIN " . TABLE_LOCATIONS . " l ON s." . COL_SETTORI_ID_LOCATION . " = l." . COL_LOCATIONS_ID . "
+        WHERE s." . COL_SETTORI_ID . " = ?
     ");
     $stmt->execute([$id]);
     $result = $stmt->fetch();
@@ -51,7 +54,7 @@ function getSettoreById(PDO $pdo, int $id): ?array
 function createSettore(PDO $pdo, array $data): int
 {
     $stmt = $pdo->prepare("
-        INSERT INTO Settori (Nome, Fila, Posto, idLocation, MoltiplicatorePrezzo, PostiDisponibili)
+        INSERT INTO " . TABLE_SETTORI . " (" . COL_SETTORI_NOME . ", " . COL_SETTORI_FILA . ", " . COL_SETTORI_POSTO . ", " . COL_SETTORI_ID_LOCATION . ", " . COL_SETTORI_MOLTIPLICATORE_PREZZO . ", " . COL_SETTORI_POSTI_DISPONIBILI . ")
         VALUES (?, ?, ?, ?, ?, ?)
     ");
     $stmt->execute([
@@ -76,14 +79,14 @@ function createSettore(PDO $pdo, array $data): int
 function updateSettore(PDO $pdo, int $id, array $data): bool
 {
     $stmt = $pdo->prepare("
-        UPDATE Settori
-        SET Nome = ?,
-            Fila = ?,
-            Posto = ?,
-            idLocation = ?,
-            MoltiplicatorePrezzo = ?,
-            PostiDisponibili = ?
-        WHERE id = ?
+        UPDATE " . TABLE_SETTORI . "
+        SET " . COL_SETTORI_NOME . " = ?,
+            " . COL_SETTORI_FILA . " = ?,
+            " . COL_SETTORI_POSTO . " = ?,
+            " . COL_SETTORI_ID_LOCATION . " = ?,
+            " . COL_SETTORI_MOLTIPLICATORE_PREZZO . " = ?,
+            " . COL_SETTORI_POSTI_DISPONIBILI . " = ?
+        WHERE " . COL_SETTORI_ID . " = ?
     ");
     return $stmt->execute([
         $data['Nome'] ?? '',
@@ -105,6 +108,6 @@ function updateSettore(PDO $pdo, int $id, array $data): bool
  */
 function deleteSettore(PDO $pdo, int $id): bool
 {
-    $stmt = $pdo->prepare("DELETE FROM Settori WHERE id = ?");
+    $stmt = $pdo->prepare("DELETE FROM " . TABLE_SETTORI . " WHERE " . COL_SETTORI_ID . " = ?");
     return $stmt->execute([$id]);
 }

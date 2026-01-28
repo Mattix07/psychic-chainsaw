@@ -4,6 +4,9 @@
  * Gestisce i settori disponibili per ogni evento
  */
 
+require_once __DIR__ . '/../config/database_schema.php';
+require_once __DIR__ . '/../lib/QueryBuilder.php';
+
 /**
  * Associa settori a un evento
  * @param array $settoriIds Array di ID settori da associare
@@ -14,12 +17,12 @@ function setEventoSettori(PDO $pdo, int $eventoId, array $settoriIds): bool
         $pdo->beginTransaction();
 
         // Rimuovi associazioni esistenti
-        $stmt = $pdo->prepare("DELETE FROM EventiSettori WHERE idEvento = ?");
+        $stmt = $pdo->prepare("DELETE FROM " . TABLE_EVENTI_SETTORI . " WHERE idEvento = ?");
         $stmt->execute([$eventoId]);
 
         // Aggiungi nuove associazioni
         if (!empty($settoriIds)) {
-            $stmt = $pdo->prepare("INSERT INTO EventiSettori (idEvento, idSettore) VALUES (?, ?)");
+            $stmt = $pdo->prepare("INSERT INTO " . TABLE_EVENTI_SETTORI . " (idEvento, idSettore) VALUES (?, ?)");
             foreach ($settoriIds as $settoreId) {
                 $stmt->execute([$eventoId, $settoreId]);
             }
@@ -40,11 +43,11 @@ function setEventoSettori(PDO $pdo, int $eventoId, array $settoriIds): bool
 function getEventoSettori(PDO $pdo, int $eventoId): array
 {
     $stmt = $pdo->prepare("
-        SELECT s.id, s.Nome, s.PostiDisponibili, s.MoltiplicatorePrezzo
-        FROM Settori s
-        JOIN EventiSettori es ON s.id = es.idSettore
+        SELECT s." . COL_SETTORI_ID . ", s." . COL_SETTORI_NOME . ", s." . COL_SETTORI_POSTI_DISPONIBILI . ", s." . COL_SETTORI_MOLTIPLICATORE_PREZZO . "
+        FROM " . TABLE_SETTORI . " s
+        JOIN " . TABLE_EVENTI_SETTORI . " es ON s." . COL_SETTORI_ID . " = es.idSettore
         WHERE es.idEvento = ?
-        ORDER BY s.MoltiplicatorePrezzo
+        ORDER BY s." . COL_SETTORI_MOLTIPLICATORE_PREZZO . "
     ");
     $stmt->execute([$eventoId]);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -57,9 +60,9 @@ function getEventoSettori(PDO $pdo, int $eventoId): array
 function calcolaBigliettiDisponibili(PDO $pdo, int $eventoId): int
 {
     $stmt = $pdo->prepare("
-        SELECT SUM(s.PostiDisponibili) as totale
-        FROM Settori s
-        JOIN EventiSettori es ON s.id = es.idSettore
+        SELECT SUM(s." . COL_SETTORI_POSTI_DISPONIBILI . ") as totale
+        FROM " . TABLE_SETTORI . " s
+        JOIN " . TABLE_EVENTI_SETTORI . " es ON s." . COL_SETTORI_ID . " = es.idSettore
         WHERE es.idEvento = ?
     ");
     $stmt->execute([$eventoId]);
@@ -73,7 +76,7 @@ function calcolaBigliettiDisponibili(PDO $pdo, int $eventoId): int
 function isSettoreDisponibilePerEvento(PDO $pdo, int $eventoId, int $settoreId): bool
 {
     $stmt = $pdo->prepare("
-        SELECT COUNT(*) FROM EventiSettori
+        SELECT COUNT(*) FROM " . TABLE_EVENTI_SETTORI . "
         WHERE idEvento = ? AND idSettore = ?
     ");
     $stmt->execute([$eventoId, $settoreId]);

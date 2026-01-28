@@ -4,6 +4,12 @@
  * Gestisce upload e modifica avatar utente
  */
 
+require_once __DIR__ . '/../config/database_schema.php';
+require_once __DIR__ . '/../config/app_config.php';
+require_once __DIR__ . '/../config/messages.php';
+require_once __DIR__ . '/../lib/Validator.php';
+require_once __DIR__ . '/../lib/QueryBuilder.php';
+
 /**
  * Upload avatar utente
  * POST: avatar (file)
@@ -15,49 +21,47 @@
 function uploadAvatarApi(PDO $pdo): void
 {
     if (!isLoggedIn()) {
-        jsonResponse(['error' => 'Devi effettuare il login'], 401);
+        jsonResponse(apiError(ERR_LOGIN_REQUIRED, 401));
         return;
     }
 
     if (!verifyCsrf()) {
-        jsonResponse(['error' => 'Token CSRF non valido'], 403);
+        jsonResponse(apiError(ERR_INVALID_CSRF, 403));
         return;
     }
 
     if (!isset($_FILES['avatar']) || $_FILES['avatar']['error'] !== UPLOAD_ERR_OK) {
-        jsonResponse(['error' => 'Errore durante l\'upload del file'], 400);
+        jsonResponse(apiError(ERR_UPLOAD_FAILED, 400));
         return;
     }
 
     $file = $_FILES['avatar'];
 
-    // Validazione dimensione (max 2MB)
-    $maxSize = 2 * 1024 * 1024; // 2MB
-    if ($file['size'] > $maxSize) {
-        jsonResponse(['error' => 'Il file è troppo grande (max 2MB)'], 400);
+    // Validazione dimensione usando costante da app_config
+    if ($file['size'] > AVATAR_MAX_SIZE) {
+        jsonResponse(apiError(message(ERR_FILE_TOO_LARGE, AVATAR_MAX_SIZE / 1024 / 1024), 400));
         return;
     }
 
-    // Validazione tipo MIME
-    $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+    // Validazione tipo MIME usando costanti
     $finfo = finfo_open(FILEINFO_MIME_TYPE);
     $mimeType = finfo_file($finfo, $file['tmp_name']);
     finfo_close($finfo);
 
-    if (!in_array($mimeType, $allowedTypes)) {
-        jsonResponse(['error' => 'Formato file non valido (solo JPG, PNG, GIF)'], 400);
+    if (!in_array($mimeType, AVATAR_ALLOWED_TYPES)) {
+        jsonResponse(apiError(ERR_INVALID_FILE_TYPE, 400));
         return;
     }
 
     // Validazione dimensioni immagine
     $imageInfo = getimagesize($file['tmp_name']);
     if (!$imageInfo) {
-        jsonResponse(['error' => 'File non valido'], 400);
+        jsonResponse(apiError(ERR_INVALID_IMAGE, 400));
         return;
     }
 
     list($width, $height) = $imageInfo;
-    $maxDimension = 1024;
+    $maxDimension = AVATAR_MAX_DIMENSION;
 
     // Ridimensiona se necessario
     if ($width > $maxDimension || $height > $maxDimension) {
@@ -70,18 +74,17 @@ function uploadAvatarApi(PDO $pdo): void
         $image = file_get_contents($file['tmp_name']);
     }
 
-    // Salva nel database
+    // Salva nel database usando QueryBuilder
     try {
-        $stmt = $pdo->prepare("UPDATE Utenti SET Avatar = ? WHERE id = ?");
-        $stmt->execute([$image, $_SESSION['user_id']]);
+        table($pdo, TABLE_UTENTI)
+            ->where(COL_UTENTI_ID, $_SESSION['user_id'])
+            ->update([COL_UTENTI_AVATAR => $image]);
 
-        jsonResponse([
-            'success' => true,
-            'message' => 'Avatar aggiornato con successo',
+        jsonResponse(apiSuccess([
             'avatarUrl' => 'index.php?action=get_avatar&id=' . $_SESSION['user_id']
-        ]);
+        ], MSG_SUCCESS_AVATAR_UPDATED, 200));
     } catch (Exception $e) {
-        jsonResponse(['error' => 'Errore durante il salvataggio: ' . $e->getMessage()], 500);
+        jsonResponse(apiError(ERR_GENERIC, 500));
     }
 }
 
@@ -91,24 +94,28 @@ function uploadAvatarApi(PDO $pdo): void
  */
 function getAvatarApi(PDO $pdo): void
 {
-    $userId = (int)($_GET['id'] ?? 0);
-
-    if (!$userId) {
+    // Validazione con Validator
+    $validator = validate($_GET)->required('id')->numeric('id');
+    if ($validator->fails()) {
         http_response_code(400);
         exit;
     }
 
-    $stmt = $pdo->prepare("SELECT Avatar FROM Utenti WHERE id = ?");
-    $stmt->execute([$userId]);
-    $avatar = $stmt->fetchColumn();
+    $userId = (int) $_GET['id'];
 
-    if ($avatar) {
+    // Query usando QueryBuilder
+    $user = table($pdo, TABLE_UTENTI)
+        ->select([COL_UTENTI_AVATAR])
+        ->where(COL_UTENTI_ID, $userId)
+        ->first();
+
+    if ($user && $user[COL_UTENTI_AVATAR]) {
         header('Content-Type: image/jpeg');
-        header('Cache-Control: max-age=86400'); // Cache 1 giorno
-        echo $avatar;
+        header('Cache-Control: max-age=' . AVATAR_CACHE_DURATION);
+        echo $user[COL_UTENTI_AVATAR];
     } else {
         // Avatar predefinito
-        header('Location: public/img/default-avatar.png');
+        header('Location: ' . DEFAULT_AVATAR_PATH);
     }
     exit;
 }
@@ -120,25 +127,23 @@ function getAvatarApi(PDO $pdo): void
 function deleteAvatarApi(PDO $pdo): void
 {
     if (!isLoggedIn()) {
-        jsonResponse(['error' => 'Devi effettuare il login'], 401);
+        jsonResponse(apiError(ERR_LOGIN_REQUIRED, 401));
         return;
     }
 
     if (!verifyCsrf()) {
-        jsonResponse(['error' => 'Token CSRF non valido'], 403);
+        jsonResponse(apiError(ERR_INVALID_CSRF, 403));
         return;
     }
 
     try {
-        $stmt = $pdo->prepare("UPDATE Utenti SET Avatar = NULL WHERE id = ?");
-        $stmt->execute([$_SESSION['user_id']]);
+        table($pdo, TABLE_UTENTI)
+            ->where(COL_UTENTI_ID, $_SESSION['user_id'])
+            ->update([COL_UTENTI_AVATAR => null]);
 
-        jsonResponse([
-            'success' => true,
-            'message' => 'Avatar eliminato'
-        ]);
+        jsonResponse(apiSuccess(null, MSG_SUCCESS_AVATAR_DELETED, 200));
     } catch (Exception $e) {
-        jsonResponse(['error' => 'Errore: ' . $e->getMessage()], 500);
+        jsonResponse(apiError(ERR_GENERIC, 500));
     }
 }
 

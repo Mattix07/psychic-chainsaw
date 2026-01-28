@@ -2,10 +2,10 @@
 
 ## Setup Iniziale
 
-- [ ] Database migration eseguita con successo
-- [ ] Tutte le nuove tabelle presenti nel database
-- [ ] File di configurazione aggiornati
-- [ ] Route aggiunte a index.php
+- [x] Database migration eseguita con successo
+- [x] Tutte le nuove tabelle presenti nel database
+- [x] File di configurazione aggiornati
+- [x] Route aggiunte a index.php
 - [ ] Avatar predefinito presente in `public/img/default-avatar.png`
 
 ## 1. Sistema Autenticazione

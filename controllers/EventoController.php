@@ -7,6 +7,10 @@
  * Le operazioni di modifica richiedono privilegi amministratore.
  */
 
+require_once __DIR__ . '/../config/app_config.php';
+require_once __DIR__ . '/../config/messages.php';
+require_once __DIR__ . '/../lib/Validator.php';
+require_once __DIR__ . '/../lib/QueryBuilder.php';
 require_once __DIR__ . '/../models/Evento.php';
 require_once __DIR__ . '/../models/Manifestazione.php';
 require_once __DIR__ . '/../models/Location.php';

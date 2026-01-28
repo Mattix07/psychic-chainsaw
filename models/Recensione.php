@@ -7,6 +7,9 @@
  * Ogni utente puo lasciare una sola recensione per evento.
  */
 
+require_once __DIR__ . '/../config/database_schema.php';
+require_once __DIR__ . '/../lib/QueryBuilder.php';
+
 /**
  * Recupera tutte le recensioni di un evento con dati autore
  *
@@ -15,11 +18,11 @@
 function getRecensioniByEvento(PDO $pdo, int $idEvento): array
 {
     $stmt = $pdo->prepare("
-        SELECT r.*, u.Nome, u.Cognome
-        FROM Recensioni r
-        JOIN Utenti u ON r.idUtente = u.id
-        WHERE r.idEvento = ?
-        ORDER BY r.idEvento
+        SELECT r.*, u." . COL_UTENTI_NOME . ", u." . COL_UTENTI_COGNOME . "
+        FROM " . TABLE_RECENSIONI . " r
+        JOIN " . TABLE_UTENTI . " u ON r." . COL_RECENSIONI_ID_UTENTE . " = u." . COL_UTENTI_ID . "
+        WHERE r." . COL_RECENSIONI_ID_EVENTO . " = ?
+        ORDER BY r." . COL_RECENSIONI_ID_EVENTO . "
     ");
     $stmt->execute([$idEvento]);
     return $stmt->fetchAll();
@@ -34,9 +37,9 @@ function getRecensioniByEvento(PDO $pdo, int $idEvento): array
 function getMediaVotiEvento(PDO $pdo, int $idEvento): ?float
 {
     $stmt = $pdo->prepare("
-        SELECT AVG(Voto) as media
-        FROM Recensioni
-        WHERE idEvento = ?
+        SELECT AVG(" . COL_RECENSIONI_VOTO . ") as media
+        FROM " . TABLE_RECENSIONI . "
+        WHERE " . COL_RECENSIONI_ID_EVENTO . " = ?
     ");
     $stmt->execute([$idEvento]);
     $result = $stmt->fetch();
@@ -51,8 +54,8 @@ function getMediaVotiEvento(PDO $pdo, int $idEvento): ?float
 function getRecensione(PDO $pdo, int $idEvento, int $idUtente): ?array
 {
     $stmt = $pdo->prepare("
-        SELECT * FROM Recensioni
-        WHERE idEvento = ? AND idUtente = ?
+        SELECT * FROM " . TABLE_RECENSIONI . "
+        WHERE " . COL_RECENSIONI_ID_EVENTO . " = ? AND " . COL_RECENSIONI_ID_UTENTE . " = ?
     ");
     $stmt->execute([$idEvento, $idUtente]);
     return $stmt->fetch() ?: null;
@@ -68,7 +71,7 @@ function getRecensione(PDO $pdo, int $idEvento, int $idUtente): ?array
 function createRecensione(PDO $pdo, int $idEvento, int $idUtente, int $voto, ?string $messaggio = null): bool
 {
     $stmt = $pdo->prepare("
-        INSERT INTO Recensioni (idEvento, idUtente, Voto, Messaggio)
+        INSERT INTO " . TABLE_RECENSIONI . " (" . COL_RECENSIONI_ID_EVENTO . ", " . COL_RECENSIONI_ID_UTENTE . ", " . COL_RECENSIONI_VOTO . ", " . COL_RECENSIONI_COMMENTO . ")
         VALUES (?, ?, ?, ?)
     ");
     return $stmt->execute([$idEvento, $idUtente, $voto, $messaggio]);
@@ -83,9 +86,9 @@ function createRecensione(PDO $pdo, int $idEvento, int $idUtente, int $voto, ?st
 function updateRecensione(PDO $pdo, int $idEvento, int $idUtente, int $voto, ?string $messaggio = null): bool
 {
     $stmt = $pdo->prepare("
-        UPDATE Recensioni
-        SET Voto = ?, Messaggio = ?
-        WHERE idEvento = ? AND idUtente = ?
+        UPDATE " . TABLE_RECENSIONI . "
+        SET " . COL_RECENSIONI_VOTO . " = ?, " . COL_RECENSIONI_COMMENTO . " = ?
+        WHERE " . COL_RECENSIONI_ID_EVENTO . " = ? AND " . COL_RECENSIONI_ID_UTENTE . " = ?
     ");
     return $stmt->execute([$voto, $messaggio, $idEvento, $idUtente]);
 }
@@ -98,8 +101,8 @@ function updateRecensione(PDO $pdo, int $idEvento, int $idUtente, int $voto, ?st
 function deleteRecensione(PDO $pdo, int $idEvento, int $idUtente): bool
 {
     $stmt = $pdo->prepare("
-        DELETE FROM Recensioni
-        WHERE idEvento = ? AND idUtente = ?
+        DELETE FROM " . TABLE_RECENSIONI . "
+        WHERE " . COL_RECENSIONI_ID_EVENTO . " = ? AND " . COL_RECENSIONI_ID_UTENTE . " = ?
     ");
     return $stmt->execute([$idEvento, $idUtente]);
 }
@@ -124,11 +127,11 @@ function hasAcquistatoBiglietto(PDO $pdo, int $idEvento, int $idUtente): bool
 {
     $stmt = $pdo->prepare("
         SELECT COUNT(*) as count
-        FROM Ordini o
-        JOIN OrdineDettagli od ON o.id = od.idOrdine
-        JOIN Biglietti b ON od.idBiglietto = b.id
+        FROM " . TABLE_ORDINI . " o
+        JOIN " . TABLE_ORDINE_BIGLIETTI . " od ON o." . COL_ORDINI_ID . " = od.idOrdine
+        JOIN " . TABLE_BIGLIETTI . " b ON od.idBiglietto = b." . COL_BIGLIETTI_ID . "
         WHERE o.idUtente = ?
-        AND b.idEvento = ?
+        AND b." . COL_BIGLIETTI_ID_EVENTO . " = ?
         AND o.Stato IN ('completato', 'confermato', 'pagato')
     ");
     $stmt->execute([$idUtente, $idEvento]);
@@ -165,7 +168,7 @@ function canRecensire(PDO $pdo, int $idEvento, int $idUtente): bool
 function isEventoRecensibile(PDO $pdo, int $idEvento): bool
 {
     $stmt = $pdo->prepare("
-        SELECT Data FROM Eventi WHERE id = ?
+        SELECT " . COL_EVENTI_DATA . " FROM " . TABLE_EVENTI . " WHERE " . COL_EVENTI_ID . " = ?
     ");
     $stmt->execute([$idEvento]);
     $evento = $stmt->fetch();
@@ -174,7 +177,7 @@ function isEventoRecensibile(PDO $pdo, int $idEvento): bool
         return false;
     }
 
-    $dataEvento = strtotime($evento['Data']);
+    $dataEvento = strtotime($evento[COL_EVENTI_DATA]);
     $now = time();
 
     // L'evento deve essere passato
@@ -195,13 +198,13 @@ function isEventoRecensibile(PDO $pdo, int $idEvento): bool
 function getRecensioniVisibili(PDO $pdo, int $idEvento): array
 {
     $stmt = $pdo->prepare("
-        SELECT r.*, u.Nome, u.Cognome
-        FROM Recensioni r
-        JOIN Utenti u ON r.idUtente = u.id
-        JOIN Eventi e ON r.idEvento = e.id
-        WHERE r.idEvento = ?
-        AND DATEDIFF(CURDATE(), e.Data) <= 14
-        ORDER BY r.created_at DESC
+        SELECT r.*, u." . COL_UTENTI_NOME . ", u." . COL_UTENTI_COGNOME . "
+        FROM " . TABLE_RECENSIONI . " r
+        JOIN " . TABLE_UTENTI . " u ON r." . COL_RECENSIONI_ID_UTENTE . " = u." . COL_UTENTI_ID . "
+        JOIN " . TABLE_EVENTI . " e ON r." . COL_RECENSIONI_ID_EVENTO . " = e." . COL_EVENTI_ID . "
+        WHERE r." . COL_RECENSIONI_ID_EVENTO . " = ?
+        AND DATEDIFF(CURDATE(), e." . COL_EVENTI_DATA . ") <= 14
+        ORDER BY r." . COL_RECENSIONI_CREATED_AT . " DESC
     ");
     $stmt->execute([$idEvento]);
     return $stmt->fetchAll();

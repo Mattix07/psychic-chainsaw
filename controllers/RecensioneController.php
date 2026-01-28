@@ -7,6 +7,10 @@
  * Ogni utente puo lasciare una sola recensione per evento.
  */
 
+require_once __DIR__ . '/../config/app_config.php';
+require_once __DIR__ . '/../config/messages.php';
+require_once __DIR__ . '/../lib/Validator.php';
+require_once __DIR__ . '/../lib/QueryBuilder.php';
 require_once __DIR__ . '/../models/Recensione.php';
 
 /**

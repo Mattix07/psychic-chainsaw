@@ -4,11 +4,8 @@
  * Gestisce operazioni CRUD, autenticazione e sistema di ruoli
  */
 
-// Costanti per i ruoli utente - gerarchia crescente di permessi
-define('ROLE_USER', 'user');
-define('ROLE_PROMOTER', 'promoter');
-define('ROLE_MOD', 'mod');
-define('ROLE_ADMIN', 'admin');
+require_once __DIR__ . '/../config/database_schema.php';
+require_once __DIR__ . '/../lib/QueryBuilder.php';
 
 /**
  * Recupera tutti gli utenti ordinati alfabeticamente
@@ -16,7 +13,10 @@ define('ROLE_ADMIN', 'admin');
  */
 function getAllUtenti(PDO $pdo): array
 {
-    return $pdo->query("SELECT * FROM Utenti ORDER BY Cognome, Nome")->fetchAll();
+    return table($pdo, TABLE_UTENTI)
+        ->orderBy(COL_UTENTI_COGNOME)
+        ->orderBy(COL_UTENTI_NOME)
+        ->get();
 }
 
 /**
@@ -25,9 +25,9 @@ function getAllUtenti(PDO $pdo): array
  */
 function getUtenteById(PDO $pdo, int $id): ?array
 {
-    $stmt = $pdo->prepare("SELECT * FROM Utenti WHERE id = ?");
-    $stmt->execute([$id]);
-    return $stmt->fetch() ?: null;
+    return table($pdo, TABLE_UTENTI)
+        ->where(COL_UTENTI_ID, $id)
+        ->first();
 }
 
 /**
@@ -36,9 +36,9 @@ function getUtenteById(PDO $pdo, int $id): ?array
  */
 function getUtenteByEmail(PDO $pdo, string $email): ?array
 {
-    $stmt = $pdo->prepare("SELECT * FROM Utenti WHERE Email = ?");
-    $stmt->execute([$email]);
-    return $stmt->fetch() ?: null;
+    return table($pdo, TABLE_UTENTI)
+        ->where(COL_UTENTI_EMAIL, $email)
+        ->first();
 }
 
 /**
@@ -47,16 +47,11 @@ function getUtenteByEmail(PDO $pdo, string $email): ?array
  */
 function createUtente(PDO $pdo, array $data): int
 {
-    $stmt = $pdo->prepare("
-        INSERT INTO Utenti (Nome, Cognome, Email)
-        VALUES (?, ?, ?)
-    ");
-    $stmt->execute([
-        $data['Nome'],
-        $data['Cognome'],
-        $data['Email']
+    return table($pdo, TABLE_UTENTI)->insert([
+        COL_UTENTI_NOME => $data['Nome'],
+        COL_UTENTI_COGNOME => $data['Cognome'],
+        COL_UTENTI_EMAIL => $data['Email']
     ]);
-    return (int) $pdo->lastInsertId();
 }
 
 /**
@@ -65,16 +60,13 @@ function createUtente(PDO $pdo, array $data): int
  */
 function updateUtente(PDO $pdo, int $id, array $data): bool
 {
-    $stmt = $pdo->prepare("
-        UPDATE Utenti SET Nome = ?, Cognome = ?, Email = ?
-        WHERE id = ?
-    ");
-    return $stmt->execute([
-        $data['Nome'],
-        $data['Cognome'],
-        $data['Email'],
-        $id
-    ]);
+    return table($pdo, TABLE_UTENTI)
+        ->where(COL_UTENTI_ID, $id)
+        ->update([
+            COL_UTENTI_NOME => $data['Nome'],
+            COL_UTENTI_COGNOME => $data['Cognome'],
+            COL_UTENTI_EMAIL => $data['Email']
+        ]) > 0;
 }
 
 /**
@@ -83,8 +75,9 @@ function updateUtente(PDO $pdo, int $id, array $data): bool
  */
 function deleteUtente(PDO $pdo, int $id): bool
 {
-    $stmt = $pdo->prepare("DELETE FROM Utenti WHERE id = ?");
-    return $stmt->execute([$id]);
+    return table($pdo, TABLE_UTENTI)
+        ->where(COL_UTENTI_ID, $id)
+        ->delete() > 0;
 }
 
 /**
@@ -95,10 +88,10 @@ function getOrdiniUtente(PDO $pdo, int $idUtente): array
 {
     $stmt = $pdo->prepare("
         SELECT o.*
-        FROM Ordini o
-        JOIN Utente_Ordini uo ON o.id = uo.idOrdine
+        FROM " . TABLE_ORDINI . " o
+        JOIN " . TABLE_UTENTE_ORDINI . " uo ON o." . COL_ORDINI_ID . " = uo.idOrdine
         WHERE uo.idUtente = ?
-        ORDER BY o.id DESC
+        ORDER BY o." . COL_ORDINI_ID . " DESC
     ");
     $stmt->execute([$idUtente]);
     return $stmt->fetchAll();
@@ -111,11 +104,11 @@ function getOrdiniUtente(PDO $pdo, int $idUtente): array
 function getRecensioniUtente(PDO $pdo, int $idUtente): array
 {
     $stmt = $pdo->prepare("
-        SELECT r.*, e.Nome as EventoNome
-        FROM Recensioni r
-        JOIN Eventi e ON r.idEvento = e.id
-        WHERE r.idUtente = ?
-        ORDER BY e.Data DESC
+        SELECT r.*, e." . COL_EVENTI_NOME . " as EventoNome
+        FROM " . TABLE_RECENSIONI . " r
+        JOIN " . TABLE_EVENTI . " e ON r." . COL_RECENSIONI_ID_EVENTO . " = e." . COL_EVENTI_ID . "
+        WHERE r." . COL_RECENSIONI_ID_UTENTE . " = ?
+        ORDER BY e." . COL_EVENTI_DATA . " DESC
     ");
     $stmt->execute([$idUtente]);
     return $stmt->fetchAll();
@@ -129,7 +122,7 @@ function getRecensioniUtente(PDO $pdo, int $idUtente): array
 function updateUtentePassword(PDO $pdo, int $id, string $newPassword): bool
 {
     $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
-    $stmt = $pdo->prepare("UPDATE Utenti SET Password = ? WHERE id = ?");
+    $stmt = $pdo->prepare("UPDATE " . TABLE_UTENTI . " SET " . COL_UTENTI_PASSWORD . " = ? WHERE " . COL_UTENTI_ID . " = ?");
     return $stmt->execute([$hashedPassword, $id]);
 }
 
@@ -140,7 +133,7 @@ function updateUtentePassword(PDO $pdo, int $id, string $newPassword): bool
  */
 function setVerificationToken(PDO $pdo, int $id, string $token): bool
 {
-    $stmt = $pdo->prepare("UPDATE Utenti SET email_verification_token = ? WHERE id = ?");
+    $stmt = $pdo->prepare("UPDATE " . TABLE_UTENTI . " SET " . COL_UTENTI_EMAIL_VERIFICATION_TOKEN . " = ? WHERE " . COL_UTENTI_ID . " = ?");
     return $stmt->execute([$token, $id]);
 }
 
@@ -152,9 +145,9 @@ function setVerificationToken(PDO $pdo, int $id, string $token): bool
 function verifyEmailToken(PDO $pdo, string $token): ?array
 {
     $stmt = $pdo->prepare("
-        SELECT * FROM Utenti
-        WHERE email_verification_token = ?
-          AND verificato = 0
+        SELECT * FROM " . TABLE_UTENTI . "
+        WHERE " . COL_UTENTI_EMAIL_VERIFICATION_TOKEN . " = ?
+          AND " . COL_UTENTI_VERIFICATO . " = 0
     ");
     $stmt->execute([$token]);
     return $stmt->fetch() ?: null;
@@ -167,9 +160,9 @@ function verifyEmailToken(PDO $pdo, string $token): ?array
 function markEmailVerified(PDO $pdo, int $id): bool
 {
     $stmt = $pdo->prepare("
-        UPDATE Utenti
-        SET verificato = 1, email_verification_token = NULL
-        WHERE id = ?
+        UPDATE " . TABLE_UTENTI . "
+        SET " . COL_UTENTI_VERIFICATO . " = 1, " . COL_UTENTI_EMAIL_VERIFICATION_TOKEN . " = NULL
+        WHERE " . COL_UTENTI_ID . " = ?
     ");
     return $stmt->execute([$id]);
 }
@@ -183,9 +176,9 @@ function setResetToken(PDO $pdo, string $email, string $token): bool
 {
     $expiry = date('Y-m-d H:i:s', strtotime('+1 hour'));
     $stmt = $pdo->prepare("
-        UPDATE Utenti
-        SET reset_token = ?, reset_token_expiry = ?
-        WHERE Email = ?
+        UPDATE " . TABLE_UTENTI . "
+        SET " . COL_UTENTI_RESET_TOKEN . " = ?, " . COL_UTENTI_RESET_TOKEN_EXPIRY . " = ?
+        WHERE " . COL_UTENTI_EMAIL . " = ?
     ");
     return $stmt->execute([$token, $expiry, $email]);
 }
@@ -197,9 +190,9 @@ function setResetToken(PDO $pdo, string $email, string $token): bool
 function verifyResetToken(PDO $pdo, string $token): ?array
 {
     $stmt = $pdo->prepare("
-        SELECT * FROM Utenti
-        WHERE reset_token = ?
-          AND reset_token_expiry > NOW()
+        SELECT * FROM " . TABLE_UTENTI . "
+        WHERE " . COL_UTENTI_RESET_TOKEN . " = ?
+          AND " . COL_UTENTI_RESET_TOKEN_EXPIRY . " > NOW()
     ");
     $stmt->execute([$token]);
     return $stmt->fetch() ?: null;
@@ -211,7 +204,7 @@ function verifyResetToken(PDO $pdo, string $token): ?array
  */
 function clearResetToken(PDO $pdo, int $id): bool
 {
-    $stmt = $pdo->prepare("UPDATE Utenti SET reset_token = NULL, reset_token_expiry = NULL WHERE id = ?");
+    $stmt = $pdo->prepare("UPDATE " . TABLE_UTENTI . " SET " . COL_UTENTI_RESET_TOKEN . " = NULL, " . COL_UTENTI_RESET_TOKEN_EXPIRY . " = NULL WHERE " . COL_UTENTI_ID . " = ?");
     return $stmt->execute([$id]);
 }
 
@@ -229,9 +222,9 @@ function resetPasswordWithToken(PDO $pdo, string $token, string $newPassword): b
 
     $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
     $stmt = $pdo->prepare("
-        UPDATE Utenti
-        SET Password = ?, reset_token = NULL, reset_token_expiry = NULL
-        WHERE id = ?
+        UPDATE " . TABLE_UTENTI . "
+        SET " . COL_UTENTI_PASSWORD . " = ?, " . COL_UTENTI_RESET_TOKEN . " = NULL, " . COL_UTENTI_RESET_TOKEN_EXPIRY . " = NULL
+        WHERE " . COL_UTENTI_ID . " = ?
     ");
     return $stmt->execute([$hashedPassword, $user['id']]);
 }
@@ -242,10 +235,10 @@ function resetPasswordWithToken(PDO $pdo, string $token, string $newPassword): b
  */
 function getUserRole(PDO $pdo, int $id): string
 {
-    $stmt = $pdo->prepare("SELECT ruolo FROM Utenti WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT " . COL_UTENTI_RUOLO . " FROM " . TABLE_UTENTI . " WHERE " . COL_UTENTI_ID . " = ?");
     $stmt->execute([$id]);
     $result = $stmt->fetch();
-    return $result['ruolo'] ?? ROLE_USER;
+    return $result[COL_UTENTI_RUOLO] ?? RUOLO_USER;
 }
 
 /**
@@ -255,12 +248,12 @@ function getUserRole(PDO $pdo, int $id): string
  */
 function setUserRole(PDO $pdo, int $id, string $role): bool
 {
-    $validRoles = [ROLE_USER, ROLE_PROMOTER, ROLE_MOD, ROLE_ADMIN];
+    $validRoles = [RUOLO_USER, RUOLO_PROMOTER, RUOLO_MOD, RUOLO_ADMIN];
     if (!in_array($role, $validRoles)) {
         return false;
     }
 
-    $stmt = $pdo->prepare("UPDATE Utenti SET ruolo = ? WHERE id = ?");
+    $stmt = $pdo->prepare("UPDATE " . TABLE_UTENTI . " SET " . COL_UTENTI_RUOLO . " = ? WHERE " . COL_UTENTI_ID . " = ?");
     return $stmt->execute([$role, $id]);
 }
 
@@ -274,7 +267,7 @@ function isAdmin(?int $userId = null): bool
     global $pdo;
     $id = $userId ?? ($_SESSION['user_id'] ?? null);
     if (!$id) return false;
-    return getUserRole($pdo, $id) === ROLE_ADMIN;
+    return getUserRole($pdo, $id) === RUOLO_ADMIN;
 }
 
 /**
@@ -288,7 +281,7 @@ function isMod(?int $userId = null): bool
     $id = $userId ?? ($_SESSION['user_id'] ?? null);
     if (!$id) return false;
     $role = getUserRole($pdo, $id);
-    return in_array($role, [ROLE_MOD, ROLE_ADMIN]);
+    return in_array($role, [RUOLO_MOD, RUOLO_ADMIN]);
 }
 
 /**
@@ -302,7 +295,7 @@ function isPromoter(?int $userId = null): bool
     $id = $userId ?? ($_SESSION['user_id'] ?? null);
     if (!$id) return false;
     $role = getUserRole($pdo, $id);
-    return in_array($role, [ROLE_PROMOTER, ROLE_MOD, ROLE_ADMIN]);
+    return in_array($role, [RUOLO_PROMOTER, RUOLO_MOD, RUOLO_ADMIN]);
 }
 
 /**
@@ -318,7 +311,7 @@ function hasRole(string $requiredRole, ?int $userId = null): bool
     if (!$id) return false;
 
     $role = getUserRole($pdo, $id);
-    $hierarchy = [ROLE_USER => 1, ROLE_PROMOTER => 2, ROLE_MOD => 3, ROLE_ADMIN => 4];
+    $hierarchy = [RUOLO_USER => 1, RUOLO_PROMOTER => 2, RUOLO_MOD => 3, RUOLO_ADMIN => 4];
 
     return ($hierarchy[$role] ?? 0) >= ($hierarchy[$requiredRole] ?? 0);
 }
@@ -329,7 +322,7 @@ function hasRole(string $requiredRole, ?int $userId = null): bool
  */
 function getUtentiByRole(PDO $pdo, string $role): array
 {
-    $stmt = $pdo->prepare("SELECT * FROM Utenti WHERE ruolo = ? ORDER BY Cognome, Nome");
+    $stmt = $pdo->prepare("SELECT * FROM " . TABLE_UTENTI . " WHERE " . COL_UTENTI_RUOLO . " = ? ORDER BY " . COL_UTENTI_COGNOME . ", " . COL_UTENTI_NOME);
     $stmt->execute([$role]);
     return $stmt->fetchAll();
 }
@@ -342,14 +335,14 @@ function getUtentiByRole(PDO $pdo, string $role): array
 function countUtentiByRole(PDO $pdo): array
 {
     $stmt = $pdo->query("
-        SELECT ruolo, COUNT(*) as count
-        FROM Utenti
-        GROUP BY ruolo
+        SELECT " . COL_UTENTI_RUOLO . ", COUNT(*) as count
+        FROM " . TABLE_UTENTI . "
+        GROUP BY " . COL_UTENTI_RUOLO . "
     ");
     $results = $stmt->fetchAll();
     $counts = [];
     foreach ($results as $row) {
-        $counts[$row['ruolo']] = $row['count'];
+        $counts[$row[COL_UTENTI_RUOLO]] = $row['count'];
     }
     return $counts;
 }

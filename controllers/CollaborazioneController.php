@@ -4,6 +4,11 @@
  * Gestisce inviti e collaboratori per eventi
  */
 
+require_once __DIR__ . '/../config/database_schema.php';
+require_once __DIR__ . '/../config/app_config.php';
+require_once __DIR__ . '/../config/messages.php';
+require_once __DIR__ . '/../lib/Validator.php';
+require_once __DIR__ . '/../lib/QueryBuilder.php';
 require_once __DIR__ . '/../models/Permessi.php';
 
 /**
@@ -39,7 +44,7 @@ function inviteCollaboratorApi(PDO $pdo): void
     }
 
     // Trova l'utente da invitare
-    $stmt = $pdo->prepare("SELECT id, ruolo FROM Utenti WHERE Email = ?");
+    $stmt = $pdo->prepare("SELECT " . COL_UTENTI_ID . ", " . COL_UTENTI_RUOLO . " FROM " . TABLE_UTENTI . " WHERE " . COL_UTENTI_EMAIL . " = ?");
     $stmt->execute([$emailCollaboratore]);
     $utente = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -48,21 +53,21 @@ function inviteCollaboratorApi(PDO $pdo): void
         return;
     }
 
-    if ($utente['ruolo'] !== 'promoter') {
+    if ($utente[COL_UTENTI_RUOLO] !== RUOLO_PROMOTER) {
         jsonResponse(['error' => 'Puoi invitare solo altri promoter'], 400);
         return;
     }
 
     // Verifica che non sia già collaboratore
-    $stmt = $pdo->prepare("SELECT COUNT(*) FROM CollaboratoriEventi WHERE idEvento = ? AND idUtente = ?");
-    $stmt->execute([$idEvento, $utente['id']]);
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM " . TABLE_COLLABORATORI_EVENTI . " WHERE " . COL_COLLABORATORI_EVENTI_ID_EVENTO . " = ? AND " . COL_COLLABORATORI_EVENTI_ID_UTENTE . " = ?");
+    $stmt->execute([$idEvento, $utente[COL_UTENTI_ID]]);
     if ($stmt->fetchColumn() > 0) {
         jsonResponse(['error' => 'Questo utente è già stato invitato'], 400);
         return;
     }
 
     // Invia invito
-    if (inviteCollaborator($pdo, $idEvento, $utente['id'], $userId)) {
+    if (inviteCollaborator($pdo, $idEvento, $utente[COL_UTENTI_ID], $userId)) {
         jsonResponse([
             'success' => true,
             'message' => 'Invito inviato con successo'

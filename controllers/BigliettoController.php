@@ -10,6 +10,11 @@
  * - Assegnazione posto e creazione ordine
  */
 
+require_once __DIR__ . '/../config/database_schema.php';
+require_once __DIR__ . '/../config/app_config.php';
+require_once __DIR__ . '/../config/messages.php';
+require_once __DIR__ . '/../lib/Validator.php';
+require_once __DIR__ . '/../lib/QueryBuilder.php';
 require_once __DIR__ . '/../models/Biglietto.php';
 require_once __DIR__ . '/../models/Ordine.php';
 require_once __DIR__ . '/../models/Evento.php';
@@ -48,23 +53,30 @@ function acquistaBiglietto(PDO $pdo): void
     requireAuth();
 
     // Blocca acquisto per promoter/admin/mod
-    $ruolo = $_SESSION['user_ruolo'] ?? 'user';
-    if (in_array($ruolo, ['admin', 'mod', 'promoter'])) {
-        redirect('index.php?action=checkout', null, 'Gli organizzatori non possono acquistare biglietti');
+    $ruolo = $_SESSION['user_ruolo'] ?? RUOLO_USER;
+    if (in_array($ruolo, [RUOLO_ADMIN, RUOLO_MOD, RUOLO_PROMOTER])) {
+        setErrorMessage(ERR_ORGANIZERS_CANNOT_PURCHASE);
+        redirect('index.php?action=checkout');
     }
 
     if (!verifyCsrf()) {
-        redirect('index.php?action=checkout', null, 'Richiesta non valida');
+        setErrorMessage(ERR_INVALID_CSRF);
+        redirect('index.php?action=checkout');
     }
 
-    $metodo = sanitize($_POST['metodo'] ?? '');
+    // Validazione con Validator
+    $validator = validate($_POST)
+        ->required('metodo')
+        ->in('metodo', PAYMENT_METHODS)
+        ->required('cart_data');
+
+    if ($validator->fails()) {
+        setErrorMessage($validator->firstError());
+        redirect('index.php?action=checkout');
+    }
+
+    $metodo = sanitize($_POST['metodo']);
     $cartData = json_decode($_POST['cart_data'] ?? '[]', true);
-
-    // Validazione metodo pagamento
-    $metodiValidi = ['Carta di credito', 'PayPal', 'Bonifico'];
-    if (!in_array($metodo, $metodiValidi)) {
-        redirect('index.php?action=checkout', null, 'Metodo di pagamento non valido');
-    }
 
     // Verifica se i dati vengono dal server (biglietti gia nel DB)
     $fromServer = isset($cartData['fromServer']) && $cartData['fromServer'] === true;
@@ -106,18 +118,18 @@ function acquistaFromServerCart(PDO $pdo, array $cartData, string $metodo): void
             if ($idBiglietto <= 0) continue;
 
             // Verifica che il biglietto esista e sia nel carrello dell'utente
-            $stmt = $pdo->prepare("SELECT id FROM Biglietti WHERE id = ? AND idUtente = ? AND Stato = 'carrello'");
-            $stmt->execute([$idBiglietto, $_SESSION['user_id']]);
+            $stmt = $pdo->prepare("SELECT " . COL_BIGLIETTI_ID . " FROM " . TABLE_BIGLIETTI . " WHERE " . COL_BIGLIETTI_ID . " = ? AND " . COL_BIGLIETTI_ID_UTENTE . " = ? AND " . COL_BIGLIETTI_STATO . " = ?");
+            $stmt->execute([$idBiglietto, $_SESSION['user_id'], STATO_BIGLIETTO_CARRELLO]);
             if (!$stmt->fetch()) {
                 throw new Exception("Biglietto non valido: " . $idBiglietto);
             }
 
             // Aggiorna dati intestatario
-            $stmt = $pdo->prepare("UPDATE Biglietti SET Nome = ?, Cognome = ?, Sesso = ? WHERE id = ?");
+            $stmt = $pdo->prepare("UPDATE " . TABLE_BIGLIETTI . " SET " . COL_BIGLIETTI_NOME . " = ?, " . COL_BIGLIETTI_COGNOME . " = ?, " . COL_BIGLIETTI_SESSO . " = ? WHERE " . COL_BIGLIETTI_ID . " = ?");
             $stmt->execute([
                 sanitize($ticket['nome']),
                 sanitize($ticket['cognome']),
-                sanitize($ticket['sesso'] ?? 'Altro'),
+                sanitize($ticket['sesso'] ?? SESSO_ALTRO),
                 $idBiglietto
             ]);
 
@@ -186,7 +198,7 @@ function acquistaFromLocalCart(PDO $pdo, array $cartData, string $metodo): void
                 'Nome' => $nome,
                 'Cognome' => $cognome,
                 'Sesso' => $sesso,
-                'Stato' => 'acquistato',
+                'Stato' => STATO_BIGLIETTO_ACQUISTATO,
                 'idUtente' => $_SESSION['user_id']
             ]);
 

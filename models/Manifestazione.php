@@ -8,6 +8,9 @@
  * Ogni evento appartiene a una manifestazione.
  */
 
+require_once __DIR__ . '/../config/database_schema.php';
+require_once __DIR__ . '/../lib/QueryBuilder.php';
+
 /**
  * Recupera tutte le manifestazioni ordinate alfabeticamente
  *
@@ -15,7 +18,10 @@
  */
 function getAllManifestazioni(PDO $pdo): array
 {
-    return $pdo->query("SELECT id, Nome FROM Manifestazioni ORDER BY Nome")->fetchAll();
+    return table($pdo, TABLE_MANIFESTAZIONI)
+        ->select([COL_MANIFESTAZIONI_ID, COL_MANIFESTAZIONI_NOME])
+        ->orderBy(COL_MANIFESTAZIONI_NOME)
+        ->get();
 }
 
 /**
@@ -25,9 +31,10 @@ function getAllManifestazioni(PDO $pdo): array
  */
 function getManifestazioneById(PDO $pdo, int $id): ?array
 {
-    $stmt = $pdo->prepare("SELECT id, Nome FROM Manifestazioni WHERE id = ?");
-    $stmt->execute([$id]);
-    return $stmt->fetch() ?: null;
+    return table($pdo, TABLE_MANIFESTAZIONI)
+        ->select([COL_MANIFESTAZIONI_ID, COL_MANIFESTAZIONI_NOME])
+        ->where(COL_MANIFESTAZIONI_ID, $id)
+        ->first();
 }
 
 /**
@@ -38,9 +45,10 @@ function getManifestazioneById(PDO $pdo, int $id): ?array
  */
 function getManifestazioneByNome(PDO $pdo, string $nome): ?array
 {
-    $stmt = $pdo->prepare("SELECT id, Nome FROM Manifestazioni WHERE Nome = ?");
-    $stmt->execute([$nome]);
-    return $stmt->fetch() ?: null;
+    return table($pdo, TABLE_MANIFESTAZIONI)
+        ->select([COL_MANIFESTAZIONI_ID, COL_MANIFESTAZIONI_NOME])
+        ->where(COL_MANIFESTAZIONI_NOME, $nome)
+        ->first();
 }
 
 /**
@@ -65,7 +73,7 @@ function createManifestazione(PDO $pdo, $data): int
     }
 
     $stmt = $pdo->prepare("
-        INSERT INTO Manifestazioni (Nome, Descrizione, DataInizio, DataFine)
+        INSERT INTO " . TABLE_MANIFESTAZIONI . " (" . COL_MANIFESTAZIONI_NOME . ", " . COL_MANIFESTAZIONI_DESCRIZIONE . ", " . COL_MANIFESTAZIONI_DATA_INIZIO . ", " . COL_MANIFESTAZIONI_DATA_FINE . ")
         VALUES (?, ?, ?, ?)
     ");
     $stmt->execute([$nome, $descrizione, $dataInizio, $dataFine]);
@@ -93,12 +101,12 @@ function updateManifestazione(PDO $pdo, int $id, $data): bool
     }
 
     $stmt = $pdo->prepare("
-        UPDATE Manifestazioni SET
-            Nome = ?,
-            Descrizione = ?,
-            DataInizio = ?,
-            DataFine = ?
-        WHERE id = ?
+        UPDATE " . TABLE_MANIFESTAZIONI . " SET
+            " . COL_MANIFESTAZIONI_NOME . " = ?,
+            " . COL_MANIFESTAZIONI_DESCRIZIONE . " = ?,
+            " . COL_MANIFESTAZIONI_DATA_INIZIO . " = ?,
+            " . COL_MANIFESTAZIONI_DATA_FINE . " = ?
+        WHERE " . COL_MANIFESTAZIONI_ID . " = ?
     ");
     return $stmt->execute([$nome, $descrizione, $dataInizio, $dataFine, $id]);
 }
@@ -111,7 +119,7 @@ function updateManifestazione(PDO $pdo, int $id, $data): bool
  */
 function deleteManifestazione(PDO $pdo, int $id): bool
 {
-    $stmt = $pdo->prepare("DELETE FROM Manifestazioni WHERE id = ?");
+    $stmt = $pdo->prepare("DELETE FROM " . TABLE_MANIFESTAZIONI . " WHERE " . COL_MANIFESTAZIONI_ID . " = ?");
     return $stmt->execute([$id]);
 }
 
@@ -133,10 +141,10 @@ function getManifestazioniByCreator(PDO $pdo, int $userId): array
 {
     $stmt = $pdo->prepare("
         SELECT m.*
-        FROM Manifestazioni m
-        INNER JOIN CreatoriManifestazioni cm ON m.id = cm.idManifestazione
+        FROM " . TABLE_MANIFESTAZIONI . " m
+        INNER JOIN " . TABLE_CREATORI_MANIFESTAZIONI . " cm ON m." . COL_MANIFESTAZIONI_ID . " = cm.idManifestazione
         WHERE cm.idUtente = ?
-        ORDER BY m.DataInizio DESC, m.Nome
+        ORDER BY m." . COL_MANIFESTAZIONI_DATA_INIZIO . " DESC, m." . COL_MANIFESTAZIONI_NOME . "
     ");
     $stmt->execute([$userId]);
     return $stmt->fetchAll();

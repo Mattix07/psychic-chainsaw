@@ -10,9 +10,14 @@
  * - Limitare il numero di biglietti per evento
  */
 
+require_once __DIR__ . '/../config/database_schema.php';
+require_once __DIR__ . '/../config/app_config.php';
+require_once __DIR__ . '/../config/messages.php';
+require_once __DIR__ . '/../config/helpers.php';
+require_once __DIR__ . '/../lib/Validator.php';
+require_once __DIR__ . '/../lib/QueryBuilder.php';
 require_once __DIR__ . '/../models/Biglietto.php';
 require_once __DIR__ . '/../models/Evento.php';
-require_once __DIR__ . '/../config/helpers.php';
 
 /**
  * Router per le azioni del carrello
@@ -62,12 +67,12 @@ function handleCart(PDO $pdo, string $action): void
 function addToCartApi(PDO $pdo): void
 {
     if (!isLoggedIn()) {
-        jsonResponse(['error' => 'Devi effettuare il login'], 401);
+        jsonResponse(['error' => ERR_LOGIN_REQUIRED], 401);
         return;
     }
 
     if (!verifyCsrf()) {
-        jsonResponse(['error' => 'Token CSRF non valido'], 403);
+        jsonResponse(['error' => ERR_INVALID_CSRF], 403);
         return;
     }
 
@@ -77,8 +82,24 @@ function addToCartApi(PDO $pdo): void
     $idSettore = (int) ($_POST['idSettore'] ?? 0);
     $idUtente = $_SESSION['user_id'];
 
-    if ($idEvento <= 0) {
-        jsonResponse(['error' => 'Evento non valido'], 400);
+    // Validazione input
+    $validator = validate($_POST)
+        ->required('idEvento', 'Evento non valido')
+        ->numeric('quantita');
+
+    if ($validator->fails()) {
+        jsonResponse(['error' => $validator->firstError()], 400);
+        return;
+    }
+
+    // Valida quantità massima
+    if ($quantita > MAX_TICKETS_PER_ORDER) {
+        jsonResponse(['error' => message(ERR_MAX_TICKETS_EXCEEDED, MAX_TICKETS_PER_ORDER)], 400);
+        return;
+    }
+
+    if ($quantita <= 0) {
+        jsonResponse(['error' => 'Quantità non valida'], 400);
         return;
     }
 
@@ -94,10 +115,13 @@ function addToCartApi(PDO $pdo): void
         }
     }
 
-    // Verifica che l'evento esista
-    $evento = getEventoById($pdo, $idEvento);
+    // Verifica che l'evento esista usando QueryBuilder
+    $evento = table($pdo, TABLE_EVENTI)
+        ->where(COL_EVENTI_ID, $idEvento)
+        ->first();
+
     if (!$evento) {
-        jsonResponse(['error' => 'Evento non trovato'], 404);
+        jsonResponse(['error' => ERR_EVENT_NOT_FOUND], 404);
         return;
     }
 
@@ -105,7 +129,7 @@ function addToCartApi(PDO $pdo): void
     if (!checkDisponibilitaBiglietti($pdo, $idEvento, $quantita)) {
         $disponibili = getBigliettiDisponibili($pdo, $idEvento);
         jsonResponse([
-            'error' => 'Biglietti non disponibili',
+            'error' => ERR_TICKETS_NOT_AVAILABLE,
             'disponibili' => $disponibili,
             'richiesti' => $quantita
         ], 400);
@@ -128,9 +152,13 @@ function addToCartApi(PDO $pdo): void
         $cart = getCartByUtente($pdo, $idUtente);
         $count = countCartItems($pdo, $idUtente);
 
+        // Formatta messaggio di successo
+        $pluralEnding = $quantita > 1 ? 'i' : 'o';
+        $message = message(MSG_SUCCESS_TICKET_ADDED, $quantita, $pluralEnding, $pluralEnding);
+
         jsonResponse([
             'success' => true,
-            'message' => $quantita . ' bigliett' . ($quantita > 1 ? 'i aggiunti' : 'o aggiunto') . ' al carrello',
+            'message' => $message,
             'bigliettiIds' => $bigliettiIds,
             'cartCount' => $count,
             'cart' => formatCartForJs($cart)
@@ -170,20 +198,24 @@ function getCartApi(PDO $pdo): void
 function updateCartApi(PDO $pdo): void
 {
     if (!isLoggedIn()) {
-        jsonResponse(['error' => 'Devi effettuare il login'], 401);
+        jsonResponse(['error' => ERR_LOGIN_REQUIRED], 401);
         return;
     }
 
     if (!verifyCsrf()) {
-        jsonResponse(['error' => 'Token CSRF non valido'], 403);
+        jsonResponse(['error' => ERR_INVALID_CSRF], 403);
         return;
     }
 
     $idBiglietto = (int) ($_POST['idBiglietto'] ?? 0);
     $idUtente = $_SESSION['user_id'];
 
-    if ($idBiglietto <= 0) {
-        jsonResponse(['error' => 'Biglietto non valido'], 400);
+    // Validazione input
+    $validator = validate($_POST)
+        ->required('idBiglietto', 'Biglietto non valido');
+
+    if ($validator->fails()) {
+        jsonResponse(['error' => $validator->firstError()], 400);
         return;
     }
 
@@ -218,20 +250,24 @@ function updateCartApi(PDO $pdo): void
 function removeFromCartApi(PDO $pdo): void
 {
     if (!isLoggedIn()) {
-        jsonResponse(['error' => 'Devi effettuare il login'], 401);
+        jsonResponse(['error' => ERR_LOGIN_REQUIRED], 401);
         return;
     }
 
     if (!verifyCsrf()) {
-        jsonResponse(['error' => 'Token CSRF non valido'], 403);
+        jsonResponse(['error' => ERR_INVALID_CSRF], 403);
         return;
     }
 
     $idBiglietto = (int) ($_POST['idBiglietto'] ?? 0);
     $idUtente = $_SESSION['user_id'];
 
-    if ($idBiglietto <= 0) {
-        jsonResponse(['error' => 'Biglietto non valido'], 400);
+    // Validazione input
+    $validator = validate($_POST)
+        ->required('idBiglietto', 'Biglietto non valido');
+
+    if ($validator->fails()) {
+        jsonResponse(['error' => $validator->firstError()], 400);
         return;
     }
 
@@ -243,12 +279,12 @@ function removeFromCartApi(PDO $pdo): void
 
         jsonResponse([
             'success' => true,
-            'message' => 'Biglietto rimosso dal carrello',
+            'message' => MSG_SUCCESS_TICKET_REMOVED,
             'cart' => formatCartForJs($cart),
             'cartCount' => $count
         ]);
     } else {
-        jsonResponse(['error' => 'Impossibile rimuovere il biglietto'], 400);
+        jsonResponse(['error' => ERR_TICKET_NOT_FOUND], 400);
     }
 }
 
@@ -258,12 +294,12 @@ function removeFromCartApi(PDO $pdo): void
 function clearCartApi(PDO $pdo): void
 {
     if (!isLoggedIn()) {
-        jsonResponse(['error' => 'Devi effettuare il login'], 401);
+        jsonResponse(['error' => ERR_LOGIN_REQUIRED], 401);
         return;
     }
 
     if (!verifyCsrf()) {
-        jsonResponse(['error' => 'Token CSRF non valido'], 403);
+        jsonResponse(['error' => ERR_INVALID_CSRF], 403);
         return;
     }
 
@@ -272,7 +308,7 @@ function clearCartApi(PDO $pdo): void
 
     jsonResponse([
         'success' => true,
-        'message' => 'Carrello svuotato',
+        'message' => MSG_SUCCESS_CART_CLEARED,
         'cart' => [],
         'cartCount' => 0
     ]);
@@ -303,8 +339,19 @@ function checkAvailabilityApi(PDO $pdo): void
     $idEvento = (int) ($_REQUEST['idEvento'] ?? 0);
     $quantita = (int) ($_REQUEST['quantita'] ?? 1);
 
-    if ($idEvento <= 0) {
-        jsonResponse(['error' => 'Evento non valido'], 400);
+    // Validazione input
+    $validator = validate($_REQUEST)
+        ->required('idEvento', 'Evento non valido')
+        ->numeric('quantita');
+
+    if ($validator->fails()) {
+        jsonResponse(['error' => $validator->firstError()], 400);
+        return;
+    }
+
+    // Valida quantità massima
+    if ($quantita > MAX_TICKETS_PER_ORDER) {
+        jsonResponse(['error' => message(ERR_MAX_TICKETS_EXCEEDED, MAX_TICKETS_PER_ORDER)], 400);
         return;
     }
 
@@ -327,18 +374,25 @@ function getSettoriApi(PDO $pdo): void
 {
     $idEvento = (int) ($_REQUEST['idEvento'] ?? 0);
 
-    if ($idEvento <= 0) {
-        jsonResponse(['error' => 'Evento non valido'], 400);
+    // Validazione input
+    $validator = validate($_REQUEST)
+        ->required('idEvento', 'Evento non valido');
+
+    if ($validator->fails()) {
+        jsonResponse(['error' => $validator->firstError()], 400);
         return;
     }
 
-    // Recupera la location dell'evento
+    // Recupera la location dell'evento usando QueryBuilder
     require_once __DIR__ . '/../models/Evento.php';
     require_once __DIR__ . '/../models/Location.php';
 
-    $evento = getEventoById($pdo, $idEvento);
+    $evento = table($pdo, TABLE_EVENTI)
+        ->where(COL_EVENTI_ID, $idEvento)
+        ->first();
+
     if (!$evento) {
-        jsonResponse(['error' => 'Evento non trovato'], 404);
+        jsonResponse(['error' => ERR_EVENT_NOT_FOUND], 404);
         return;
     }
 
@@ -363,12 +417,12 @@ function getSettoriApi(PDO $pdo): void
 function updateSettoreApi(PDO $pdo): void
 {
     if (!isLoggedIn()) {
-        jsonResponse(['error' => 'Devi effettuare il login'], 401);
+        jsonResponse(['error' => ERR_LOGIN_REQUIRED], 401);
         return;
     }
 
     if (!verifyCsrf()) {
-        jsonResponse(['error' => 'Token CSRF non valido'], 403);
+        jsonResponse(['error' => ERR_INVALID_CSRF], 403);
         return;
     }
 
@@ -376,27 +430,36 @@ function updateSettoreApi(PDO $pdo): void
     $idSettore = (int) ($_POST['idSettore'] ?? 0);
     $idUtente = $_SESSION['user_id'];
 
-    if ($idBiglietto <= 0 || $idSettore <= 0) {
-        jsonResponse(['error' => 'Parametri non validi'], 400);
+    // Validazione input
+    $validator = validate($_POST)
+        ->required('idBiglietto', 'Biglietto non valido')
+        ->required('idSettore', 'Settore non valido');
+
+    if ($validator->fails()) {
+        jsonResponse(['error' => $validator->firstError()], 400);
         return;
     }
 
-    // Verifica che il biglietto appartenga all'utente e sia nel carrello
-    $stmt = $pdo->prepare("SELECT id, idEvento FROM Biglietti WHERE id = ? AND idUtente = ? AND Stato = 'carrello'");
-    $stmt->execute([$idBiglietto, $idUtente]);
-    $biglietto = $stmt->fetch();
+    // Verifica che il biglietto appartenga all'utente e sia nel carrello usando QueryBuilder
+    $biglietto = table($pdo, TABLE_BIGLIETTI)
+        ->select([COL_BIGLIETTI_ID, COL_BIGLIETTI_ID_EVENTO])
+        ->where(COL_BIGLIETTI_ID, $idBiglietto)
+        ->where(COL_BIGLIETTI_ID_UTENTE, $idUtente)
+        ->where(COL_BIGLIETTI_STATO, STATO_BIGLIETTO_CARRELLO)
+        ->first();
 
     if (!$biglietto) {
-        jsonResponse(['error' => 'Biglietto non trovato'], 404);
+        jsonResponse(['error' => ERR_TICKET_NOT_FOUND], 404);
         return;
     }
 
     try {
         $pdo->beginTransaction();
 
-        // Rimuovi eventuale assegnazione precedente
-        $stmt = $pdo->prepare("DELETE FROM Settore_Biglietti WHERE idBiglietto = ?");
-        $stmt->execute([$idBiglietto]);
+        // Rimuovi eventuale assegnazione precedente usando QueryBuilder
+        table($pdo, TABLE_SETTORE_BIGLIETTI)
+            ->where(COL_SETTORE_BIGLIETTI_ID_BIGLIETTO, $idBiglietto)
+            ->delete();
 
         // Assegna nuovo posto nel settore selezionato
         assegnaPostoInSettore($pdo, $idBiglietto, $biglietto['idEvento'], $idSettore);

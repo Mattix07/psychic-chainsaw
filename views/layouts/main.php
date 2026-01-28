@@ -320,7 +320,7 @@
     window.EventsMaster = {
         isLoggedIn: <?= isLoggedIn() ? 'true' : 'false' ?>,
         userId: <?= isLoggedIn() ? ($_SESSION['user_id'] ?? 'null') : 'null' ?>,
-        csrfToken: '<?= $_SESSION['csrf_token'] ?? '' ?>',
+        csrfToken: '<?= generateCsrfToken() ?>',
         redirectAfterLogin: '<?= $_GET['redirect'] ?? '' ?>'
     };
 </script>

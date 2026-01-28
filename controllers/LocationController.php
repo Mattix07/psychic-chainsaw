@@ -4,6 +4,11 @@
  * Gestisce creazione e modifica delle location da parte di promoter/admin/mod
  */
 
+require_once __DIR__ . '/../config/database_schema.php';
+require_once __DIR__ . '/../config/app_config.php';
+require_once __DIR__ . '/../config/messages.php';
+require_once __DIR__ . '/../lib/Validator.php';
+require_once __DIR__ . '/../lib/QueryBuilder.php';
 require_once __DIR__ . '/../models/Location.php';
 require_once __DIR__ . '/../models/Permessi.php';
 
@@ -95,9 +100,9 @@ function listLocations(PDO $pdo): void
 {
     requireRole(ROLE_PROMOTER);
 
-    $ruolo = $_SESSION['user_ruolo'] ?? 'user';
+    $ruolo = $_SESSION['user_ruolo'] ?? RUOLO_USER;
 
-    if (in_array($ruolo, ['admin', 'mod'])) {
+    if (in_array($ruolo, [RUOLO_ADMIN, RUOLO_MOD])) {
         // Admin e mod vedono tutto
         $locations = getAllLocations($pdo);
     } else {

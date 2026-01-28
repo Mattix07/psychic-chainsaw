@@ -7,6 +7,10 @@
  * Ogni ordine contiene uno o piu biglietti acquistati.
  */
 
+require_once __DIR__ . '/../config/app_config.php';
+require_once __DIR__ . '/../config/messages.php';
+require_once __DIR__ . '/../lib/Validator.php';
+require_once __DIR__ . '/../lib/QueryBuilder.php';
 require_once __DIR__ . '/../models/Ordine.php';
 require_once __DIR__ . '/../models/Biglietto.php';
 

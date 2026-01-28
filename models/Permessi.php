@@ -4,6 +4,8 @@
  * Gestisce i permessi per eventi, locations e manifestazioni
  */
 
+require_once __DIR__ . '/../config/database_schema.php';
+require_once __DIR__ . '/../lib/QueryBuilder.php';
 require_once __DIR__ . '/../lib/EmailService.php';
 
 /**
@@ -14,26 +16,26 @@ require_once __DIR__ . '/../lib/EmailService.php';
 function canEditEvento(PDO $pdo, int $userId, int $eventoId): bool
 {
     // Ottieni ruolo utente
-    $stmt = $pdo->prepare("SELECT ruolo FROM Utenti WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT " . COL_UTENTI_RUOLO . " FROM " . TABLE_UTENTI . " WHERE " . COL_UTENTI_ID . " = ?");
     $stmt->execute([$userId]);
     $ruolo = $stmt->fetchColumn();
 
     // Admin e mod possono modificare tutto
-    if ($ruolo === 'admin' || $ruolo === 'mod') {
+    if ($ruolo === RUOLO_ADMIN || $ruolo === RUOLO_MOD) {
         return true;
     }
 
     // Promoter può modificare solo se è il creatore o collaboratore
-    if ($ruolo === 'promoter') {
+    if ($ruolo === RUOLO_PROMOTER) {
         // Verifica se è il creatore
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM CreatoriEventi WHERE idEvento = ? AND idUtente = ?");
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM " . TABLE_CREATORI_EVENTI . " WHERE idEvento = ? AND idUtente = ?");
         $stmt->execute([$eventoId, $userId]);
         if ($stmt->fetchColumn() > 0) {
             return true;
         }
 
         // Verifica se è collaboratore con stato accepted
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM CollaboratoriEventi WHERE idEvento = ? AND idUtente = ? AND status = 'accepted'");
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM " . TABLE_COLLABORATORI_EVENTI . " WHERE idEvento = ? AND idUtente = ? AND " . COL_COLLABORATORI_EVENTI_STATUS . " = '" . STATUS_ACCEPTED . "'");
         $stmt->execute([$eventoId, $userId]);
         return $stmt->fetchColumn() > 0;
     }
@@ -46,16 +48,16 @@ function canEditEvento(PDO $pdo, int $userId, int $eventoId): bool
  */
 function canEditLocation(PDO $pdo, int $userId, int $locationId): bool
 {
-    $stmt = $pdo->prepare("SELECT ruolo FROM Utenti WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT " . COL_UTENTI_RUOLO . " FROM " . TABLE_UTENTI . " WHERE " . COL_UTENTI_ID . " = ?");
     $stmt->execute([$userId]);
     $ruolo = $stmt->fetchColumn();
 
-    if ($ruolo === 'admin' || $ruolo === 'mod') {
+    if ($ruolo === RUOLO_ADMIN || $ruolo === RUOLO_MOD) {
         return true;
     }
 
-    if ($ruolo === 'promoter') {
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM CreatoriLocations WHERE idLocation = ? AND idUtente = ?");
+    if ($ruolo === RUOLO_PROMOTER) {
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM " . TABLE_CREATORI_LOCATIONS . " WHERE idLocation = ? AND idUtente = ?");
         $stmt->execute([$locationId, $userId]);
         return $stmt->fetchColumn() > 0;
     }
@@ -68,16 +70,16 @@ function canEditLocation(PDO $pdo, int $userId, int $locationId): bool
  */
 function canEditManifestazione(PDO $pdo, int $userId, int $manifestazioneId): bool
 {
-    $stmt = $pdo->prepare("SELECT ruolo FROM Utenti WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT " . COL_UTENTI_RUOLO . " FROM " . TABLE_UTENTI . " WHERE " . COL_UTENTI_ID . " = ?");
     $stmt->execute([$userId]);
     $ruolo = $stmt->fetchColumn();
 
-    if ($ruolo === 'admin' || $ruolo === 'mod') {
+    if ($ruolo === RUOLO_ADMIN || $ruolo === RUOLO_MOD) {
         return true;
     }
 
-    if ($ruolo === 'promoter') {
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM CreatoriManifestazioni WHERE idManifestazione = ? AND idUtente = ?");
+    if ($ruolo === RUOLO_PROMOTER) {
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM " . TABLE_CREATORI_MANIFESTAZIONI . " WHERE idManifestazione = ? AND idUtente = ?");
         $stmt->execute([$manifestazioneId, $userId]);
         return $stmt->fetchColumn() > 0;
     }
@@ -91,7 +93,7 @@ function canEditManifestazione(PDO $pdo, int $userId, int $manifestazioneId): bo
 function registerEventoCreator(PDO $pdo, int $eventoId, int $userId): bool
 {
     try {
-        $stmt = $pdo->prepare("INSERT INTO CreatoriEventi (idEvento, idUtente) VALUES (?, ?)");
+        $stmt = $pdo->prepare("INSERT INTO " . TABLE_CREATORI_EVENTI . " (idEvento, idUtente) VALUES (?, ?)");
         return $stmt->execute([$eventoId, $userId]);
     } catch (Exception $e) {
         error_log("Errore registrazione creatore evento: " . $e->getMessage());
@@ -105,7 +107,7 @@ function registerEventoCreator(PDO $pdo, int $eventoId, int $userId): bool
 function registerLocationCreator(PDO $pdo, int $locationId, int $userId): bool
 {
     try {
-        $stmt = $pdo->prepare("INSERT INTO CreatoriLocations (idLocation, idUtente) VALUES (?, ?)");
+        $stmt = $pdo->prepare("INSERT INTO " . TABLE_CREATORI_LOCATIONS . " (idLocation, idUtente) VALUES (?, ?)");
         return $stmt->execute([$locationId, $userId]);
     } catch (Exception $e) {
         return false;
@@ -118,7 +120,7 @@ function registerLocationCreator(PDO $pdo, int $locationId, int $userId): bool
 function registerManifestazioneCreator(PDO $pdo, int $manifestazioneId, int $userId): bool
 {
     try {
-        $stmt = $pdo->prepare("INSERT INTO CreatoriManifestazioni (idManifestazione, idUtente) VALUES (?, ?)");
+        $stmt = $pdo->prepare("INSERT INTO " . TABLE_CREATORI_MANIFESTAZIONI . " (idManifestazione, idUtente) VALUES (?, ?)");
         return $stmt->execute([$manifestazioneId, $userId]);
     } catch (Exception $e) {
         return false;
@@ -131,11 +133,11 @@ function registerManifestazioneCreator(PDO $pdo, int $manifestazioneId, int $use
 function inviteCollaborator(PDO $pdo, int $eventoId, int $invitedUserId, int $invitedBy): bool
 {
     // Verifica che l'utente invitato sia un promoter
-    $stmt = $pdo->prepare("SELECT ruolo FROM Utenti WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT " . COL_UTENTI_RUOLO . " FROM " . TABLE_UTENTI . " WHERE " . COL_UTENTI_ID . " = ?");
     $stmt->execute([$invitedUserId]);
     $ruolo = $stmt->fetchColumn();
 
-    if ($ruolo !== 'promoter') {
+    if ($ruolo !== RUOLO_PROMOTER) {
         return false;
     }
 
@@ -144,13 +146,13 @@ function inviteCollaborator(PDO $pdo, int $eventoId, int $invitedUserId, int $in
 
     try {
         $stmt = $pdo->prepare("
-            INSERT INTO CollaboratoriEventi (idEvento, idUtente, invitato_da, token)
+            INSERT INTO " . TABLE_COLLABORATORI_EVENTI . " (idEvento, idUtente, " . COL_COLLABORATORI_EVENTI_INVITATO_DA . ", " . COL_COLLABORATORI_EVENTI_TOKEN . ")
             VALUES (?, ?, ?, ?)
         ");
         $stmt->execute([$eventoId, $invitedUserId, $invitedBy, $token]);
 
         // Invia email di invito
-        $stmtEvento = $pdo->prepare("SELECT Nome FROM Eventi WHERE id = ?");
+        $stmtEvento = $pdo->prepare("SELECT " . COL_EVENTI_NOME . " FROM " . TABLE_EVENTI . " WHERE " . COL_EVENTI_ID . " = ?");
         $stmtEvento->execute([$eventoId]);
         $nomeEvento = $stmtEvento->fetchColumn();
 
@@ -170,7 +172,7 @@ function inviteCollaborator(PDO $pdo, int $eventoId, int $invitedUserId, int $in
 function acceptCollaborationInvite(PDO $pdo, string $token): bool
 {
     try {
-        $stmt = $pdo->prepare("UPDATE CollaboratoriEventi SET status = 'accepted', updated_at = NOW() WHERE token = ? AND status = 'pending'");
+        $stmt = $pdo->prepare("UPDATE " . TABLE_COLLABORATORI_EVENTI . " SET " . COL_COLLABORATORI_EVENTI_STATUS . " = '" . STATUS_ACCEPTED . "', " . COL_COLLABORATORI_EVENTI_UPDATED_AT . " = NOW() WHERE " . COL_COLLABORATORI_EVENTI_TOKEN . " = ? AND " . COL_COLLABORATORI_EVENTI_STATUS . " = '" . STATUS_PENDING . "'");
         return $stmt->execute([$token]) && $stmt->rowCount() > 0;
     } catch (Exception $e) {
         return false;
@@ -183,7 +185,7 @@ function acceptCollaborationInvite(PDO $pdo, string $token): bool
 function declineCollaborationInvite(PDO $pdo, string $token): bool
 {
     try {
-        $stmt = $pdo->prepare("UPDATE CollaboratoriEventi SET status = 'declined', updated_at = NOW() WHERE token = ? AND status = 'pending'");
+        $stmt = $pdo->prepare("UPDATE " . TABLE_COLLABORATORI_EVENTI . " SET " . COL_COLLABORATORI_EVENTI_STATUS . " = '" . STATUS_DECLINED . "', " . COL_COLLABORATORI_EVENTI_UPDATED_AT . " = NOW() WHERE " . COL_COLLABORATORI_EVENTI_TOKEN . " = ? AND " . COL_COLLABORATORI_EVENTI_STATUS . " = '" . STATUS_PENDING . "'");
         return $stmt->execute([$token]) && $stmt->rowCount() > 0;
     } catch (Exception $e) {
         return false;
@@ -196,13 +198,13 @@ function declineCollaborationInvite(PDO $pdo, string $token): bool
 function getEventCollaborators(PDO $pdo, int $eventoId): array
 {
     $stmt = $pdo->prepare("
-        SELECT u.id, u.Nome, u.Cognome, u.Email, ce.status, ce.created_at,
-               inviter.Nome as InvitatoDaNome, inviter.Cognome as InvitatoDaCognome
-        FROM CollaboratoriEventi ce
-        JOIN Utenti u ON ce.idUtente = u.id
-        JOIN Utenti inviter ON ce.invitato_da = inviter.id
+        SELECT u." . COL_UTENTI_ID . ", u." . COL_UTENTI_NOME . ", u." . COL_UTENTI_COGNOME . ", u." . COL_UTENTI_EMAIL . ", ce." . COL_COLLABORATORI_EVENTI_STATUS . ", ce." . COL_COLLABORATORI_EVENTI_CREATED_AT . ",
+               inviter." . COL_UTENTI_NOME . " as InvitatoDaNome, inviter." . COL_UTENTI_COGNOME . " as InvitatoDaCognome
+        FROM " . TABLE_COLLABORATORI_EVENTI . " ce
+        JOIN " . TABLE_UTENTI . " u ON ce.idUtente = u." . COL_UTENTI_ID . "
+        JOIN " . TABLE_UTENTI . " inviter ON ce." . COL_COLLABORATORI_EVENTI_INVITATO_DA . " = inviter." . COL_UTENTI_ID . "
         WHERE ce.idEvento = ?
-        ORDER BY ce.created_at DESC
+        ORDER BY ce." . COL_COLLABORATORI_EVENTI_CREATED_AT . " DESC
     ");
     $stmt->execute([$eventoId]);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -214,9 +216,9 @@ function getEventCollaborators(PDO $pdo, int $eventoId): array
 function getEventCreator(PDO $pdo, int $eventoId): ?array
 {
     $stmt = $pdo->prepare("
-        SELECT u.id, u.Nome, u.Cognome, u.Email
-        FROM CreatoriEventi ce
-        JOIN Utenti u ON ce.idUtente = u.id
+        SELECT u." . COL_UTENTI_ID . ", u." . COL_UTENTI_NOME . ", u." . COL_UTENTI_COGNOME . ", u." . COL_UTENTI_EMAIL . "
+        FROM " . TABLE_CREATORI_EVENTI . " ce
+        JOIN " . TABLE_UTENTI . " u ON ce.idUtente = u." . COL_UTENTI_ID . "
         WHERE ce.idEvento = ?
         LIMIT 1
     ");
@@ -232,18 +234,18 @@ function notifyEventModification(PDO $pdo, int $eventoId, int $modifiedBy, array
 {
     // Ottieni il creatore
     $creator = getEventCreator($pdo, $eventoId);
-    if (!$creator || $creator['id'] == $modifiedBy) {
+    if (!$creator || $creator[COL_UTENTI_ID] == $modifiedBy) {
         return; // Non notificare se è il creatore stesso a modificare
     }
 
     // Ottieni info evento
-    $stmt = $pdo->prepare("SELECT Nome FROM Eventi WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT " . COL_EVENTI_NOME . " FROM " . TABLE_EVENTI . " WHERE " . COL_EVENTI_ID . " = ?");
     $stmt->execute([$eventoId]);
     $nomeEvento = $stmt->fetchColumn();
 
     // Invia email
     $emailService = new EmailService($pdo, false);
-    $emailService->sendEventModifiedNotification($creator['id'], $modifiedBy, $eventoId, $nomeEvento, $modifiche);
+    $emailService->sendEventModifiedNotification($creator[COL_UTENTI_ID], $modifiedBy, $eventoId, $nomeEvento, $modifiche);
 }
 
 /**
@@ -252,13 +254,13 @@ function notifyEventModification(PDO $pdo, int $eventoId, int $modifiedBy, array
 function getEventiCreatiDaUtente(PDO $pdo, int $userId): array
 {
     $stmt = $pdo->prepare("
-        SELECT e.*, l.Nome as LocationNome, m.Nome as ManifestazioneName
-        FROM Eventi e
-        JOIN CreatoriEventi ce ON e.id = ce.idEvento
-        JOIN Locations l ON e.idLocation = l.id
-        JOIN Manifestazioni m ON e.idManifestazione = m.id
+        SELECT e.*, l." . COL_LOCATIONS_NOME . " as LocationNome, m." . COL_MANIFESTAZIONI_NOME . " as ManifestazioneName
+        FROM " . TABLE_EVENTI . " e
+        JOIN " . TABLE_CREATORI_EVENTI . " ce ON e." . COL_EVENTI_ID . " = ce.idEvento
+        JOIN " . TABLE_LOCATIONS . " l ON e." . COL_EVENTI_ID_LOCATION . " = l." . COL_LOCATIONS_ID . "
+        JOIN " . TABLE_MANIFESTAZIONI . " m ON e." . COL_EVENTI_ID_MANIFESTAZIONE . " = m." . COL_MANIFESTAZIONI_ID . "
         WHERE ce.idUtente = ?
-        ORDER BY e.Data DESC
+        ORDER BY e." . COL_EVENTI_DATA . " DESC
     ");
     $stmt->execute([$userId]);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -270,13 +272,13 @@ function getEventiCreatiDaUtente(PDO $pdo, int $userId): array
 function getEventiCollaborazione(PDO $pdo, int $userId): array
 {
     $stmt = $pdo->prepare("
-        SELECT e.*, l.Nome as LocationNome, m.Nome as ManifestazioneName
-        FROM Eventi e
-        JOIN CollaboratoriEventi ce ON e.id = ce.idEvento
-        JOIN Locations l ON e.idLocation = l.id
-        JOIN Manifestazioni m ON e.idManifestazione = m.id
-        WHERE ce.idUtente = ? AND ce.status = 'accepted'
-        ORDER BY e.Data DESC
+        SELECT e.*, l." . COL_LOCATIONS_NOME . " as LocationNome, m." . COL_MANIFESTAZIONI_NOME . " as ManifestazioneName
+        FROM " . TABLE_EVENTI . " e
+        JOIN " . TABLE_COLLABORATORI_EVENTI . " ce ON e." . COL_EVENTI_ID . " = ce.idEvento
+        JOIN " . TABLE_LOCATIONS . " l ON e." . COL_EVENTI_ID_LOCATION . " = l." . COL_LOCATIONS_ID . "
+        JOIN " . TABLE_MANIFESTAZIONI . " m ON e." . COL_EVENTI_ID_MANIFESTAZIONE . " = m." . COL_MANIFESTAZIONI_ID . "
+        WHERE ce.idUtente = ? AND ce." . COL_COLLABORATORI_EVENTI_STATUS . " = '" . STATUS_ACCEPTED . "'
+        ORDER BY e." . COL_EVENTI_DATA . " DESC
     ");
     $stmt->execute([$userId]);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -289,10 +291,10 @@ function getLocationsCreatoDaPromoter(PDO $pdo, int $userId): array
 {
     $stmt = $pdo->prepare("
         SELECT l.*
-        FROM Locations l
-        JOIN CreatoriLocations cl ON l.id = cl.idLocation
+        FROM " . TABLE_LOCATIONS . " l
+        JOIN " . TABLE_CREATORI_LOCATIONS . " cl ON l." . COL_LOCATIONS_ID . " = cl.idLocation
         WHERE cl.idUtente = ?
-        ORDER BY l.Nome
+        ORDER BY l." . COL_LOCATIONS_NOME . "
     ");
     $stmt->execute([$userId]);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -305,10 +307,10 @@ function getManifestazioniCreateDaPromoter(PDO $pdo, int $userId): array
 {
     $stmt = $pdo->prepare("
         SELECT m.*
-        FROM Manifestazioni m
-        JOIN CreatoriManifestazioni cm ON m.id = cm.idManifestazione
+        FROM " . TABLE_MANIFESTAZIONI . " m
+        JOIN " . TABLE_CREATORI_MANIFESTAZIONI . " cm ON m." . COL_MANIFESTAZIONI_ID . " = cm.idManifestazione
         WHERE cm.idUtente = ?
-        ORDER BY m.Nome
+        ORDER BY m." . COL_MANIFESTAZIONI_NOME . "
     ");
     $stmt->execute([$userId]);
     return $stmt->fetchAll(PDO::FETCH_ASSOC);

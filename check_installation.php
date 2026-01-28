@@ -185,17 +185,36 @@ if (!in_array($_SERVER['REMOTE_ADDR'], ['127.0.0.1', '::1'])) {
         <h2>📁 File e Directory</h2>
         <?php
         $files = [
+            // Config files
             'config/database.php' => 'File di configurazione database',
+            'config/database_schema.php' => 'Schema database centralizzato',
+            'config/app_config.php' => 'Configurazione applicazione',
+            'config/messages.php' => 'Messaggi centralizzati',
+            'config/helpers.php' => 'Funzioni helper globali',
+
+            // Lib files
+            'lib/QueryBuilder.php' => 'Query Builder fluent interface',
+            'lib/Validator.php' => 'Sistema validazione',
+            'lib/EmailService.php' => 'Servizio email',
+
+            // Models
             'models/Permessi.php' => 'Model sistema permessi',
             'models/EventoSettori.php' => 'Model gestione settori',
             'models/Settore.php' => 'Model settori',
+
+            // Controllers
             'controllers/CollaborazioneController.php' => 'Controller collaborazioni',
             'controllers/AvatarController.php' => 'Controller avatar',
-            'lib/EmailService.php' => 'Servizio email',
-            'cron/auto_delete_old_events.php' => 'Script auto-eliminazione',
-            'public/css/mobile.css' => 'CSS responsive mobile',
+            'controllers/CartController.php' => 'Controller carrello',
+
+            // Migrations
             'db/migrations/001_add_collaboration_system.sql' => 'Migration database',
             'db/reset_to_production_state.sql' => 'Script reset database',
+
+            // Documentation
+            'ARCHITECTURE.md' => 'Documentazione architettura',
+            'INTEGRATION_SUMMARY.md' => 'Riepilogo integrazione helpers',
+            'FUNCTION_CONFLICT_PREVENTION.md' => 'Guida prevenzione conflitti',
         ];
 
         foreach ($files as $file => $desc) {
@@ -233,22 +252,23 @@ if (!in_array($_SERVER['REMOTE_ADDR'], ['127.0.0.1', '::1'])) {
             addCheck(
                 'Connessione PDO',
                 'ok',
-                'Connesso a ' . DB_NAME,
+                'Connesso a ' . env('DB_NAME'),
                 'Database raggiungibile'
             );
 
             // Verifica tabelle
             $requiredTables = [
-                'Utenti', 'Eventi', 'Location', 'Settori', 'Biglietti',
+                'Utenti', 'Eventi', 'Locations', 'Settori', 'Biglietti',
                 'CreatoriEventi', 'CollaboratoriEventi', 'EventiSettori',
                 'Notifiche', 'Manifestazioni', 'Intrattenitore'
             ];
 
             $stmt = $pdo->query("SHOW TABLES");
-            $existingTables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            $tablesResult = $stmt->fetchAll(PDO::FETCH_NUM);
+            $existingTables = array_map(fn($row) => strtolower($row[0]), $tablesResult);
 
             foreach ($requiredTables as $table) {
-                $exists = in_array($table, $existingTables);
+                $exists = in_array(strtolower($table), $existingTables);
                 addCheck(
                     "Tabella $table",
                     $exists ? 'ok' : 'fail',
@@ -266,10 +286,10 @@ if (!in_array($_SERVER['REMOTE_ADDR'], ['127.0.0.1', '::1'])) {
 
             foreach ($newColumns as $table => $columns) {
                 $stmt = $pdo->query("DESCRIBE $table");
-                $existingCols = $stmt->fetchAll(PDO::FETCH_COLUMN);
+                $existingCols = array_map('strtolower', $stmt->fetchAll(PDO::FETCH_COLUMN));
 
                 foreach ($columns as $col) {
-                    $exists = in_array($col, $existingCols);
+                    $exists = in_array(strtolower($col), $existingCols);
                     addCheck(
                         "Colonna $table.$col",
                         $exists ? 'ok' : 'fail',
@@ -290,28 +310,158 @@ if (!in_array($_SERVER['REMOTE_ADDR'], ['127.0.0.1', '::1'])) {
         ?>
     </div>
 
-    <!-- VERIFICA FUNZIONI -->
+    <!-- VERIFICA HELPER SYSTEMS -->
     <div class="section">
-        <h2>⚙️ Funzioni e Classi</h2>
+        <h2>🛠️ Helper Systems (Nuovi)</h2>
+        <?php
+        // Test caricamento helper systems
+        $helperSystemsLoaded = true;
+        $loadErrors = [];
+
+        try {
+            // Tenta di caricare tutti i helper systems
+            if (!defined('TABLE_UTENTI')) {
+                require_once __DIR__ . '/config/database_schema.php';
+            }
+            if (!defined('APP_NAME')) {
+                require_once __DIR__ . '/config/app_config.php';
+            }
+            if (!defined('MSG_SUCCESS_LOGIN')) {
+                require_once __DIR__ . '/config/messages.php';
+            }
+            if (!function_exists('e')) {
+                require_once __DIR__ . '/config/helpers.php';
+            }
+            if (!class_exists('QueryBuilder')) {
+                require_once __DIR__ . '/lib/QueryBuilder.php';
+            }
+            if (!class_exists('Validator')) {
+                require_once __DIR__ . '/lib/Validator.php';
+            }
+
+            addCheck(
+                'Caricamento Helper Systems',
+                'ok',
+                'Tutti i file helper caricati',
+                'Nessun conflitto di ridichiarazione'
+            );
+        } catch (Throwable $e) {
+            $helperSystemsLoaded = false;
+            addCheck(
+                'Caricamento Helper Systems',
+                'fail',
+                'Errore: ' . $e->getMessage(),
+                'Verificare i file di configurazione'
+            );
+        }
+
+        if ($helperSystemsLoaded) {
+            // Verifica costanti database_schema
+            $schemaConstants = ['TABLE_UTENTI', 'TABLE_EVENTI', 'COL_UTENTI_ID', 'RUOLO_ADMIN'];
+            foreach ($schemaConstants as $const) {
+                $exists = defined($const);
+                addCheck(
+                    "Costante $const",
+                    $exists ? 'ok' : 'fail',
+                    'database_schema.php',
+                    $exists ? 'Definita' : 'Mancante'
+                );
+            }
+
+            // Verifica costanti app_config
+            $appConstants = ['APP_NAME', 'PASSWORD_MIN_LENGTH', 'MAX_TICKETS_PER_ORDER'];
+            foreach ($appConstants as $const) {
+                $exists = defined($const);
+                addCheck(
+                    "Costante $const",
+                    $exists ? 'ok' : 'fail',
+                    'app_config.php',
+                    $exists ? 'Definita' : 'Mancante'
+                );
+            }
+
+            // Verifica costanti messages
+            $msgConstants = ['MSG_SUCCESS_LOGIN', 'ERR_INVALID_CSRF', 'ERR_PERMISSION_DENIED'];
+            foreach ($msgConstants as $const) {
+                $exists = defined($const);
+                addCheck(
+                    "Costante $const",
+                    $exists ? 'ok' : 'fail',
+                    'messages.php',
+                    $exists ? 'Definita' : 'Mancante'
+                );
+            }
+
+            // Verifica funzioni helper
+            $helperFunctions = [
+                'formatDate' => 'helpers.php',
+                'formatTime' => 'helpers.php',
+                'sanitize' => 'helpers.php',
+                'message' => 'messages.php',
+                'setSuccessMessage' => 'messages.php',
+                'apiSuccess' => 'messages.php',
+                'table' => 'QueryBuilder.php',
+                'validate' => 'Validator.php'
+            ];
+
+            foreach ($helperFunctions as $func => $file) {
+                $exists = function_exists($func);
+                addCheck(
+                    "Funzione $func()",
+                    $exists ? 'ok' : 'fail',
+                    $file,
+                    $exists ? 'Definita e protetta' : 'Mancante'
+                );
+            }
+
+            // Verifica classi
+            $classes = ['QueryBuilder', 'Validator'];
+            foreach ($classes as $class) {
+                $exists = class_exists($class);
+                addCheck(
+                    "Classe $class",
+                    $exists ? 'ok' : 'fail',
+                    '',
+                    $exists ? 'Definita correttamente' : 'Classe mancante'
+                );
+            }
+        }
+        ?>
+    </div>
+
+    <!-- VERIFICA FUNZIONI MODELLI -->
+    <div class="section">
+        <h2>⚙️ Funzioni Modelli</h2>
         <?php
         // Carica i file necessari
         $functionFiles = [
             'models/Permessi.php' => ['canEditEvento', 'inviteCollaborator', 'registerEventoCreator'],
             'models/EventoSettori.php' => ['setEventoSettori', 'getEventoSettori'],
-            'models/Settore.php' => ['getAllSettori', 'getSettoriByLocation'],
+            'models/Settore.php' => ['getAllSettori', 'getSettoreById', 'createSettore'],
+            'models/Utente.php' => ['getAllUtenti', 'getUtenteById', 'createUtente'],
+            'models/Location.php' => ['getAllLocations', 'getLocationById', 'getSettoriByLocation'],
         ];
 
         foreach ($functionFiles as $file => $functions) {
             if (file_exists(__DIR__ . '/' . $file)) {
-                require_once __DIR__ . '/' . $file;
+                try {
+                    require_once __DIR__ . '/' . $file;
 
-                foreach ($functions as $func) {
-                    $exists = function_exists($func);
+                    foreach ($functions as $func) {
+                        $exists = function_exists($func);
+                        addCheck(
+                            "Funzione $func()",
+                            $exists ? 'ok' : 'fail',
+                            "in $file",
+                            $exists ? 'Definita' : 'Funzione mancante'
+                        );
+                    }
+                } catch (Throwable $e) {
                     addCheck(
-                        "Funzione $func()",
-                        $exists ? 'ok' : 'fail',
-                        "in $file",
-                        $exists ? 'Definita' : 'Funzione mancante'
+                        "Caricamento $file",
+                        'fail',
+                        'Errore: ' . $e->getMessage(),
+                        'Verificare il file'
                     );
                 }
             }
@@ -319,14 +469,23 @@ if (!in_array($_SERVER['REMOTE_ADDR'], ['127.0.0.1', '::1'])) {
 
         // Verifica classe EmailService
         if (file_exists(__DIR__ . '/lib/EmailService.php')) {
-            require_once __DIR__ . '/lib/EmailService.php';
-            $classExists = class_exists('EmailService');
-            addCheck(
-                'Classe EmailService',
-                $classExists ? 'ok' : 'fail',
-                '',
-                $classExists ? 'Definita correttamente' : 'Classe mancante'
-            );
+            try {
+                require_once __DIR__ . '/lib/EmailService.php';
+                $classExists = class_exists('EmailService');
+                addCheck(
+                    'Classe EmailService',
+                    $classExists ? 'ok' : 'fail',
+                    '',
+                    $classExists ? 'Definita correttamente' : 'Classe mancante'
+                );
+            } catch (Throwable $e) {
+                addCheck(
+                    'Classe EmailService',
+                    'fail',
+                    'Errore: ' . $e->getMessage(),
+                    'Verificare lib/EmailService.php'
+                );
+            }
         }
         ?>
     </div>
@@ -377,6 +536,47 @@ if (!in_array($_SERVER['REMOTE_ADDR'], ['127.0.0.1', '::1'])) {
         <?php endif; ?>
     <?php endforeach; ?>
 
+    <!-- TEST CONFLITTI FUNZIONI -->
+    <div class="section">
+        <h2>🔍 Test Conflitti Funzioni</h2>
+        <?php
+        // Esegui test_conflicts.php se esiste
+        if (file_exists(__DIR__ . '/test_conflicts.php')) {
+            addCheck(
+                'Script test_conflicts.php',
+                'ok',
+                'File presente',
+                'Eseguire manualmente: php test_conflicts.php'
+            );
+        } else {
+            addCheck(
+                'Script test_conflicts.php',
+                'warn',
+                'File non trovato',
+                'Opzionale - Per testare conflitti di ridichiarazione'
+            );
+        }
+
+        // Verifica documentazione
+        $docs = [
+            'ARCHITECTURE.md' => 'Documentazione architettura completa',
+            'INTEGRATION_SUMMARY.md' => 'Riepilogo integrazione helper systems',
+            'FUNCTION_CONFLICT_PREVENTION.md' => 'Guida prevenzione conflitti',
+            'CONFLICT_FIX_SUMMARY.md' => 'Riepilogo correzioni conflitti'
+        ];
+
+        foreach ($docs as $doc => $desc) {
+            $exists = file_exists(__DIR__ . '/' . $doc);
+            addCheck(
+                $doc,
+                $exists ? 'ok' : 'warn',
+                $desc,
+                $exists ? 'Documentazione presente' : 'Documentazione mancante (opzionale)'
+            );
+        }
+        ?>
+    </div>
+
     <!-- AZIONI CONSIGLIATE -->
     <div class="section">
         <h2>💡 Prossimi Passi</h2>
@@ -386,21 +586,46 @@ if (!in_array($_SERVER['REMOTE_ADDR'], ['127.0.0.1', '::1'])) {
                 <li>Se mancano tabelle/colonne: eseguire <code>db/migrations/001_add_collaboration_system.sql</code></li>
                 <li>Se manca config/database.php: copiare da config/database.example.php e configurare</li>
                 <li>Se mancano file PHP: verificare che tutti i file siano stati caricati</li>
+                <li>Se ci sono errori di caricamento helper: verificare <code>FUNCTION_CONFLICT_PREVENTION.md</code></li>
+                <li>Eseguire test conflitti: <code>php test_conflicts.php</code></li>
             </ol>
         <?php else: ?>
             <p><strong>✅ Sistema pronto! Puoi procedere con:</strong></p>
             <ol>
+                <li>Testare i conflitti: <code>php test_conflicts.php</code></li>
                 <li>Popolare il database: <a href="db/reset_database.php">db/reset_database.php</a></li>
                 <li>Testare il sistema: <a href="index.php">Homepage</a></li>
                 <li>Login come admin: <a href="index.php?action=show_login">Accedi</a> con <code>admin@eventsmaster.it</code> / <code>password123</code></li>
-                <li>Verificare tutte le funzionalità: consultare <code>TESTING.md</code></li>
+                <li>Consultare la documentazione:
+                    <ul>
+                        <li><code>ARCHITECTURE.md</code> - Architettura completa</li>
+                        <li><code>INTEGRATION_SUMMARY.md</code> - Riepilogo helper systems</li>
+                        <li><code>FUNCTION_CONFLICT_PREVENTION.md</code> - Best practices</li>
+                    </ul>
+                </li>
             </ol>
         <?php endif; ?>
+
+        <div style="margin-top: 20px; padding: 15px; background: #e8f4f8; border-left: 4px solid #3498db; border-radius: 4px;">
+            <strong>📚 Novità Helper Systems:</strong>
+            <ul style="margin: 10px 0; padding-left: 20px;">
+                <li><strong>database_schema.php</strong> - Costanti centralizzate per tabelle e colonne</li>
+                <li><strong>app_config.php</strong> - Configurazione applicazione centralizzata</li>
+                <li><strong>messages.php</strong> - Messaggi e risposte API standardizzate</li>
+                <li><strong>QueryBuilder</strong> - Interfaccia fluent per query database</li>
+                <li><strong>Validator</strong> - Sistema validazione riutilizzabile</li>
+            </ul>
+            <p style="margin: 10px 0 0 0; font-size: 0.9em;">
+                Tutti i controller e models sono stati aggiornati per utilizzare questi sistemi.
+                Consulta <code>INTEGRATION_SUMMARY.md</code> per i dettagli.
+            </p>
+        </div>
     </div>
 
     <div style="text-align: center; margin-top: 40px; color: #7f8c8d;">
-        <p>EventsMaster v1.0 - Sistema di Biglietteria Eventi</p>
-        <p style="font-size: 0.9em;">Questo script è disponibile solo su localhost per sicurezza</p>
+        <p><strong>EventsMaster v2.0</strong> - Sistema di Biglietteria Eventi</p>
+        <p style="font-size: 0.9em;">Con Helper Systems integrati: QueryBuilder, Validator, Centralized Config</p>
+        <p style="font-size: 0.85em; margin-top: 10px;">Questo script è disponibile solo su localhost per sicurezza</p>
     </div>
 </body>
 </html>

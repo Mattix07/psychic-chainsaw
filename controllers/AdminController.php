@@ -7,6 +7,11 @@
  * di autorizzazione per ogni funzione sensibile.
  */
 
+require_once __DIR__ . '/../config/database_schema.php';
+require_once __DIR__ . '/../config/app_config.php';
+require_once __DIR__ . '/../config/messages.php';
+require_once __DIR__ . '/../lib/Validator.php';
+require_once __DIR__ . '/../lib/QueryBuilder.php';
 require_once __DIR__ . '/../models/Utente.php';
 require_once __DIR__ . '/../models/Evento.php';
 require_once __DIR__ . '/../models/Ordine.php';
@@ -22,13 +27,13 @@ require_once __DIR__ . '/../lib/EmailService.php';
 function requireRole(string $role): void
 {
     if (!isLoggedIn()) {
-        $_SESSION['error'] = 'Devi effettuare il login.';
+        setErrorMessage(ERR_LOGIN_REQUIRED);
         header('Location: index.php?action=show_login');
         exit;
     }
 
     if (!hasRole($role)) {
-        $_SESSION['error'] = 'Non hai i permessi per accedere a questa area.';
+        setErrorMessage(ERR_PERMISSION_DENIED);
         header('Location: index.php');
         exit;
     }
@@ -87,25 +92,38 @@ function adminUpdateUserRole(PDO $pdo): void
     requireRole(ROLE_ADMIN);
 
     if (!verifyCsrf()) {
-        $_SESSION['error'] = 'Token non valido.';
+        setErrorMessage(ERR_INVALID_CSRF);
         header('Location: index.php?action=admin_users');
         exit;
     }
 
-    $userId = (int) ($_POST['user_id'] ?? 0);
-    $newRole = $_POST['role'] ?? '';
+    // Validazione con Validator
+    $validator = validate($_POST)
+        ->required('user_id')
+        ->numeric('user_id')
+        ->required('role')
+        ->in('role', [RUOLO_USER, RUOLO_PROMOTER, RUOLO_MOD, RUOLO_ADMIN]);
+
+    if ($validator->fails()) {
+        setErrorMessage($validator->firstError());
+        header('Location: index.php?action=admin_users');
+        exit;
+    }
+
+    $userId = (int) $_POST['user_id'];
+    $newRole = $_POST['role'];
 
     // Protezione: non permettere modifica del proprio ruolo
     if ($userId === $_SESSION['user_id']) {
-        $_SESSION['error'] = 'Non puoi modificare il tuo stesso ruolo.';
+        setErrorMessage(ERR_CANNOT_MODIFY_SELF);
         header('Location: index.php?action=admin_users');
         exit;
     }
 
     if (setUserRole($pdo, $userId, $newRole)) {
-        $_SESSION['msg'] = 'Ruolo aggiornato con successo.';
+        setSuccessMessage(MSG_SUCCESS_USER_ROLE_UPDATED);
     } else {
-        $_SESSION['error'] = 'Errore durante l\'aggiornamento del ruolo.';
+        setErrorMessage(ERR_GENERIC);
     }
 
     header('Location: index.php?action=admin_users');
@@ -121,24 +139,35 @@ function adminDeleteUser(PDO $pdo): void
     requireRole(ROLE_ADMIN);
 
     if (!verifyCsrf()) {
-        $_SESSION['error'] = 'Token non valido.';
+        setErrorMessage(ERR_INVALID_CSRF);
         header('Location: index.php?action=admin_users');
         exit;
     }
 
-    $userId = (int) ($_POST['user_id'] ?? 0);
+    // Validazione con Validator
+    $validator = validate($_POST)
+        ->required('user_id')
+        ->numeric('user_id');
+
+    if ($validator->fails()) {
+        setErrorMessage($validator->firstError());
+        header('Location: index.php?action=admin_users');
+        exit;
+    }
+
+    $userId = (int) $_POST['user_id'];
 
     // Protezione: non permettere auto-eliminazione
     if ($userId === $_SESSION['user_id']) {
-        $_SESSION['error'] = 'Non puoi eliminare il tuo stesso account.';
+        setErrorMessage(ERR_CANNOT_DELETE_SELF);
         header('Location: index.php?action=admin_users');
         exit;
     }
 
     if (deleteUtente($pdo, $userId)) {
-        $_SESSION['msg'] = 'Utente eliminato con successo.';
+        setSuccessMessage(MSG_SUCCESS_USER_DELETED);
     } else {
-        $_SESSION['error'] = 'Errore durante l\'eliminazione dell\'utente.';
+        setErrorMessage(ERR_GENERIC);
     }
 
     header('Location: index.php?action=admin_users');
@@ -169,28 +198,37 @@ function adminCreateEvent(PDO $pdo): void
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!verifyCsrf()) {
-            $_SESSION['error'] = 'Token non valido.';
+            setErrorMessage(ERR_INVALID_CSRF);
             header('Location: index.php?action=admin_events');
             exit;
         }
 
+        // Validazione con Validator
+        $validator = validate($_POST)
+            ->required('nome')
+            ->required('data')
+            ->date('data')
+            ->future('data')
+            ->required('location')
+            ->numeric('location');
+
+        if ($validator->fails()) {
+            setErrorMessage($validator->firstError());
+            header('Location: index.php?action=admin_create_event');
+            exit;
+        }
+
         $data = [
-            'Nome' => sanitize($_POST['nome'] ?? ''),
-            'Data' => $_POST['data'] ?? '',
+            'Nome' => sanitize($_POST['nome']),
+            'Data' => $_POST['data'],
             'OraI' => $_POST['ora_inizio'] ?? '',
             'OraF' => $_POST['ora_fine'] ?? '',
             'Programma' => sanitize($_POST['programma'] ?? ''),
             'PrezzoNoMod' => (float) ($_POST['prezzo'] ?? 0),
-            'idLocation' => (int) ($_POST['location'] ?? 0),
+            'idLocation' => (int) $_POST['location'],
             'idManifestazione' => (int) ($_POST['manifestazione'] ?? 0) ?: null,
             'Immagine' => sanitize($_POST['immagine'] ?? '')
         ];
-
-        if (empty($data['Nome']) || empty($data['Data'])) {
-            $_SESSION['error'] = 'Nome e data sono obbligatori.';
-            header('Location: index.php?action=admin_create_event');
-            exit;
-        }
 
         try {
             require_once __DIR__ . '/../models/EventoSettori.php';
@@ -212,11 +250,11 @@ function adminCreateEvent(PDO $pdo): void
 
             $pdo->commit();
 
-            $_SESSION['msg'] = 'Evento creato con successo.';
+            setSuccessMessage(MSG_SUCCESS_EVENT_CREATED);
             header('Location: index.php?action=admin_events');
         } catch (Exception $e) {
             $pdo->rollBack();
-            $_SESSION['error'] = 'Errore durante la creazione dell\'evento: ' . $e->getMessage();
+            setErrorMessage(ERR_GENERIC);
             header('Location: index.php?action=admin_create_event');
         }
         exit;
@@ -240,17 +278,28 @@ function adminDeleteEvent(PDO $pdo): void
     requireRole(ROLE_MOD);
 
     if (!verifyCsrf()) {
-        $_SESSION['error'] = 'Token non valido.';
+        setErrorMessage(ERR_INVALID_CSRF);
         header('Location: index.php?action=admin_events');
         exit;
     }
 
-    $eventoId = (int) ($_POST['evento_id'] ?? 0);
+    // Validazione con Validator
+    $validator = validate($_POST)
+        ->required('evento_id')
+        ->numeric('evento_id');
+
+    if ($validator->fails()) {
+        setErrorMessage($validator->firstError());
+        header('Location: index.php?action=admin_events');
+        exit;
+    }
+
+    $eventoId = (int) $_POST['evento_id'];
 
     if (deleteEvento($pdo, $eventoId)) {
-        $_SESSION['msg'] = 'Evento eliminato con successo.';
+        setSuccessMessage(MSG_SUCCESS_EVENT_DELETED);
     } else {
-        $_SESSION['error'] = 'Errore durante l\'eliminazione dell\'evento.';
+        setErrorMessage(ERR_GENERIC);
     }
 
     header('Location: index.php?action=admin_events');
@@ -311,7 +360,7 @@ function showModDashboard(PDO $pdo): void
  */
 function countEventi(PDO $pdo): int
 {
-    return (int) $pdo->query("SELECT COUNT(*) FROM Eventi")->fetchColumn();
+    return table($pdo, TABLE_EVENTI)->count();
 }
 
 /**
@@ -319,7 +368,9 @@ function countEventi(PDO $pdo): int
  */
 function countEventiFuturi(PDO $pdo): int
 {
-    return (int) $pdo->query("SELECT COUNT(*) FROM Eventi WHERE Data >= CURDATE()")->fetchColumn();
+    return table($pdo, TABLE_EVENTI)
+        ->where(COL_EVENTI_DATA . ' >= CURDATE()')
+        ->count();
 }
 
 /**
@@ -327,7 +378,7 @@ function countEventiFuturi(PDO $pdo): int
  */
 function countOrdini(PDO $pdo): int
 {
-    return (int) $pdo->query("SELECT COUNT(*) FROM Ordini")->fetchColumn();
+    return table($pdo, TABLE_ORDINI)->count();
 }
 
 /**
@@ -335,7 +386,7 @@ function countOrdini(PDO $pdo): int
  */
 function countRecensioni(PDO $pdo): int
 {
-    return (int) $pdo->query("SELECT COUNT(*) FROM Recensioni")->fetchColumn();
+    return table($pdo, TABLE_RECENSIONI)->count();
 }
 
 /**
@@ -347,11 +398,11 @@ function countRecensioni(PDO $pdo): int
 function getAllEventiAdmin(PDO $pdo): array
 {
     return $pdo->query("
-        SELECT e.*, l.Nome as LocationName, m.Nome as ManifestazioneName
-        FROM Eventi e
-        LEFT JOIN Locations l ON e.idLocation = l.id
-        LEFT JOIN Manifestazioni m ON e.idManifestazione = m.id
-        ORDER BY e.Data DESC
+        SELECT e.*, l." . COL_LOCATIONS_NOME . " as LocationName, m." . COL_MANIFESTAZIONI_NOME . " as ManifestazioneName
+        FROM " . TABLE_EVENTI . " e
+        LEFT JOIN " . TABLE_LOCATIONS . " l ON e." . COL_EVENTI_ID_LOCATION . " = l." . COL_LOCATIONS_ID . "
+        LEFT JOIN " . TABLE_MANIFESTAZIONI . " m ON e." . COL_EVENTI_ID_MANIFESTAZIONE . " = m." . COL_MANIFESTAZIONI_ID . "
+        ORDER BY e." . COL_EVENTI_DATA . " DESC
     ")->fetchAll();
 }
 
@@ -366,29 +417,31 @@ function getAllEventiAdmin(PDO $pdo): array
 function deleteBigliettiEventoApi(PDO $pdo): void
 {
     if (!isLoggedIn() || !hasRole(ROLE_ADMIN)) {
-        jsonResponse(['error' => 'Accesso negato'], 403);
+        jsonResponse(apiError(ERR_PERMISSION_DENIED, 403));
         return;
     }
 
     if (!verifyCsrf()) {
-        jsonResponse(['error' => 'Token CSRF non valido'], 403);
+        jsonResponse(apiError(ERR_INVALID_CSRF, 403));
         return;
     }
 
-    $idEvento = (int)($_POST['idEvento'] ?? 0);
-    if (!$idEvento) {
-        jsonResponse(['error' => 'ID evento mancante'], 400);
+    $validator = validate($_POST)->required('idEvento')->numeric('idEvento');
+    if ($validator->fails()) {
+        jsonResponse(apiError($validator->firstError(), 400));
         return;
     }
+
+    $idEvento = (int) $_POST['idEvento'];
 
     try {
-        $stmt = $pdo->prepare("DELETE FROM Biglietti WHERE idEvento = ?");
-        $stmt->execute([$idEvento]);
-        $count = $stmt->rowCount();
+        $count = table($pdo, TABLE_BIGLIETTI)
+            ->where(COL_BIGLIETTI_ID_EVENTO, $idEvento)
+            ->delete();
 
-        jsonResponse(['success' => true, 'message' => "$count biglietti eliminati"]);
+        jsonResponse(apiSuccess(null, "$count biglietti eliminati", 200));
     } catch (Exception $e) {
-        jsonResponse(['error' => 'Errore: ' . $e->getMessage()], 500);
+        jsonResponse(apiError(ERR_GENERIC, 500));
     }
 }
 
@@ -399,27 +452,30 @@ function deleteBigliettiEventoApi(PDO $pdo): void
 function deleteLocationApi(PDO $pdo): void
 {
     if (!isLoggedIn() || !hasRole(ROLE_ADMIN)) {
-        jsonResponse(['error' => 'Accesso negato'], 403);
+        jsonResponse(apiError(ERR_PERMISSION_DENIED, 403));
         return;
     }
 
     if (!verifyCsrf()) {
-        jsonResponse(['error' => 'Token CSRF non valido'], 403);
+        jsonResponse(apiError(ERR_INVALID_CSRF, 403));
         return;
     }
 
-    $idLocation = (int)($_POST['idLocation'] ?? 0);
-    if (!$idLocation) {
-        jsonResponse(['error' => 'ID location mancante'], 400);
+    $validator = validate($_POST)->required('idLocation')->numeric('idLocation');
+    if ($validator->fails()) {
+        jsonResponse(apiError($validator->firstError(), 400));
         return;
     }
+
+    $idLocation = (int) $_POST['idLocation'];
 
     try {
-        $stmt = $pdo->prepare("DELETE FROM Locations WHERE id = ?");
-        $stmt->execute([$idLocation]);
-        jsonResponse(['success' => true, 'message' => 'Location eliminata']);
+        table($pdo, TABLE_LOCATIONS)
+            ->where(COL_LOCATIONS_ID, $idLocation)
+            ->delete();
+        jsonResponse(apiSuccess(null, MSG_SUCCESS_LOCATION_DELETED, 200));
     } catch (Exception $e) {
-        jsonResponse(['error' => 'Impossibile eliminare: ci sono eventi associati'], 400);
+        jsonResponse(apiError(ERR_LOCATION_HAS_EVENTS, 400));
     }
 }
 
@@ -430,27 +486,30 @@ function deleteLocationApi(PDO $pdo): void
 function deleteManifestazioneApi(PDO $pdo): void
 {
     if (!isLoggedIn() || !hasRole(ROLE_ADMIN)) {
-        jsonResponse(['error' => 'Accesso negato'], 403);
+        jsonResponse(apiError(ERR_PERMISSION_DENIED, 403));
         return;
     }
 
     if (!verifyCsrf()) {
-        jsonResponse(['error' => 'Token CSRF non valido'], 403);
+        jsonResponse(apiError(ERR_INVALID_CSRF, 403));
         return;
     }
 
-    $idManifestazione = (int)($_POST['idManifestazione'] ?? 0);
-    if (!$idManifestazione) {
-        jsonResponse(['error' => 'ID manifestazione mancante'], 400);
+    $validator = validate($_POST)->required('idManifestazione')->numeric('idManifestazione');
+    if ($validator->fails()) {
+        jsonResponse(apiError($validator->firstError(), 400));
         return;
     }
+
+    $idManifestazione = (int) $_POST['idManifestazione'];
 
     try {
-        $stmt = $pdo->prepare("DELETE FROM Manifestazioni WHERE id = ?");
-        $stmt->execute([$idManifestazione]);
-        jsonResponse(['success' => true, 'message' => 'Manifestazione eliminata']);
+        table($pdo, TABLE_MANIFESTAZIONI)
+            ->where(COL_MANIFESTAZIONI_ID, $idManifestazione)
+            ->delete();
+        jsonResponse(apiSuccess(null, MSG_SUCCESS_MANIFESTATION_DELETED, 200));
     } catch (Exception $e) {
-        jsonResponse(['error' => 'Impossibile eliminare: ci sono eventi associati'], 400);
+        jsonResponse(apiError(ERR_MANIFESTATION_HAS_EVENTS, 400));
     }
 }
 
@@ -461,34 +520,42 @@ function deleteManifestazioneApi(PDO $pdo): void
 function deleteRecensioneApi(PDO $pdo): void
 {
     if (!isLoggedIn() || !hasRole(ROLE_MOD)) {
-        jsonResponse(['error' => 'Accesso negato'], 403);
+        jsonResponse(apiError(ERR_PERMISSION_DENIED, 403));
         return;
     }
 
     if (!verifyCsrf()) {
-        jsonResponse(['error' => 'Token CSRF non valido'], 403);
+        jsonResponse(apiError(ERR_INVALID_CSRF, 403));
         return;
     }
 
-    $idEvento = (int)($_POST['idEvento'] ?? 0);
-    $idUtente = (int)($_POST['idUtente'] ?? 0);
+    $validator = validate($_POST)
+        ->required('idEvento')
+        ->numeric('idEvento')
+        ->required('idUtente')
+        ->numeric('idUtente');
 
-    if (!$idEvento || !$idUtente) {
-        jsonResponse(['error' => 'Dati mancanti'], 400);
+    if ($validator->fails()) {
+        jsonResponse(apiError($validator->firstError(), 400));
         return;
     }
+
+    $idEvento = (int) $_POST['idEvento'];
+    $idUtente = (int) $_POST['idUtente'];
 
     try {
-        $stmt = $pdo->prepare("DELETE FROM Recensioni WHERE idEvento = ? AND idUtente = ?");
-        $stmt->execute([$idEvento, $idUtente]);
+        $count = table($pdo, TABLE_RECENSIONI)
+            ->where(COL_RECENSIONI_ID_EVENTO, $idEvento)
+            ->where(COL_RECENSIONI_ID_UTENTE, $idUtente)
+            ->delete();
 
-        if ($stmt->rowCount() > 0) {
-            jsonResponse(['success' => true, 'message' => 'Recensione eliminata']);
+        if ($count > 0) {
+            jsonResponse(apiSuccess(null, MSG_SUCCESS_REVIEW_DELETED, 200));
         } else {
-            jsonResponse(['error' => 'Recensione non trovata'], 404);
+            jsonResponse(apiError(ERR_REVIEW_NOT_FOUND, 404));
         }
     } catch (Exception $e) {
-        jsonResponse(['error' => 'Errore: ' . $e->getMessage()], 500);
+        jsonResponse(apiError(ERR_GENERIC, 500));
     }
 }
 
@@ -499,31 +566,37 @@ function deleteRecensioneApi(PDO $pdo): void
 function verifyAccountApi(PDO $pdo): void
 {
     if (!isLoggedIn() || !hasRole(ROLE_MOD)) {
-        jsonResponse(['error' => 'Accesso negato'], 403);
+        jsonResponse(apiError(ERR_PERMISSION_DENIED, 403));
         return;
     }
 
     if (!verifyCsrf()) {
-        jsonResponse(['error' => 'Token CSRF non valido'], 403);
+        jsonResponse(apiError(ERR_INVALID_CSRF, 403));
         return;
     }
 
-    $idUtente = (int)($_POST['idUtente'] ?? 0);
-    if (!$idUtente) {
-        jsonResponse(['error' => 'ID utente mancante'], 400);
+    $validator = validate($_POST)->required('idUtente')->numeric('idUtente');
+    if ($validator->fails()) {
+        jsonResponse(apiError($validator->firstError(), 400));
         return;
     }
+
+    $idUtente = (int) $_POST['idUtente'];
 
     try {
-        $stmt = $pdo->prepare("UPDATE Utenti SET verificato = 1, email_verification_token = NULL WHERE id = ?");
-        $stmt->execute([$idUtente]);
+        table($pdo, TABLE_UTENTI)
+            ->where(COL_UTENTI_ID, $idUtente)
+            ->update([
+                COL_UTENTI_VERIFICATO => 1,
+                COL_UTENTI_EMAIL_VERIFICATION_TOKEN => null
+            ]);
 
         $emailService = new EmailService($pdo, false);
         $emailService->sendAccountVerifiedNotification($idUtente, $_SESSION['user_id']);
 
-        jsonResponse(['success' => true, 'message' => 'Account verificato']);
+        jsonResponse(apiSuccess(null, MSG_SUCCESS_USER_VERIFIED, 200));
     } catch (Exception $e) {
-        jsonResponse(['error' => 'Errore: ' . $e->getMessage()], 500);
+        jsonResponse(apiError(ERR_GENERIC, 500));
     }
 }
 
@@ -533,23 +606,27 @@ function verifyAccountApi(PDO $pdo): void
 function getUnverifiedAccountsApi(PDO $pdo): void
 {
     if (!isLoggedIn() || !hasRole(ROLE_MOD)) {
-        jsonResponse(['error' => 'Accesso negato'], 403);
+        jsonResponse(apiError(ERR_PERMISSION_DENIED, 403));
         return;
     }
 
     try {
-        $stmt = $pdo->prepare("
-            SELECT id, Nome, Cognome, Email, ruolo, DataRegistrazione
-            FROM Utenti
-            WHERE verificato = 0
-            ORDER BY DataRegistrazione DESC
-        ");
-        $stmt->execute();
-        $accounts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $accounts = table($pdo, TABLE_UTENTI)
+            ->select([
+                COL_UTENTI_ID,
+                COL_UTENTI_NOME,
+                COL_UTENTI_COGNOME,
+                COL_UTENTI_EMAIL,
+                COL_UTENTI_RUOLO,
+                COL_UTENTI_DATA_REGISTRAZIONE
+            ])
+            ->where(COL_UTENTI_VERIFICATO, 0)
+            ->orderBy(COL_UTENTI_DATA_REGISTRAZIONE, 'DESC')
+            ->get();
 
-        jsonResponse(['success' => true, 'accounts' => $accounts]);
+        jsonResponse(apiSuccess(['accounts' => $accounts], null, 200));
     } catch (Exception $e) {
-        jsonResponse(['error' => 'Errore: ' . $e->getMessage()], 500);
+        jsonResponse(apiError(ERR_GENERIC, 500));
     }
 }
 

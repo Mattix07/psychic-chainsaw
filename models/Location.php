@@ -7,6 +7,9 @@
  * con diverse capienze e fasce di prezzo.
  */
 
+require_once __DIR__ . '/../config/database_schema.php';
+require_once __DIR__ . '/../lib/QueryBuilder.php';
+
 /**
  * Recupera tutte le location ordinate alfabeticamente
  *
@@ -14,7 +17,9 @@
  */
 function getAllLocations(PDO $pdo): array
 {
-    return $pdo->query("SELECT * FROM Locations ORDER BY Nome")->fetchAll();
+    return table($pdo, TABLE_LOCATIONS)
+        ->orderBy(COL_LOCATIONS_NOME)
+        ->get();
 }
 
 /**
@@ -24,9 +29,9 @@ function getAllLocations(PDO $pdo): array
  */
 function getLocationById(PDO $pdo, int $id): ?array
 {
-    $stmt = $pdo->prepare("SELECT * FROM Locations WHERE id = ?");
-    $stmt->execute([$id]);
-    return $stmt->fetch() ?: null;
+    return table($pdo, TABLE_LOCATIONS)
+        ->where(COL_LOCATIONS_ID, $id)
+        ->first();
 }
 
 /**
@@ -53,9 +58,9 @@ function getLocationWithSettori(PDO $pdo, int $id): ?array
 function getSettoriByLocation(PDO $pdo, int $idLocation): array
 {
     $stmt = $pdo->prepare("
-        SELECT * FROM Settori
-        WHERE idLocation = ?
-        ORDER BY MoltiplicatorePrezzo DESC
+        SELECT * FROM " . TABLE_SETTORI . "
+        WHERE " . COL_SETTORI_ID_LOCATION . " = ?
+        ORDER BY " . COL_SETTORI_MOLTIPLICATORE_PREZZO . " DESC
     ");
     $stmt->execute([$idLocation]);
     return $stmt->fetchAll();
@@ -69,19 +74,14 @@ function getSettoriByLocation(PDO $pdo, int $idLocation): array
  */
 function createLocation(PDO $pdo, array $data): int
 {
-    $stmt = $pdo->prepare("
-        INSERT INTO Locations (Nome, Indirizzo, Citta, CAP, Regione, Capienza)
-        VALUES (?, ?, ?, ?, ?, ?)
-    ");
-    $stmt->execute([
-        $data['Nome'],
-        $data['Indirizzo'] ?? '',
-        $data['Citta'] ?? '',
-        $data['CAP'] ?? '',
-        $data['Regione'] ?? '',
-        $data['Capienza'] ?? 0
+    return table($pdo, TABLE_LOCATIONS)->insert([
+        COL_LOCATIONS_NOME => $data['Nome'],
+        COL_LOCATIONS_INDIRIZZO => $data['Indirizzo'] ?? '',
+        COL_LOCATIONS_CITTA => $data['Citta'] ?? '',
+        COL_LOCATIONS_CAP => $data['CAP'] ?? '',
+        COL_LOCATIONS_REGIONE => $data['Regione'] ?? '',
+        COL_LOCATIONS_CAPIENZA => $data['Capienza'] ?? 0
     ]);
-    return (int) $pdo->lastInsertId();
 }
 
 /**
@@ -92,14 +92,14 @@ function createLocation(PDO $pdo, array $data): int
 function updateLocation(PDO $pdo, int $id, array $data): bool
 {
     $stmt = $pdo->prepare("
-        UPDATE Locations SET
-            Nome = ?,
-            Indirizzo = ?,
-            Citta = ?,
-            CAP = ?,
-            Regione = ?,
-            Capienza = ?
-        WHERE id = ?
+        UPDATE " . TABLE_LOCATIONS . " SET
+            " . COL_LOCATIONS_NOME . " = ?,
+            " . COL_LOCATIONS_INDIRIZZO . " = ?,
+            " . COL_LOCATIONS_CITTA . " = ?,
+            " . COL_LOCATIONS_CAP . " = ?,
+            " . COL_LOCATIONS_REGIONE . " = ?,
+            " . COL_LOCATIONS_CAPIENZA . " = ?
+        WHERE " . COL_LOCATIONS_ID . " = ?
     ");
     return $stmt->execute([
         $data['Nome'],
@@ -120,7 +120,7 @@ function updateLocation(PDO $pdo, int $id, array $data): bool
  */
 function deleteLocation(PDO $pdo, int $id): bool
 {
-    $stmt = $pdo->prepare("DELETE FROM Locations WHERE id = ?");
+    $stmt = $pdo->prepare("DELETE FROM " . TABLE_LOCATIONS . " WHERE " . COL_LOCATIONS_ID . " = ?");
     return $stmt->execute([$id]);
 }
 
@@ -142,10 +142,10 @@ function getLocationsByCreator(PDO $pdo, int $userId): array
 {
     $stmt = $pdo->prepare("
         SELECT l.*
-        FROM Locations l
-        INNER JOIN CreatoriLocations cl ON l.id = cl.idLocation
+        FROM " . TABLE_LOCATIONS . " l
+        INNER JOIN " . TABLE_CREATORI_LOCATIONS . " cl ON l." . COL_LOCATIONS_ID . " = cl.idLocation
         WHERE cl.idUtente = ?
-        ORDER BY l.Nome
+        ORDER BY l." . COL_LOCATIONS_NOME . "
     ");
     $stmt->execute([$userId]);
     return $stmt->fetchAll();
@@ -160,12 +160,12 @@ function getLocationsByCreator(PDO $pdo, int $userId): array
 function getPostiDisponibiliSettore(PDO $pdo, int $idSettore, int $idEvento): int
 {
     $stmt = $pdo->prepare("
-        SELECT s.PostiDisponibili - COUNT(sb.idBiglietto) as disponibili
-        FROM Settori s
-        LEFT JOIN Settore_Biglietti sb ON s.id = sb.idSettore
-        LEFT JOIN Biglietti b ON sb.idBiglietto = b.id AND b.idEvento = ?
-        WHERE s.id = ?
-        GROUP BY s.id
+        SELECT s." . COL_SETTORI_POSTI_DISPONIBILI . " - COUNT(sb." . COL_SETTORE_BIGLIETTI_ID_BIGLIETTO . ") as disponibili
+        FROM " . TABLE_SETTORI . " s
+        LEFT JOIN " . TABLE_SETTORE_BIGLIETTI . " sb ON s." . COL_SETTORI_ID . " = sb." . COL_SETTORE_BIGLIETTI_ID_SETTORE . "
+        LEFT JOIN " . TABLE_BIGLIETTI . " b ON sb." . COL_SETTORE_BIGLIETTI_ID_BIGLIETTO . " = b." . COL_BIGLIETTI_ID . " AND b." . COL_BIGLIETTI_ID_EVENTO . " = ?
+        WHERE s." . COL_SETTORI_ID . " = ?
+        GROUP BY s." . COL_SETTORI_ID . "
     ");
     $stmt->execute([$idEvento, $idSettore]);
     $result = $stmt->fetch();

@@ -7,6 +7,10 @@
  * Tutte le operazioni POST sono protette da token CSRF.
  */
 
+require_once __DIR__ . '/../config/app_config.php';
+require_once __DIR__ . '/../config/messages.php';
+require_once __DIR__ . '/../lib/Validator.php';
+require_once __DIR__ . '/../lib/QueryBuilder.php';
 require_once __DIR__ . '/../models/Utente.php';
 
 /**
@@ -38,25 +42,33 @@ function handleAuth(PDO $pdo, string $action): void
 function loginAction(PDO $pdo): void
 {
     if (!verifyCsrf()) {
-        redirect('index.php?action=show_login', null, 'Richiesta non valida');
+        setErrorMessage(ERR_INVALID_CSRF);
+        redirect('index.php?action=show_login');
     }
 
-    $email = strtolower(trim(sanitize($_POST['email'] ?? '')));
-    $password = $_POST['password'] ?? '';
+    // Validazione con Validator
+    $validator = validate($_POST)
+        ->required('email')
+        ->email('email')
+        ->required('password');
 
-    if (empty($email) || empty($password)) {
-        redirect('index.php?action=show_login', null, 'Email e password sono obbligatori');
+    if ($validator->fails()) {
+        setErrorMessage($validator->firstError());
+        redirect('index.php?action=show_login');
     }
 
-    if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
-        redirect('index.php?action=show_login', null, 'Email non valida');
-    }
+    $email = strtolower(trim(sanitize($_POST['email'])));
+    $password = $_POST['password'];
 
-    $utente = getUtenteByEmail($pdo, $email);
+    // Ricerca utente con QueryBuilder
+    $utente = table($pdo, TABLE_UTENTI)
+        ->where(COL_UTENTI_EMAIL, $email)
+        ->first();
 
     if (!$utente) {
         logError("Login fallito: email non trovata - {$email}");
-        redirect('index.php?action=show_login', null, 'Credenziali non valide');
+        setErrorMessage(ERR_INVALID_CREDENTIALS);
+        redirect('index.php?action=show_login');
     }
 
     // Nota: in produzione verificare con password_verify($password, $utente['Password'])
@@ -69,7 +81,8 @@ function loginAction(PDO $pdo): void
     $_SESSION['page'] = 'home';
 
     logError("Login riuscito: {$email}");
-    redirect('index.php', 'Benvenuto, ' . $utente['Nome'] . '!');
+    setSuccessMessage(message(MSG_SUCCESS_LOGIN, $utente['Nome']));
+    redirect('index.php');
 }
 
 /**
@@ -79,36 +92,38 @@ function loginAction(PDO $pdo): void
 function registerAction(PDO $pdo): void
 {
     if (!verifyCsrf()) {
-        redirect('index.php?action=show_register', null, 'Richiesta non valida');
+        setErrorMessage(ERR_INVALID_CSRF);
+        redirect('index.php?action=show_register');
     }
 
-    $nome = sanitize($_POST['nome'] ?? '');
-    $cognome = sanitize($_POST['cognome'] ?? '');
-    $email = strtolower(trim(sanitize($_POST['email'] ?? '')));
-    $password = $_POST['password'] ?? '';
-    $passwordConfirm = $_POST['password_confirm'] ?? '';
+    // Validazione completa con Validator
+    $validator = validate($_POST)
+        ->required('nome')
+        ->required('cognome')
+        ->required('email')
+        ->email('email')
+        ->required('password')
+        ->min('password', PASSWORD_MIN_LENGTH, message(ERR_PASSWORD_TOO_SHORT, PASSWORD_MIN_LENGTH))
+        ->required('password_confirm')
+        ->matches('password', 'password_confirm');
 
-    // Validazione campi obbligatori
-    if (empty($nome) || empty($cognome) || empty($email) || empty($password)) {
-        redirect('index.php?action=show_register', null, 'Tutti i campi sono obbligatori');
+    if ($validator->fails()) {
+        setErrorMessage($validator->firstError());
+        redirect('index.php?action=show_register');
     }
 
-    if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
-        redirect('index.php?action=show_register', null, 'Email non valida');
-    }
+    $nome = sanitize($_POST['nome']);
+    $cognome = sanitize($_POST['cognome']);
+    $email = strtolower(trim(sanitize($_POST['email'])));
 
-    // Requisiti minimi password
-    if (strlen($password) < 6) {
-        redirect('index.php?action=show_register', null, 'La password deve essere di almeno 6 caratteri');
-    }
+    // Verifica email non gia registrata con QueryBuilder
+    $existingUser = table($pdo, TABLE_UTENTI)
+        ->where(COL_UTENTI_EMAIL, $email)
+        ->exists();
 
-    if ($password !== $passwordConfirm) {
-        redirect('index.php?action=show_register', null, 'Le password non coincidono');
-    }
-
-    // Verifica email non gia registrata
-    if (getUtenteByEmail($pdo, $email)) {
-        redirect('index.php?action=show_register', null, 'Email gia registrata');
+    if ($existingUser) {
+        setErrorMessage(ERR_EMAIL_ALREADY_EXISTS);
+        redirect('index.php?action=show_register');
     }
 
     try {
@@ -119,11 +134,13 @@ function registerAction(PDO $pdo): void
         ]);
 
         logError("Nuovo utente registrato: {$email} (ID: {$id})");
-        redirect('index.php?action=show_login', 'Registrazione completata! Ora puoi accedere.');
+        setSuccessMessage(MSG_SUCCESS_REGISTER);
+        redirect('index.php?action=show_login');
 
     } catch (Exception $e) {
         logError("Errore registrazione: " . $e->getMessage());
-        redirect('index.php?action=show_register', null, 'Errore durante la registrazione');
+        setErrorMessage(ERR_GENERIC);
+        redirect('index.php?action=show_register');
     }
 }
 
@@ -135,5 +152,6 @@ function logoutAction(): void
 {
     session_destroy();
     session_start();
-    redirect('index.php', 'Logout effettuato con successo');
+    setSuccessMessage(MSG_SUCCESS_LOGOUT);
+    redirect('index.php');
 }
