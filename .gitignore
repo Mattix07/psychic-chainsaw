@@ -40,7 +40,8 @@ uploads/*
 # IDE e Editor
 # ============================================
 
-# Visual Studio Code
+# Visual Studio Code Dir
+.claude/
 .vscode/
 *.code-workspace
 

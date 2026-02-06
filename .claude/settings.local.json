@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(grep:*)",
-      "Bash(powershell -ExecutionPolicy Bypass -File:*)",
-      "Bash(netstat:*)"
-    ]
-  }
-}
