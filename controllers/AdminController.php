@@ -369,7 +369,7 @@ function countEventi(PDO $pdo): int
 function countEventiFuturi(PDO $pdo): int
 {
     return table($pdo, TABLE_EVENTI)
-        ->where(COL_EVENTI_DATA . ' >= CURDATE()')
+        ->whereRaw(COL_EVENTI_DATA . ' >= CURDATE()')
         ->count();
 }
 

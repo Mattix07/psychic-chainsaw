@@ -45,6 +45,15 @@ class QueryBuilder
     }
 
     /**
+     * Aggiunge una condizione WHERE con espressione raw
+     */
+    public function whereRaw(string $expression): self
+    {
+        $this->wheres[] = $expression;
+        return $this;
+    }
+
+    /**
      * Aggiunge una condizione WHERE IN
      */
     public function whereIn(string $column, array $values): self
