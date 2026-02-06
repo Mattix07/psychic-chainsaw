@@ -254,7 +254,7 @@ if (!function_exists('buildSelect')) {
  *
  * @example
  * $where = buildWhere(COL_UTENTI_ID, 'u');
- * // Risultato: "u.id = ?"
+ * Risultato: "u.id = ?"
  */
 if (!function_exists('buildWhere')) {
     function buildWhere(string $column, string $alias = ''): string
