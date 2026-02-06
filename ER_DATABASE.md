@@ -5,6 +5,10 @@ Database: `5cit_eventsMaster` (MySQL, charset utf8mb4)
 ## Diagramma
 
 ```mermaid
+---
+config:
+    layout:elk;
+---
 erDiagram
 
     Utenti {
