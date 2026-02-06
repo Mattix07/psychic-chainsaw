@@ -35,8 +35,12 @@ if (!$evento) {
     return;
 }
 
-// Dati per il selettore biglietti
-$settori = getSettoriByLocation($pdo, $evento['idLocation']);
+// Dati per il selettore biglietti: settori specifici dell'evento, o tutti quelli della location
+require_once __DIR__ . '/../models/EventoSettori.php';
+$settori = getEventoSettori($pdo, $evento['id']);
+if (empty($settori)) {
+    $settori = getSettoriByLocation($pdo, $evento['idLocation']);
+}
 $tipi = getAllTipiBiglietto($pdo);
 
 // Eventi correlati: altri eventi della stessa manifestazione (escludendo quello corrente)
@@ -273,8 +277,8 @@ if (!empty($evento['idManifestazione'])) {
                     <label for="idSettore">Settore</label>
                     <select id="idSettore" name="idSettore" required>
                         <?php foreach ($settori as $s): ?>
-                        <option value="<?= $s['id'] ?>" data-mult="<?= $s['MoltiplicatorePrezzo'] ?>" data-posti="<?= $s['Posti'] ?>">
-                            Settore <?= $s['id'] ?> - x<?= $s['MoltiplicatorePrezzo'] ?>
+                        <option value="<?= $s['id'] ?>" data-mult="<?= $s['MoltiplicatorePrezzo'] ?>" data-posti="<?= $s['PostiDisponibili'] ?>">
+                            <?= e($s['Nome']) ?> - x<?= $s['MoltiplicatorePrezzo'] ?>
                         </option>
                         <?php endforeach; ?>
                     </select>

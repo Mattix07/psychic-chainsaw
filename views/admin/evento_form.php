@@ -39,7 +39,7 @@ if ($isEdit) {
     </div>
 
     <div class="admin-form-container">
-        <form method="post" action="index.php?action=admin_create_event" class="admin-form">
+        <form method="post" action="index.php?action=<?= $isEdit ? 'admin_edit_event' : 'admin_create_event' ?>" class="admin-form">
             <?= csrfField() ?>
             <?php if ($isEdit): ?>
                 <input type="hidden" name="evento_id" value="<?= $evento['id'] ?>">
@@ -115,7 +115,7 @@ if ($isEdit) {
                 <div class="settori-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">
                     <?php foreach ($settoriDisponibili as $settore): ?>
                         <?php
-                        $isSelected = in_array($settore['id'], array_column($settoriSelezionati, 'idSettore'));
+                        $isSelected = in_array($settore['id'], array_column($settoriSelezionati, 'id'));
                         ?>
                         <label class="checkbox-card" style="display: flex; align-items: center; padding: 12px; border: 1px solid #ddd; border-radius: 6px; cursor: pointer;">
                             <input type="checkbox" name="settori[]" value="<?= $settore['id'] ?>" <?= $isSelected ? 'checked' : '' ?> style="margin-right: 8px;">

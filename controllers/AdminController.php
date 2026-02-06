@@ -264,6 +264,100 @@ function adminCreateEvent(PDO $pdo): void
     require_once __DIR__ . '/../models/Location.php';
     require_once __DIR__ . '/../models/Manifestazione.php';
 
+    unset($_SESSION['admin_evento']);
+    $_SESSION['admin_locations'] = getAllLocations($pdo);
+    $_SESSION['admin_manifestazioni'] = getAllManifestazioni($pdo);
+    setPage('admin/evento_form');
+}
+
+/**
+ * Modifica evento esistente
+ * GET: carica i dati dell'evento nel form
+ * POST: salva le modifiche
+ * Richiede almeno ruolo PROMOTER + permessi sull'evento
+ */
+function adminEditEvent(PDO $pdo): void
+{
+    requireRole(ROLE_PROMOTER);
+
+    $eventoId = (int) ($_GET['id'] ?? $_POST['evento_id'] ?? 0);
+    if (!$eventoId) {
+        setErrorMessage(ERR_GENERIC);
+        header('Location: index.php?action=admin_events');
+        exit;
+    }
+
+    require_once __DIR__ . '/../models/Evento.php';
+    require_once __DIR__ . '/../models/Permessi.php';
+
+    // Verifica permessi
+    if (!canEditEvento($pdo, $_SESSION['user_id'], $eventoId)) {
+        setErrorMessage(ERR_PERMISSION_DENIED);
+        header('Location: index.php?action=admin_events');
+        exit;
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (!verifyCsrf()) {
+            setErrorMessage(ERR_INVALID_CSRF);
+            header('Location: index.php?action=admin_edit_event&id=' . $eventoId);
+            exit;
+        }
+
+        $validator = validate($_POST)
+            ->required('nome')
+            ->required('data')
+            ->date('data')
+            ->required('location')
+            ->numeric('location');
+
+        if ($validator->fails()) {
+            setErrorMessage($validator->firstError());
+            header('Location: index.php?action=admin_edit_event&id=' . $eventoId);
+            exit;
+        }
+
+        $data = [
+            'Nome' => sanitize($_POST['nome']),
+            'Data' => $_POST['data'],
+            'OraI' => $_POST['ora_inizio'] ?? '',
+            'OraF' => $_POST['ora_fine'] ?? '',
+            'Programma' => sanitize($_POST['programma'] ?? ''),
+            'PrezzoNoMod' => (float) ($_POST['prezzo'] ?? 0),
+            'idLocation' => (int) $_POST['location'],
+            'idManifestazione' => (int) ($_POST['manifestazione'] ?? 0) ?: null,
+            'Immagine' => sanitize($_POST['immagine'] ?? '')
+        ];
+
+        try {
+            require_once __DIR__ . '/../models/EventoSettori.php';
+
+            updateEvento($pdo, $eventoId, $data);
+
+            $settori = $_POST['settori'] ?? [];
+            setEventoSettori($pdo, $eventoId, array_map('intval', $settori));
+
+            setSuccessMessage(MSG_SUCCESS_EVENT_UPDATED);
+            header('Location: index.php?action=admin_events');
+        } catch (Exception $e) {
+            setErrorMessage(ERR_GENERIC);
+            header('Location: index.php?action=admin_edit_event&id=' . $eventoId);
+        }
+        exit;
+    }
+
+    // GET: carica dati evento e mostra form
+    $evento = getEventoById($pdo, $eventoId);
+    if (!$evento) {
+        setErrorMessage(ERR_GENERIC);
+        header('Location: index.php?action=admin_events');
+        exit;
+    }
+
+    require_once __DIR__ . '/../models/Location.php';
+    require_once __DIR__ . '/../models/Manifestazione.php';
+
+    $_SESSION['admin_evento'] = $evento;
     $_SESSION['admin_locations'] = getAllLocations($pdo);
     $_SESSION['admin_manifestazioni'] = getAllManifestazioni($pdo);
     setPage('admin/evento_form');

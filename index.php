@@ -254,6 +254,12 @@ switch ($action) {
         adminCreateEvent($pdo);
         break;
 
+    case 'admin_edit_event':
+        require_once 'controllers/PageController.php';
+        require_once 'controllers/AdminController.php';
+        adminEditEvent($pdo);
+        break;
+
     case 'admin_delete_event':
         require_once 'controllers/AdminController.php';
         adminDeleteEvent($pdo);
