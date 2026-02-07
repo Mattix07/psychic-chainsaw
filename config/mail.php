@@ -12,8 +12,8 @@
  * 3. Imposta USE_REAL_MAIL = true
  */
 
-// Modalita invio: false = simulazione su log, true = SMTP reale
-define('USE_REAL_MAIL', false);
+// Modalita invio: controllato da MAIL_ENABLED in .env
+define('USE_REAL_MAIL', filter_var(env('MAIL_ENABLED', false), FILTER_VALIDATE_BOOLEAN));
 define('MAIL_LOG_PATH', __DIR__ . '/../logs/mail.log');
 
 // Configurazione server SMTP (valori da .env in produzione)
@@ -231,6 +231,9 @@ function getEmailTemplate(string $template, array $data): string
  */
 function getBaseUrl(): string
 {
+    if (defined('BASE_URL')) {
+        return rtrim(BASE_URL, '/') . '/';
+    }
     $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
     $path = dirname($_SERVER['SCRIPT_NAME']);

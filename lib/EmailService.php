@@ -2,28 +2,21 @@
 /**
  * Servizio Email
  * Gestisce l'invio di email con supporto per template
- *
- * TODO: Configurare PHPMailer per invio SMTP reale
- * Al momento usa mail() PHP, che richiede sendmail configurato
+ * Delega l'invio reale a sendMail() in config/mail.php (PHPMailer SMTP)
  */
+
+require_once __DIR__ . '/../config/mail.php';
 
 class EmailService
 {
     private PDO $pdo;
-    private bool $enableRealSending;
-    private string $fromEmail;
-    private string $fromName;
 
     /**
      * @param PDO $pdo Database connection
-     * @param bool $enableRealSending Se true, invia email reali. Se false, solo log nel DB
      */
-    public function __construct(PDO $pdo, bool $enableRealSending = false)
+    public function __construct(PDO $pdo)
     {
         $this->pdo = $pdo;
-        $this->enableRealSending = $enableRealSending;
-        $this->fromEmail = 'noreply@eventsmaster.it';
-        $this->fromName = 'EventsMaster';
     }
 
     /**
@@ -143,23 +136,11 @@ class EmailService
         $stmt->execute([$tipo, $destinatarioId, $mittenteId, $subject, $htmlMessage, 0, $metadata]);
         $notificaId = $this->pdo->lastInsertId();
 
-        // Se l'invio reale è disabilitato, fermiamoci qui
-        if (!$this->enableRealSending) {
-            error_log("EMAIL SIMULATA - To: $to, Subject: $subject");
-            return true;
-        }
+        // Delega invio a sendMail() (gestisce simulazione vs SMTP reale)
+        $success = sendMail($to, $subject, $htmlMessage, true);
 
-        // Invio reale con mail() PHP
-        $headers = "MIME-Version: 1.0\r\n";
-        $headers .= "Content-type: text/html; charset=utf-8\r\n";
-        $headers .= "From: {$this->fromName} <{$this->fromEmail}>\r\n";
-        $headers .= "Reply-To: {$this->fromEmail}\r\n";
-        $headers .= "X-Mailer: PHP/" . phpversion();
-
-        $success = mail($to, $subject, $htmlMessage, $headers);
-
-        // Aggiorna lo stato della notifica
-        if ($success) {
+        // Aggiorna lo stato della notifica se invio reale riuscito
+        if ($success && USE_REAL_MAIL) {
             $stmt = $this->pdo->prepare("UPDATE Notifiche SET email_inviata = 1 WHERE id = ?");
             $stmt->execute([$notificaId]);
         }
@@ -283,16 +264,16 @@ class EmailService
 
     private function getEventoUrl(int $eventoId): string
     {
-        return "http://{$_SERVER['HTTP_HOST']}/index.php?action=evento_dettaglio&id=$eventoId";
+        return getBaseUrl() . "index.php?action=evento_dettaglio&id=$eventoId";
     }
 
     private function getAcceptInviteUrl(string $token): string
     {
-        return "http://{$_SERVER['HTTP_HOST']}/index.php?action=accept_collaboration&token=$token";
+        return getBaseUrl() . "index.php?action=accept_collaboration&token=$token";
     }
 
     private function getDeclineInviteUrl(string $token): string
     {
-        return "http://{$_SERVER['HTTP_HOST']}/index.php?action=decline_collaboration&token=$token";
+        return getBaseUrl() . "index.php?action=decline_collaboration&token=$token";
     }
 }

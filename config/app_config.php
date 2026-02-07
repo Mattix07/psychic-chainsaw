@@ -21,7 +21,7 @@ define('APP_ENV', 'development'); // development, staging, production
 // URL E PATH
 // ============================================================
 
-define('BASE_URL', 'http://localhost/eventsMaster');
+define('BASE_URL', env('APP_URL', 'http://localhost/eventsMaster'));
 define('ASSETS_URL', BASE_URL . '/assets');
 define('UPLOAD_PATH', __DIR__ . '/../uploads');
 define('LOGS_PATH', __DIR__ . '/../logs');

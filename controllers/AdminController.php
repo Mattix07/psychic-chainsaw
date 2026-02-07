@@ -691,7 +691,7 @@ function verifyAccountApi(PDO $pdo): void
                 COL_UTENTI_EMAIL_VERIFICATION_TOKEN => null
             ]);
 
-        $emailService = new EmailService($pdo, false);
+        $emailService = new EmailService($pdo);
         $emailService->sendAccountVerifiedNotification($idUtente, $_SESSION['user_id']);
 
         jsonResponse(apiSuccess(null, MSG_SUCCESS_USER_VERIFIED, 200));

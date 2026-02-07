@@ -12,7 +12,7 @@
 
 define('MSG_SUCCESS_LOGIN', 'Benvenuto, %s!');
 define('MSG_SUCCESS_LOGOUT', 'Logout effettuato con successo');
-define('MSG_SUCCESS_REGISTER', 'Registrazione completata! Ora puoi accedere.');
+define('MSG_SUCCESS_REGISTER', 'Registrazione completata! Controlla la tua email per verificare il tuo account.');
 define('MSG_SUCCESS_PROFILE_UPDATE', 'Profilo aggiornato con successo.');
 define('MSG_SUCCESS_PASSWORD_UPDATE', 'Password aggiornata con successo.');
 define('MSG_SUCCESS_EMAIL_VERIFIED', 'Email verificata con successo!');

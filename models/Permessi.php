@@ -156,7 +156,7 @@ function inviteCollaborator(PDO $pdo, int $eventoId, int $invitedUserId, int $in
         $stmtEvento->execute([$eventoId]);
         $nomeEvento = $stmtEvento->fetchColumn();
 
-        $emailService = new EmailService($pdo, false); // false = solo log, no invio reale
+        $emailService = new EmailService($pdo); // false = solo log, no invio reale
         $emailService->sendCollaborationInvite($invitedUserId, $invitedBy, $eventoId, $nomeEvento, $token);
 
         return true;
@@ -244,7 +244,7 @@ function notifyEventModification(PDO $pdo, int $eventoId, int $modifiedBy, array
     $nomeEvento = $stmt->fetchColumn();
 
     // Invia email
-    $emailService = new EmailService($pdo, false);
+    $emailService = new EmailService($pdo);
     $emailService->sendEventModifiedNotification($creator[COL_UTENTI_ID], $modifiedBy, $eventoId, $nomeEvento, $modifiche);
 }
 

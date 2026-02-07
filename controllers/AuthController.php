@@ -12,6 +12,7 @@ require_once __DIR__ . '/../config/messages.php';
 require_once __DIR__ . '/../lib/Validator.php';
 require_once __DIR__ . '/../lib/QueryBuilder.php';
 require_once __DIR__ . '/../models/Utente.php';
+require_once __DIR__ . '/../config/mail.php';
 
 /**
  * Router interno per le azioni di autenticazione
@@ -132,6 +133,11 @@ function registerAction(PDO $pdo): void
             'Cognome' => $cognome,
             'Email' => $email
         ]);
+
+        // Genera token di verifica e invia email
+        $token = generateToken();
+        setVerificationToken($pdo, $id, $token);
+        sendVerificationEmail($email, $nome, $token);
 
         logError("Nuovo utente registrato: {$email} (ID: {$id})");
         setSuccessMessage(MSG_SUCCESS_REGISTER);

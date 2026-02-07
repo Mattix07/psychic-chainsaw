@@ -1,0 +1,8 @@
+{
+    "name": "boscomattia6/eventsmaster",
+    "description": "EventsMaster",
+    "type": "project",
+    "require": {
+        "phpmailer/phpmailer": "^7.0"
+    }
+}
