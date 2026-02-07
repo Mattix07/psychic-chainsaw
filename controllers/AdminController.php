@@ -218,6 +218,20 @@ function adminCreateEvent(PDO $pdo): void
             exit;
         }
 
+        // Settori: se nessuno selezionato, usa tutti quelli della location
+        require_once __DIR__ . '/../models/Location.php';
+        $settori = $_POST['settori'] ?? [];
+        if (empty($settori)) {
+            $locationSettori = getSettoriByLocation($pdo, (int) $_POST['location']);
+            $settori = array_column($locationSettori, 'id');
+        }
+
+        if (empty($settori)) {
+            setErrorMessage('La location selezionata non ha settori configurati.');
+            header('Location: index.php?action=admin_create_event');
+            exit;
+        }
+
         $data = [
             'Nome' => sanitize($_POST['nome']),
             'Data' => $_POST['data'],
@@ -234,8 +248,6 @@ function adminCreateEvent(PDO $pdo): void
             require_once __DIR__ . '/../models/EventoSettori.php';
             require_once __DIR__ . '/../models/Permessi.php';
 
-            $pdo->beginTransaction();
-
             // Crea l'evento
             $eventoId = createEvento($pdo, $data);
 
@@ -243,17 +255,11 @@ function adminCreateEvent(PDO $pdo): void
             registerEventoCreator($pdo, $eventoId, $_SESSION['user_id']);
 
             // Salva i settori selezionati
-            $settori = $_POST['settori'] ?? [];
-            if (!empty($settori)) {
-                setEventoSettori($pdo, $eventoId, array_map('intval', $settori));
-            }
-
-            $pdo->commit();
+            setEventoSettori($pdo, $eventoId, array_map('intval', $settori));
 
             setSuccessMessage(MSG_SUCCESS_EVENT_CREATED);
             header('Location: index.php?action=admin_events');
         } catch (Exception $e) {
-            $pdo->rollBack();
             setErrorMessage(ERR_GENERIC);
             header('Location: index.php?action=admin_create_event');
         }
@@ -722,6 +728,28 @@ function getUnverifiedAccountsApi(PDO $pdo): void
     } catch (Exception $e) {
         jsonResponse(apiError(ERR_GENERIC, 500));
     }
+}
+
+/**
+ * API: Restituisce i settori di una location
+ * GET: idLocation
+ */
+function getSettoriByLocationApi(PDO $pdo): void
+{
+    if (!isLoggedIn() || !hasRole(ROLE_PROMOTER)) {
+        jsonResponse(apiError(ERR_PERMISSION_DENIED, 403));
+        return;
+    }
+
+    $idLocation = (int) ($_GET['idLocation'] ?? 0);
+    if (!$idLocation) {
+        jsonResponse(apiError('Location non valida', 400));
+        return;
+    }
+
+    require_once __DIR__ . '/../models/Location.php';
+    $settori = getSettoriByLocation($pdo, $idLocation);
+    jsonResponse(apiSuccess($settori));
 }
 
 function jsonResponse(array $data, int $statusCode = 200): void

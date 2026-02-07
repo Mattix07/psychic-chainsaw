@@ -268,6 +268,12 @@ switch ($action) {
     // ==========================================
     // NUOVE FUNZIONALITÀ ADMIN/MOD
     // ==========================================
+    case 'get_settori_location':
+        require_once 'controllers/AdminController.php';
+        getSettoriByLocationApi($pdo);
+        exit; // API JSON
+        break;
+
     case 'delete_biglietti_evento':
         require_once 'controllers/AdminController.php';
         deleteBigliettiEventoApi($pdo);

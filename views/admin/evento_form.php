@@ -18,13 +18,13 @@ $manifestazioni = $_SESSION['admin_manifestazioni'] ?? [];
 $evento = $_SESSION['admin_evento'] ?? null;
 $isEdit = !empty($evento);
 
-// Carica settori disponibili
-require_once __DIR__ . '/../../models/Settore.php';
-$settoriDisponibili = getAllSettori($pdo);
-
-// Se in modifica, carica settori già associati
+// Carica settori della location selezionata
+require_once __DIR__ . '/../../models/Location.php';
+$settoriDisponibili = [];
 $settoriSelezionati = [];
-if ($isEdit) {
+
+if ($isEdit && !empty($evento['idLocation'])) {
+    $settoriDisponibili = getSettoriByLocation($pdo, (int) $evento['idLocation']);
     require_once __DIR__ . '/../../models/EventoSettori.php';
     $settoriSelezionati = getEventoSettori($pdo, $evento['id']);
 }
@@ -110,12 +110,14 @@ if ($isEdit) {
 
             <div class="form-section">
                 <h3>Settori Disponibili</h3>
-                <p class="form-hint">Seleziona i settori disponibili per questo evento. Se non selezioni nessun settore, saranno disponibili tutti i settori della location.</p>
+                <p class="form-hint">Seleziona i settori disponibili per questo evento. Deve essere attivo almeno un settore.</p>
 
-                <div class="settori-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">
-                    <?php foreach ($settoriDisponibili as $settore): ?>
+                <div id="settori-grid" class="settori-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">
+                    <?php if (!empty($settoriDisponibili)): ?>
                         <?php
-                        $isSelected = in_array($settore['id'], array_column($settoriSelezionati, 'id'));
+                        $selectedIds = array_column($settoriSelezionati, 'id');
+                        foreach ($settoriDisponibili as $settore):
+                            $isSelected = in_array($settore['id'], $selectedIds);
                         ?>
                         <label class="checkbox-card" style="display: flex; align-items: center; padding: 12px; border: 1px solid #ddd; border-radius: 6px; cursor: pointer;">
                             <input type="checkbox" name="settori[]" value="<?= $settore['id'] ?>" <?= $isSelected ? 'checked' : '' ?> style="margin-right: 8px;">
@@ -124,7 +126,10 @@ if ($isEdit) {
                                 <small style="display: block; color: #666;">Posti: <?= $settore['PostiDisponibili'] ?> | ×<?= $settore['MoltiplicatorePrezzo'] ?></small>
                             </div>
                         </label>
-                    <?php endforeach; ?>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <p class="no-data" style="grid-column: 1/-1; color: #888;">Seleziona una location per visualizzare i settori disponibili.</p>
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -147,3 +152,35 @@ if ($isEdit) {
         </form>
     </div>
 </div>
+
+<script>
+document.getElementById('location').addEventListener('change', function() {
+    const locationId = this.value;
+    const grid = document.getElementById('settori-grid');
+
+    if (!locationId) {
+        grid.innerHTML = '<p class="no-data" style="grid-column: 1/-1; color: #888;">Seleziona una location per visualizzare i settori disponibili.</p>';
+        return;
+    }
+
+    grid.innerHTML = '<p style="grid-column: 1/-1; color: #888;">Caricamento settori...</p>';
+
+    fetch('index.php?action=get_settori_location&idLocation=' + locationId)
+        .then(r => r.json())
+        .then(res => {
+            if (!res.success || !res.data || res.data.length === 0) {
+                grid.innerHTML = '<p class="no-data" style="grid-column: 1/-1; color: #888;">Nessun settore disponibile per questa location.</p>';
+                return;
+            }
+            grid.innerHTML = res.data.map(s => `
+                <label class="checkbox-card" style="display: flex; align-items: center; padding: 12px; border: 1px solid #ddd; border-radius: 6px; cursor: pointer;">
+                    <input type="checkbox" name="settori[]" value="${s.id}" checked style="margin-right: 8px;">
+                    <div>
+                        <strong>${s.Nome}</strong>
+                        <small style="display: block; color: #666;">Posti: ${s.PostiDisponibili} | ×${s.MoltiplicatorePrezzo}</small>
+                    </div>
+                </label>
+            `).join('');
+        });
+});
+</script>
