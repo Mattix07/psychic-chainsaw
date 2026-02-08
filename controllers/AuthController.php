@@ -72,7 +72,11 @@ function loginAction(PDO $pdo): void
         redirect('index.php?action=show_login');
     }
 
-    // Nota: in produzione verificare con password_verify($password, $utente['Password'])
+    if (!password_verify($password, $utente['Password'])) {
+        logError("Login fallito: password errata - {$email}");
+        setErrorMessage(ERR_INVALID_CREDENTIALS);
+        redirect('index.php?action=show_login');
+    }
 
     // Salva dati utente in sessione
     $_SESSION['user_id'] = $utente['id'];
@@ -131,7 +135,8 @@ function registerAction(PDO $pdo): void
         $id = createUtente($pdo, [
             'Nome' => $nome,
             'Cognome' => $cognome,
-            'Email' => $email
+            'Email' => $email,
+            'Password' => password_hash($_POST['password'], PASSWORD_DEFAULT)
         ]);
 
         // Genera token di verifica e invia email

@@ -50,7 +50,8 @@ function createUtente(PDO $pdo, array $data): int
     return table($pdo, TABLE_UTENTI)->insert([
         COL_UTENTI_NOME => $data['Nome'],
         COL_UTENTI_COGNOME => $data['Cognome'],
-        COL_UTENTI_EMAIL => $data['Email']
+        COL_UTENTI_EMAIL => $data['Email'],
+        COL_UTENTI_PASSWORD => $data['Password']
     ]);
 }
 
