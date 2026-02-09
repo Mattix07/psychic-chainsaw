@@ -83,6 +83,7 @@ function loginAction(PDO $pdo): void
     $_SESSION['user_nome'] = $utente['Nome'];
     $_SESSION['user_cognome'] = $utente['Cognome'];
     $_SESSION['user_email'] = $utente['Email'];
+    $_SESSION['user_ruolo'] = $utente['ruolo'];
     $_SESSION['page'] = 'home';
 
     logError("Login riuscito: {$email}");

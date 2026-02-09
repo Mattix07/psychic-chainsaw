@@ -14,12 +14,11 @@ require_once __DIR__ . '/../lib/QueryBuilder.php';
 /**
  * Recupera tutte le manifestazioni ordinate alfabeticamente
  *
- * @return array Lista manifestazioni con id e nome
+ * @return array Lista manifestazioni con tutti i campi
  */
 function getAllManifestazioni(PDO $pdo): array
 {
     return table($pdo, TABLE_MANIFESTAZIONI)
-        ->select([COL_MANIFESTAZIONI_ID, COL_MANIFESTAZIONI_NOME])
         ->orderBy(COL_MANIFESTAZIONI_NOME)
         ->get();
 }

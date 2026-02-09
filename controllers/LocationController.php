@@ -100,13 +100,10 @@ function listLocations(PDO $pdo): void
 {
     requireRole(ROLE_PROMOTER);
 
-    $ruolo = $_SESSION['user_ruolo'] ?? RUOLO_USER;
-
-    if (in_array($ruolo, [RUOLO_ADMIN, RUOLO_MOD])) {
-        // Admin e mod vedono tutto
+    // Admin e mod vedono tutto, promoter solo le sue
+    if (hasRole(ROLE_MOD)) {
         $locations = getAllLocations($pdo);
     } else {
-        // Promoter vede solo le sue
         $locations = getLocationsByCreator($pdo, $_SESSION['user_id']);
     }
 

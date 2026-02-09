@@ -5,14 +5,21 @@
 requireRole(ROLE_PROMOTER);
 
 $locations = $_SESSION['locations_list'] ?? [];
-$ruolo = $_SESSION['user_ruolo'] ?? 'user';
-$canDelete = in_array($ruolo, ['admin', 'mod']);
+$canDelete = hasRole(ROLE_MOD);
+
+// Determina la dashboard corretta in base al ruolo
+$dashboardAction = 'promoter_dashboard';
+if (hasRole(ROLE_ADMIN)) {
+    $dashboardAction = 'admin_dashboard';
+} elseif (hasRole(ROLE_MOD)) {
+    $dashboardAction = 'mod_dashboard';
+}
 ?>
 
 <div class="admin-page">
     <div class="admin-header">
         <div>
-            <a href="index.php?action=<?= $ruolo ?>_dashboard" class="back-link">
+            <a href="index.php?action=<?= $dashboardAction ?>" class="back-link">
                 <i class="fas fa-arrow-left"></i> Dashboard
             </a>
             <h1><i class="fas fa-map-marker-alt"></i> Gestione Location</h1>
