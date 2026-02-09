@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset
+      xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+            http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+
+
+<url>
+  <loc>https://bofco.it/</loc>
+  <lastmod>2026-02-09T13:43:21+00:00</lastmod>
+  <priority>1.00</priority>
+</url>
+<url>
+  <loc>https://bofco.it/index.php</loc>
+  <lastmod>2026-02-09T13:43:21+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://bofco.it/index.php?action=list_eventi</loc>
+  <lastmod>2026-02-09T13:43:21+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://bofco.it/index.php?action=category&amp;cat=concerti</loc>
+  <lastmod>2026-02-09T13:43:21+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://bofco.it/index.php?action=category&amp;cat=teatro</loc>
+  <lastmod>2026-02-09T13:43:21+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://bofco.it/index.php?action=category&amp;cat=sport</loc>
+  <lastmod>2026-02-09T13:43:21+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://bofco.it/index.php?action=show_login</loc>
+  <lastmod>2026-02-09T13:43:21+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://bofco.it/index.php?action=view_evento&amp;id=12</loc>
+  <lastmod>2026-02-09T13:43:21+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://bofco.it/index.php?action=category&amp;cat=comedy</loc>
+  <lastmod>2026-02-09T13:43:21+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://bofco.it/index.php?action=category&amp;cat=cinema</loc>
+  <lastmod>2026-02-09T13:43:21+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://bofco.it/index.php?action=category&amp;cat=famiglia</loc>
+  <lastmod>2026-02-09T13:43:21+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://bofco.it/index.php?action=show_login&amp;redirect=checkout</loc>
+  <lastmod>2026-02-09T13:43:21+00:00</lastmod>
+  <priority>0.80</priority>
+</url>
+<url>
+  <loc>https://bofco.it/index.php?action=recupera_password</loc>
+  <lastmod>2026-02-09T13:43:21+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+<url>
+  <loc>https://bofco.it/index.php?action=show_register</loc>
+  <lastmod>2026-02-09T13:43:21+00:00</lastmod>
+  <priority>0.64</priority>
+</url>
+
+
+</urlset>
