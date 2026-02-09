@@ -114,6 +114,23 @@ function requireAdmin(): void
 }
 
 /**
+ * Middleware di controllo accesso basato su ruolo
+ * Verifica autenticazione e ruolo minimo richiesto
+ *
+ * @param string $role Ruolo minimo richiesto (usa costanti ROLE_*)
+ */
+function requireRole(string $role): void
+{
+    if (!isLoggedIn()) {
+        redirect('index.php?action=show_login', null, 'Devi effettuare il login.');
+    }
+
+    if (!hasRole($role)) {
+        redirect('index.php', null, 'Non hai i permessi per accedere a questa area.');
+    }
+}
+
+/**
  * Sanifica una stringa rimuovendo tag HTML e spazi superflui
  * Da usare per input utente che non deve contenere markup
  *

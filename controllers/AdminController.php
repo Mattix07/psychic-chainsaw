@@ -18,27 +18,6 @@ require_once __DIR__ . '/../models/Ordine.php';
 require_once __DIR__ . '/../models/Permessi.php';
 require_once __DIR__ . '/../lib/EmailService.php';
 
-/**
- * Middleware di controllo accesso basato su ruolo
- * Verifica autenticazione e ruolo minimo richiesto
- *
- * @param string $role Ruolo minimo richiesto (usa costanti ROLE_*)
- */
-function requireRole(string $role): void
-{
-    if (!isLoggedIn()) {
-        setErrorMessage(ERR_LOGIN_REQUIRED);
-        header('Location: index.php?action=show_login');
-        exit;
-    }
-
-    if (!hasRole($role)) {
-        setErrorMessage(ERR_PERMISSION_DENIED);
-        header('Location: index.php');
-        exit;
-    }
-}
-
 // ==========================================
 // ADMIN DASHBOARD
 // ==========================================
