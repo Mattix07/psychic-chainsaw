@@ -47,6 +47,12 @@ switch ($action) {
     // ==========================================
     case 'home':
         require_once 'controllers/PageController.php';
+        if (isLoggedIn()) {
+            $ruolo = $_SESSION['user_ruolo'] ?? 'user';
+            if ($ruolo === 'admin') { redirect('index.php?action=admin_dashboard'); }
+            elseif ($ruolo === 'mod') { redirect('index.php?action=mod_dashboard'); }
+            elseif ($ruolo === 'promoter') { redirect('index.php?action=promoter_dashboard'); }
+        }
         setPage('home');
         break;
 
@@ -438,6 +444,12 @@ switch ($action) {
     // ==========================================
     default:
         require_once 'controllers/PageController.php';
+        if (isLoggedIn()) {
+            $ruolo = $_SESSION['user_ruolo'] ?? 'user';
+            if ($ruolo === 'admin') { redirect('index.php?action=admin_dashboard'); }
+            elseif ($ruolo === 'mod') { redirect('index.php?action=mod_dashboard'); }
+            elseif ($ruolo === 'promoter') { redirect('index.php?action=promoter_dashboard'); }
+        }
         setPage('home');
         break;
 }
