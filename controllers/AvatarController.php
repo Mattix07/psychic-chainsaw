@@ -46,7 +46,7 @@ function uploadAvatarApi(PDO $pdo): void
     // Validazione tipo MIME usando costanti
     $finfo = finfo_open(FILEINFO_MIME_TYPE);
     $mimeType = finfo_file($finfo, $file['tmp_name']);
-    finfo_close($finfo);
+    $finfo = null;
 
     if (!in_array($mimeType, AVATAR_ALLOWED_TYPES)) {
         jsonResponse(apiError(ERR_INVALID_FILE_TYPE, 400));
