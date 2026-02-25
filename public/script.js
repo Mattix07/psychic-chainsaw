@@ -309,6 +309,40 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ==========================================
+    // CLIENT-SIDE PASSWORD HASHING (SHA-256)
+    // ==========================================
+    async function hashPassword(password) {
+        const msgBuffer = new TextEncoder().encode(password);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    (function() {
+        document.querySelectorAll('form').forEach(function(form) {
+            const actionField = form.querySelector('input[name="action"]');
+            if (!actionField) return;
+            const action = actionField.value;
+            let fields = [];
+            if (action === 'login') fields = ['password'];
+            else if (action === 'register') fields = ['password', 'password_confirm'];
+            else if (action === 'update_password') fields = ['current_password', 'new_password', 'confirm_password'];
+            else if (action === 'do_reset_password') fields = ['password', 'password_confirm'];
+            if (fields.length === 0) return;
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                for (const name of fields) {
+                    const field = form.querySelector('[name="' + name + '"]');
+                    if (field && field.value) {
+                        field.value = await hashPassword(field.value);
+                    }
+                }
+                form.submit();
+            });
+        });
+    })();
+
+    // ==========================================
     // PASSWORD CONFIRMATION
     // ==========================================
     const passwordConfirm = document.getElementById('password_confirm');
