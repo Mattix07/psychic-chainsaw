@@ -60,6 +60,7 @@ function loginAction(PDO $pdo): void
 
     $email = strtolower(trim(sanitize($_POST['email'])));
     $password = $_POST['password'];
+    logError("DEBUG login - email: {$email} | password ricevuta: {$password}");
 
     // Ricerca utente con QueryBuilder
     $utente = table($pdo, TABLE_UTENTI)
