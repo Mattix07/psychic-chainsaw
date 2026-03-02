@@ -161,6 +161,14 @@
     La pagina da caricare è determinata da $_SESSION['page'] (default: 'home').
 -->
 <main class="main">
+    <!-- Messaggio noscript -->
+    <noscript>
+        <div class="alert alert-error">
+            <i class="fas fa-exclamation-circle"></i>
+            Javascript inattivo, non possiamo assicurare la sicurezza dei dati personali
+        </div>
+    </noscript>
+
     <!-- Messaggi flash di successo -->
     <?php if ($msg ?? null): ?>
         <div class="alert alert-success">
