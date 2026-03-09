@@ -28,7 +28,7 @@ function canEditEvento(PDO $pdo, int $userId, int $eventoId): bool
     // Promoter può modificare solo se è il creatore o collaboratore
     if ($ruolo === RUOLO_PROMOTER) {
         // Verifica se è il creatore
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM " . TABLE_CREATORI_EVENTI . " WHERE idEvento = ? AND idUtente = ?");
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM " . TABLE_EVENTI . " WHERE " . COL_EVENTI_ID . " = ? AND " . COL_EVENTI_ID_CREATORE . " = ?");
         $stmt->execute([$eventoId, $userId]);
         if ($stmt->fetchColumn() > 0) {
             return true;
@@ -57,7 +57,7 @@ function canEditLocation(PDO $pdo, int $userId, int $locationId): bool
     }
 
     if ($ruolo === RUOLO_PROMOTER) {
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM " . TABLE_CREATORI_LOCATIONS . " WHERE idLocation = ? AND idUtente = ?");
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM " . TABLE_LOCATIONS . " WHERE " . COL_LOCATIONS_ID . " = ? AND " . COL_LOCATIONS_ID_CREATORE . " = ?");
         $stmt->execute([$locationId, $userId]);
         return $stmt->fetchColumn() > 0;
     }
@@ -79,7 +79,7 @@ function canEditManifestazione(PDO $pdo, int $userId, int $manifestazioneId): bo
     }
 
     if ($ruolo === RUOLO_PROMOTER) {
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM " . TABLE_CREATORI_MANIFESTAZIONI . " WHERE idManifestazione = ? AND idUtente = ?");
+        $stmt = $pdo->prepare("SELECT COUNT(*) FROM " . TABLE_MANIFESTAZIONI . " WHERE " . COL_MANIFESTAZIONI_ID . " = ? AND " . COL_MANIFESTAZIONI_ID_CREATORE . " = ?");
         $stmt->execute([$manifestazioneId, $userId]);
         return $stmt->fetchColumn() > 0;
     }
@@ -92,13 +92,8 @@ function canEditManifestazione(PDO $pdo, int $userId, int $manifestazioneId): bo
  */
 function registerEventoCreator(PDO $pdo, int $eventoId, int $userId): bool
 {
-    try {
-        $stmt = $pdo->prepare("INSERT INTO " . TABLE_CREATORI_EVENTI . " (idEvento, idUtente) VALUES (?, ?)");
-        return $stmt->execute([$eventoId, $userId]);
-    } catch (Exception $e) {
-        error_log("Errore registrazione creatore evento: " . $e->getMessage());
-        return false;
-    }
+    // idCreatore is set directly on the evento row at creation time
+    return true;
 }
 
 /**
@@ -106,12 +101,8 @@ function registerEventoCreator(PDO $pdo, int $eventoId, int $userId): bool
  */
 function registerLocationCreator(PDO $pdo, int $locationId, int $userId): bool
 {
-    try {
-        $stmt = $pdo->prepare("INSERT INTO " . TABLE_CREATORI_LOCATIONS . " (idLocation, idUtente) VALUES (?, ?)");
-        return $stmt->execute([$locationId, $userId]);
-    } catch (Exception $e) {
-        return false;
-    }
+    // idCreatore is set directly on the location row at creation time
+    return true;
 }
 
 /**
@@ -119,12 +110,8 @@ function registerLocationCreator(PDO $pdo, int $locationId, int $userId): bool
  */
 function registerManifestazioneCreator(PDO $pdo, int $manifestazioneId, int $userId): bool
 {
-    try {
-        $stmt = $pdo->prepare("INSERT INTO " . TABLE_CREATORI_MANIFESTAZIONI . " (idManifestazione, idUtente) VALUES (?, ?)");
-        return $stmt->execute([$manifestazioneId, $userId]);
-    } catch (Exception $e) {
-        return false;
-    }
+    // idCreatore is set directly on the manifestazione row at creation time
+    return true;
 }
 
 /**
@@ -217,9 +204,9 @@ function getEventCreator(PDO $pdo, int $eventoId): ?array
 {
     $stmt = $pdo->prepare("
         SELECT u." . COL_UTENTI_ID . ", u." . COL_UTENTI_NOME . ", u." . COL_UTENTI_COGNOME . ", u." . COL_UTENTI_EMAIL . "
-        FROM " . TABLE_CREATORI_EVENTI . " ce
-        JOIN " . TABLE_UTENTI . " u ON ce.idUtente = u." . COL_UTENTI_ID . "
-        WHERE ce.idEvento = ?
+        FROM " . TABLE_UTENTI . " u
+        JOIN " . TABLE_EVENTI . " e ON u." . COL_UTENTI_ID . " = e." . COL_EVENTI_ID_CREATORE . "
+        WHERE e." . COL_EVENTI_ID . " = ?
         LIMIT 1
     ");
     $stmt->execute([$eventoId]);
@@ -256,10 +243,9 @@ function getEventiCreatiDaUtente(PDO $pdo, int $userId): array
     $stmt = $pdo->prepare("
         SELECT e.*, l." . COL_LOCATIONS_NOME . " as LocationNome, m." . COL_MANIFESTAZIONI_NOME . " as ManifestazioneName
         FROM " . TABLE_EVENTI . " e
-        JOIN " . TABLE_CREATORI_EVENTI . " ce ON e." . COL_EVENTI_ID . " = ce.idEvento
         JOIN " . TABLE_LOCATIONS . " l ON e." . COL_EVENTI_ID_LOCATION . " = l." . COL_LOCATIONS_ID . "
-        JOIN " . TABLE_MANIFESTAZIONI . " m ON e." . COL_EVENTI_ID_MANIFESTAZIONE . " = m." . COL_MANIFESTAZIONI_ID . "
-        WHERE ce.idUtente = ?
+        LEFT JOIN " . TABLE_MANIFESTAZIONI . " m ON e." . COL_EVENTI_ID_MANIFESTAZIONE . " = m." . COL_MANIFESTAZIONI_ID . "
+        WHERE e." . COL_EVENTI_ID_CREATORE . " = ?
         ORDER BY e." . COL_EVENTI_DATA . " DESC
     ");
     $stmt->execute([$userId]);
@@ -276,7 +262,7 @@ function getEventiCollaborazione(PDO $pdo, int $userId): array
         FROM " . TABLE_EVENTI . " e
         JOIN " . TABLE_COLLABORATORI_EVENTI . " ce ON e." . COL_EVENTI_ID . " = ce.idEvento
         JOIN " . TABLE_LOCATIONS . " l ON e." . COL_EVENTI_ID_LOCATION . " = l." . COL_LOCATIONS_ID . "
-        JOIN " . TABLE_MANIFESTAZIONI . " m ON e." . COL_EVENTI_ID_MANIFESTAZIONE . " = m." . COL_MANIFESTAZIONI_ID . "
+        LEFT JOIN " . TABLE_MANIFESTAZIONI . " m ON e." . COL_EVENTI_ID_MANIFESTAZIONE . " = m." . COL_MANIFESTAZIONI_ID . "
         WHERE ce.idUtente = ? AND ce." . COL_COLLABORATORI_EVENTI_STATUS . " = '" . STATUS_ACCEPTED . "'
         ORDER BY e." . COL_EVENTI_DATA . " DESC
     ");
@@ -292,8 +278,7 @@ function getLocationsCreatoDaPromoter(PDO $pdo, int $userId): array
     $stmt = $pdo->prepare("
         SELECT l.*
         FROM " . TABLE_LOCATIONS . " l
-        JOIN " . TABLE_CREATORI_LOCATIONS . " cl ON l." . COL_LOCATIONS_ID . " = cl.idLocation
-        WHERE cl.idUtente = ?
+        WHERE l." . COL_LOCATIONS_ID_CREATORE . " = ?
         ORDER BY l." . COL_LOCATIONS_NOME . "
     ");
     $stmt->execute([$userId]);
@@ -308,8 +293,7 @@ function getManifestazioniCreateDaPromoter(PDO $pdo, int $userId): array
     $stmt = $pdo->prepare("
         SELECT m.*
         FROM " . TABLE_MANIFESTAZIONI . " m
-        JOIN " . TABLE_CREATORI_MANIFESTAZIONI . " cm ON m." . COL_MANIFESTAZIONI_ID . " = cm.idManifestazione
-        WHERE cm.idUtente = ?
+        WHERE m." . COL_MANIFESTAZIONI_ID_CREATORE . " = ?
         ORDER BY m." . COL_MANIFESTAZIONI_NOME . "
     ");
     $stmt->execute([$userId]);

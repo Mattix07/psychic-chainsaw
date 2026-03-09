@@ -60,7 +60,8 @@ function saveManifestazione(PDO $pdo): void
         'Nome' => sanitize($_POST['nome'] ?? ''),
         'Descrizione' => sanitize($_POST['descrizione'] ?? ''),
         'DataInizio' => $_POST['data_inizio'] ?? null,
-        'DataFine' => $_POST['data_fine'] ?? null
+        'DataFine' => $_POST['data_fine'] ?? null,
+        'idCreatore' => $_SESSION['user_id']
     ];
 
     if (empty($data['Nome'])) {

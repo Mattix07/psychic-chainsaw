@@ -76,6 +76,14 @@ function viewEvento(PDO $pdo): void
     $_SESSION['intrattenitori_evento'] = getIntrattenitoriEvento($pdo, $id);
     $_SESSION['recensioni_evento'] = getRecensioniByEvento($pdo, $id);
     $_SESSION['media_voti'] = getMediaVotiEvento($pdo, $id);
+
+    $desc = $evento['Programma'] ?? '';
+    $descTrunc = mb_strlen($desc) > 155 ? mb_substr($desc, 0, 155) . '…' : $desc;
+    setSeoMeta(
+        $evento['Nome'],
+        $descTrunc ?: 'Acquista biglietti per ' . $evento['Nome'] . ' su EventsMaster.',
+        'index,follow'
+    );
     setPage('evento_dettaglio');
 }
 
@@ -85,6 +93,7 @@ function viewEvento(PDO $pdo): void
 function listEventi(PDO $pdo): void
 {
     $_SESSION['eventi'] = getAllEventi($pdo);
+    setSeoMeta('Tutti gli eventi', 'Scopri tutti gli eventi disponibili su EventsMaster: concerti, teatro, sport e molto altro. Acquista i tuoi biglietti online.');
     setPage('eventi_lista');
 }
 
@@ -122,9 +131,11 @@ function listByCategory(PDO $pdo, string $category): void
     if (in_array($categoria, $validCategories)) {
         $_SESSION['eventi'] = getEventiByTipo($pdo, $categoria);
         $_SESSION['categoria_nome'] = ucfirst($categoria);
+        setSeoMeta(ucfirst($categoria), 'Scopri tutti gli eventi di ' . ucfirst($categoria) . ' su EventsMaster. Acquista biglietti online in modo facile e sicuro.');
     } else {
         $_SESSION['eventi'] = getAllEventi($pdo);
         $_SESSION['categoria_nome'] = 'Tutti gli eventi';
+        setSeoMeta('Tutti gli eventi', 'Scopri tutti gli eventi disponibili su EventsMaster: concerti, teatro, sport e molto altro. Acquista i tuoi biglietti online.');
     }
 
     setPage('eventi_lista');

@@ -46,7 +46,7 @@ function getBigliettoById(PDO $pdo, int $id): ?array
         SELECT b.*, e." . COL_EVENTI_NOME . " as EventoNome, t." . COL_TIPO_MODIFICATORE_PREZZO . "
         FROM " . TABLE_BIGLIETTI . " b
         JOIN " . TABLE_EVENTI . " e ON b." . COL_BIGLIETTI_ID_EVENTO . " = e." . COL_EVENTI_ID . "
-        JOIN " . TABLE_TIPO . " t ON b." . COL_BIGLIETTI_ID_CLASSE . " = t." . COL_TIPO_NOME . "
+        JOIN " . TABLE_TIPO . " t ON b." . COL_BIGLIETTI_ID_TIPO . " = t." . COL_TIPO_ID . "
         WHERE b." . COL_BIGLIETTI_ID . " = ?
     ");
     $stmt->execute([$id]);
@@ -64,7 +64,7 @@ function getBigliettiByEvento(PDO $pdo, int $idEvento): array
     $stmt = $pdo->prepare("
         SELECT b.*, t." . COL_TIPO_MODIFICATORE_PREZZO . ", sb." . COL_SETTORE_BIGLIETTI_FILA . ", sb." . COL_SETTORE_BIGLIETTI_NUMERO . ", s." . COL_SETTORI_ID . " as idSettore
         FROM " . TABLE_BIGLIETTI . " b
-        JOIN " . TABLE_TIPO . " t ON b." . COL_BIGLIETTI_ID_CLASSE . " = t." . COL_TIPO_NOME . "
+        JOIN " . TABLE_TIPO . " t ON b." . COL_BIGLIETTI_ID_TIPO . " = t." . COL_TIPO_ID . "
         LEFT JOIN " . TABLE_SETTORE_BIGLIETTI . " sb ON b." . COL_BIGLIETTI_ID . " = sb." . COL_SETTORE_BIGLIETTI_ID_BIGLIETTO . "
         LEFT JOIN " . TABLE_SETTORI . " s ON sb." . COL_SETTORE_BIGLIETTI_ID_SETTORE . " = s." . COL_SETTORI_ID . "
         WHERE b." . COL_BIGLIETTI_ID_EVENTO . " = ?
@@ -87,7 +87,7 @@ function getBigliettiByOrdine(PDO $pdo, int $idOrdine): array
         FROM " . TABLE_BIGLIETTI . " b
         JOIN " . TABLE_ORDINE_BIGLIETTI . " ob ON b." . COL_BIGLIETTI_ID . " = ob.idBiglietto
         JOIN " . TABLE_EVENTI . " e ON b." . COL_BIGLIETTI_ID_EVENTO . " = e." . COL_EVENTI_ID . "
-        JOIN " . TABLE_TIPO . " t ON b." . COL_BIGLIETTI_ID_CLASSE . " = t." . COL_TIPO_NOME . "
+        JOIN " . TABLE_TIPO . " t ON b." . COL_BIGLIETTI_ID_TIPO . " = t." . COL_TIPO_ID . "
         WHERE ob.idOrdine = ?
     ");
     $stmt->execute([$idOrdine]);
@@ -107,13 +107,20 @@ function createBiglietto(PDO $pdo, array $data): int
     $stato = $data['Stato'] ?? STATO_BIGLIETTO_ACQUISTATO;
     $idUtente = $data['idUtente'] ?? null;
 
+    $idClasse = $data['idClasse'];
+    if (is_string($idClasse) && !is_numeric($idClasse)) {
+        $tipoStmt = $pdo->prepare("SELECT " . COL_TIPO_ID . " FROM " . TABLE_TIPO . " WHERE " . COL_TIPO_NOME . " = ?");
+        $tipoStmt->execute([$idClasse]);
+        $idClasse = (int)($tipoStmt->fetchColumn() ?: 1);
+    }
+
     $stmt = $pdo->prepare("
-        INSERT INTO " . TABLE_BIGLIETTI . " (" . COL_BIGLIETTI_ID_EVENTO . ", " . COL_BIGLIETTI_ID_CLASSE . ", " . COL_BIGLIETTI_NOME . ", " . COL_BIGLIETTI_COGNOME . ", " . COL_BIGLIETTI_SESSO . ", " . COL_BIGLIETTI_QRCODE . ", " . COL_BIGLIETTI_STATO . ", " . COL_BIGLIETTI_ID_UTENTE . ")
+        INSERT INTO " . TABLE_BIGLIETTI . " (" . COL_BIGLIETTI_ID_EVENTO . ", " . COL_BIGLIETTI_ID_TIPO . ", " . COL_BIGLIETTI_NOME . ", " . COL_BIGLIETTI_COGNOME . ", " . COL_BIGLIETTI_SESSO . ", " . COL_BIGLIETTI_QRCODE . ", " . COL_BIGLIETTI_STATO . ", " . COL_BIGLIETTI_ID_UTENTE . ")
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ");
     $stmt->execute([
         $data['idEvento'],
-        $data['idClasse'],
+        $idClasse,
         $data['Nome'],
         $data['Cognome'],
         $data['Sesso'],
@@ -134,11 +141,19 @@ function createBiglietto(PDO $pdo, array $data): int
  */
 function assegnaPosto(PDO $pdo, int $idBiglietto, int $idSettore, string $fila, int $numero): bool
 {
-    $stmt = $pdo->prepare("
-        INSERT INTO " . TABLE_SETTORE_BIGLIETTI . " (" . COL_SETTORE_BIGLIETTI_ID_SETTORE . ", " . COL_SETTORE_BIGLIETTI_ID_BIGLIETTO . ", " . COL_SETTORE_BIGLIETTI_FILA . ", " . COL_SETTORE_BIGLIETTI_NUMERO . ")
-        VALUES (?, ?, ?, ?)
-    ");
-    return $stmt->execute([$idSettore, $idBiglietto, $fila, $numero]);
+    try {
+        $stmt = $pdo->prepare("
+            INSERT INTO " . TABLE_SETTORE_BIGLIETTI . " (" . COL_SETTORE_BIGLIETTI_ID_SETTORE . ", " . COL_SETTORE_BIGLIETTI_ID_BIGLIETTO . ", " . COL_SETTORE_BIGLIETTI_FILA . ", " . COL_SETTORE_BIGLIETTI_NUMERO . ")
+            VALUES (?, ?, ?, ?)
+        ");
+        return $stmt->execute([$idSettore, $idBiglietto, $fila, $numero]);
+    } catch (PDOException $e) {
+        // SQLSTATE 23000 = Integrity constraint violation (duplicate seat)
+        if ($e->getCode() === '23000') {
+            return false; // Il chiamante dovrà riprovare con un altro posto
+        }
+        throw $e;
+    }
 }
 
 /**
@@ -197,16 +212,16 @@ function generateQRCode(): string
  * @param string $idClasse Nome della tipologia biglietto
  * @return float Prezzo finale calcolato, 0 se dati non trovati
  */
-function calcolaPrezzoFinale(PDO $pdo, int $idEvento, string $idClasse, int $idSettore): float
+function calcolaPrezzoFinale(PDO $pdo, int $idEvento, int $idTipo, int $idSettore): float
 {
     $stmt = $pdo->prepare("
         SELECT e." . COL_EVENTI_PREZZO_NO_MOD . ", t." . COL_TIPO_MODIFICATORE_PREZZO . ", s." . COL_SETTORI_MOLTIPLICATORE_PREZZO . "
         FROM " . TABLE_EVENTI . " e
         CROSS JOIN " . TABLE_TIPO . " t
         CROSS JOIN " . TABLE_SETTORI . " s
-        WHERE e." . COL_EVENTI_ID . " = ? AND t." . COL_TIPO_NOME . " = ? AND s." . COL_SETTORI_ID . " = ?
+        WHERE e." . COL_EVENTI_ID . " = ? AND t." . COL_TIPO_ID . " = ? AND s." . COL_SETTORI_ID . " = ?
     ");
-    $stmt->execute([$idEvento, $idClasse, $idSettore]);
+    $stmt->execute([$idEvento, $idTipo, $idSettore]);
     $result = $stmt->fetch();
 
     if (!$result) {
@@ -236,15 +251,14 @@ function getBigliettiUtenteFuturi(PDO $pdo, int $idUtente): array
         FROM " . TABLE_BIGLIETTI . " b
         JOIN " . TABLE_EVENTI . " e ON b." . COL_BIGLIETTI_ID_EVENTO . " = e." . COL_EVENTI_ID . "
         JOIN " . TABLE_LOCATIONS . " l ON e." . COL_EVENTI_ID_LOCATION . " = l." . COL_LOCATIONS_ID . "
-        JOIN " . TABLE_TIPO . " t ON b." . COL_BIGLIETTI_ID_CLASSE . " = t." . COL_TIPO_NOME . "
+        JOIN " . TABLE_TIPO . " t ON b." . COL_BIGLIETTI_ID_TIPO . " = t." . COL_TIPO_ID . "
         LEFT JOIN " . TABLE_SETTORE_BIGLIETTI . " sb ON b." . COL_BIGLIETTI_ID . " = sb." . COL_SETTORE_BIGLIETTI_ID_BIGLIETTO . "
         LEFT JOIN " . TABLE_SETTORI . " s ON sb." . COL_SETTORE_BIGLIETTI_ID_SETTORE . " = s." . COL_SETTORI_ID . "
         LEFT JOIN " . TABLE_ORDINE_BIGLIETTI . " ob ON b." . COL_BIGLIETTI_ID . " = ob.idBiglietto
         LEFT JOIN " . TABLE_ORDINI . " o ON ob.idOrdine = o." . COL_ORDINI_ID . "
-        LEFT JOIN " . TABLE_UTENTE_ORDINI . " uo ON o." . COL_ORDINI_ID . " = uo.idOrdine
         WHERE e." . COL_EVENTI_DATA . " >= CURDATE()
           AND (b." . COL_BIGLIETTI_STATO . " = '" . STATO_BIGLIETTO_ACQUISTATO . "' OR b." . COL_BIGLIETTI_STATO . " IS NULL)
-          AND (uo.idUtente = ? OR b." . COL_BIGLIETTI_ID_UTENTE . " = ?)
+          AND (o." . COL_ORDINI_ID_UTENTE . " = ? OR b." . COL_BIGLIETTI_ID_UTENTE . " = ?)
         ORDER BY e." . COL_EVENTI_DATA . ", e." . COL_EVENTI_ORA_INIZIO . "
     ");
     $stmt->execute([$idUtente, $idUtente]);
@@ -271,15 +285,14 @@ function getBigliettiUtentePassati(PDO $pdo, int $idUtente): array
         FROM " . TABLE_BIGLIETTI . " b
         JOIN " . TABLE_EVENTI . " e ON b." . COL_BIGLIETTI_ID_EVENTO . " = e." . COL_EVENTI_ID . "
         JOIN " . TABLE_LOCATIONS . " l ON e." . COL_EVENTI_ID_LOCATION . " = l." . COL_LOCATIONS_ID . "
-        JOIN " . TABLE_TIPO . " t ON b." . COL_BIGLIETTI_ID_CLASSE . " = t." . COL_TIPO_NOME . "
+        JOIN " . TABLE_TIPO . " t ON b." . COL_BIGLIETTI_ID_TIPO . " = t." . COL_TIPO_ID . "
         LEFT JOIN " . TABLE_SETTORE_BIGLIETTI . " sb ON b." . COL_BIGLIETTI_ID . " = sb." . COL_SETTORE_BIGLIETTI_ID_BIGLIETTO . "
         LEFT JOIN " . TABLE_SETTORI . " s ON sb." . COL_SETTORE_BIGLIETTI_ID_SETTORE . " = s." . COL_SETTORI_ID . "
         LEFT JOIN " . TABLE_ORDINE_BIGLIETTI . " ob ON b." . COL_BIGLIETTI_ID . " = ob.idBiglietto
         LEFT JOIN " . TABLE_ORDINI . " o ON ob.idOrdine = o." . COL_ORDINI_ID . "
-        LEFT JOIN " . TABLE_UTENTE_ORDINI . " uo ON o." . COL_ORDINI_ID . " = uo.idOrdine
         WHERE e." . COL_EVENTI_DATA . " < CURDATE()
           AND (b." . COL_BIGLIETTI_STATO . " = '" . STATO_BIGLIETTO_ACQUISTATO . "' OR b." . COL_BIGLIETTI_STATO . " IS NULL)
-          AND (uo.idUtente = ? OR b." . COL_BIGLIETTI_ID_UTENTE . " = ?)
+          AND (o." . COL_ORDINI_ID_UTENTE . " = ? OR b." . COL_BIGLIETTI_ID_UTENTE . " = ?)
         ORDER BY e." . COL_EVENTI_DATA . " DESC, e." . COL_EVENTI_ORA_INIZIO . " DESC
     ");
     $stmt->execute([$idUtente, $idUtente]);
@@ -300,10 +313,9 @@ function hasBigliettoPerEvento(PDO $pdo, int $idUtente, int $idEvento): bool
         FROM " . TABLE_BIGLIETTI . " b
         LEFT JOIN " . TABLE_ORDINE_BIGLIETTI . " ob ON b." . COL_BIGLIETTI_ID . " = ob.idBiglietto
         LEFT JOIN " . TABLE_ORDINI . " o ON ob.idOrdine = o." . COL_ORDINI_ID . "
-        LEFT JOIN " . TABLE_UTENTE_ORDINI . " uo ON o." . COL_ORDINI_ID . " = uo.idOrdine
         WHERE b." . COL_BIGLIETTI_ID_EVENTO . " = ?
           AND (b." . COL_BIGLIETTI_STATO . " = '" . STATO_BIGLIETTO_ACQUISTATO . "' OR b." . COL_BIGLIETTI_STATO . " IS NULL)
-          AND (uo.idUtente = ? OR b." . COL_BIGLIETTI_ID_UTENTE . " = ?)
+          AND (o." . COL_ORDINI_ID_UTENTE . " = ? OR b." . COL_BIGLIETTI_ID_UTENTE . " = ?)
     ");
     $stmt->execute([$idEvento, $idUtente, $idUtente]);
     $result = $stmt->fetch();
@@ -346,12 +358,16 @@ function esisteBigliettoDuplicato(PDO $pdo, int $idEvento, string $nome, string 
  */
 function addBigliettoToCart(PDO $pdo, int $idEvento, string $idClasse, ?int $idUtente = null, ?int $idSettore = null): int
 {
+    $tipoStmt = $pdo->prepare("SELECT " . COL_TIPO_ID . " FROM " . TABLE_TIPO . " WHERE " . COL_TIPO_NOME . " = ?");
+    $tipoStmt->execute([$idClasse]);
+    $idTipo = (int)($tipoStmt->fetchColumn() ?: 1);
+
     $stmt = $pdo->prepare("
-        INSERT INTO " . TABLE_BIGLIETTI . " (" . COL_BIGLIETTI_ID_EVENTO . ", " . COL_BIGLIETTI_ID_CLASSE . ", " . COL_BIGLIETTI_NOME . ", " . COL_BIGLIETTI_COGNOME . ", " . COL_BIGLIETTI_SESSO . ", " . COL_BIGLIETTI_QRCODE . ", " . COL_BIGLIETTI_STATO . ", " . COL_BIGLIETTI_ID_UTENTE . ", " . COL_BIGLIETTI_DATA_CARRELLO . ")
+        INSERT INTO " . TABLE_BIGLIETTI . " (" . COL_BIGLIETTI_ID_EVENTO . ", " . COL_BIGLIETTI_ID_TIPO . ", " . COL_BIGLIETTI_NOME . ", " . COL_BIGLIETTI_COGNOME . ", " . COL_BIGLIETTI_SESSO . ", " . COL_BIGLIETTI_QRCODE . ", " . COL_BIGLIETTI_STATO . ", " . COL_BIGLIETTI_ID_UTENTE . ", " . COL_BIGLIETTI_DATA_CARRELLO . ")
         VALUES (?, ?, '', '', '" . SESSO_ALTRO . "', ?, '" . STATO_BIGLIETTO_CARRELLO . "', ?, NOW())
     ");
     $qrcode = generateQRCode();
-    $stmt->execute([$idEvento, $idClasse, $qrcode, $idUtente]);
+    $stmt->execute([$idEvento, $idTipo, $qrcode, $idUtente]);
     $idBiglietto = (int) $pdo->lastInsertId();
 
     // Se è stato selezionato un settore, assegna subito il posto
@@ -410,8 +426,11 @@ function assegnaPostoInSettore(PDO $pdo, int $idBiglietto, int $idEvento, int $i
         for ($numero = 1; $numero <= $postiInQuestaFila; $numero++) {
             $chiave = $letteraFila . '-' . $numero;
             if (!isset($occupati[$chiave])) {
-                // Posto libero trovato! Assegnalo
-                return assegnaPosto($pdo, $idBiglietto, $idSettore, $letteraFila, $numero);
+                // Posto libero trovato: prova ad assegnarlo.
+                // Se fallisce per race condition (UNIQUE violation), continua col prossimo.
+                if (assegnaPosto($pdo, $idBiglietto, $idSettore, $letteraFila, $numero)) {
+                    return true;
+                }
             }
         }
     }
@@ -435,7 +454,7 @@ function getCartByUtente(PDO $pdo, int $idUtente): array
                (e." . COL_EVENTI_PREZZO_NO_MOD . " + t." . COL_TIPO_MODIFICATORE_PREZZO . ") * COALESCE(s." . COL_SETTORI_MOLTIPLICATORE_PREZZO . ", 1) as PrezzoFinale
         FROM " . TABLE_BIGLIETTI . " b
         JOIN " . TABLE_EVENTI . " e ON b." . COL_BIGLIETTI_ID_EVENTO . " = e." . COL_EVENTI_ID . "
-        JOIN " . TABLE_TIPO . " t ON b." . COL_BIGLIETTI_ID_CLASSE . " = t." . COL_TIPO_NOME . "
+        JOIN " . TABLE_TIPO . " t ON b." . COL_BIGLIETTI_ID_TIPO . " = t." . COL_TIPO_ID . "
         LEFT JOIN " . TABLE_SETTORE_BIGLIETTI . " sb ON b." . COL_BIGLIETTI_ID . " = sb." . COL_SETTORE_BIGLIETTI_ID_BIGLIETTO . "
         LEFT JOIN " . TABLE_SETTORI . " s ON sb." . COL_SETTORE_BIGLIETTI_ID_SETTORE . " = s." . COL_SETTORI_ID . "
         WHERE b." . COL_BIGLIETTI_ID_UTENTE . " = ? AND b." . COL_BIGLIETTI_STATO . " = '" . STATO_BIGLIETTO_CARRELLO . "'
@@ -487,12 +506,16 @@ function updateBigliettoCart(PDO $pdo, int $idBiglietto, string $nome, string $c
  */
 function updateBigliettoTipo(PDO $pdo, int $idBiglietto, string $nuovoTipo): bool
 {
+    $tipoStmt = $pdo->prepare("SELECT " . COL_TIPO_ID . " FROM " . TABLE_TIPO . " WHERE " . COL_TIPO_NOME . " = ?");
+    $tipoStmt->execute([$nuovoTipo]);
+    $idTipo = (int)($tipoStmt->fetchColumn() ?: 1);
+
     $stmt = $pdo->prepare("
         UPDATE " . TABLE_BIGLIETTI . "
-        SET " . COL_BIGLIETTI_ID_CLASSE . " = ?
+        SET " . COL_BIGLIETTI_ID_TIPO . " = ?
         WHERE " . COL_BIGLIETTI_ID . " = ? AND " . COL_BIGLIETTI_STATO . " = '" . STATO_BIGLIETTO_CARRELLO . "'
     ");
-    return $stmt->execute([$nuovoTipo, $idBiglietto]);
+    return $stmt->execute([$idTipo, $idBiglietto]);
 }
 
 /**

@@ -103,8 +103,8 @@ function getEventiProssimi(PDO $pdo, int $limit = 10): array
 function createEvento(PDO $pdo, array $data): int
 {
     $stmt = $pdo->prepare("
-        INSERT INTO " . TABLE_EVENTI . " (" . COL_EVENTI_ID_MANIFESTAZIONE . ", " . COL_EVENTI_ID_LOCATION . ", " . COL_EVENTI_NOME . ", " . COL_EVENTI_PREZZO_NO_MOD . ", " . COL_EVENTI_DATA . ", " . COL_EVENTI_ORA_INIZIO . ", " . COL_EVENTI_ORA_FINE . ", " . COL_EVENTI_PROGRAMMA . ", " . COL_EVENTI_IMMAGINE . ", " . COL_EVENTI_CATEGORIA . ")
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO " . TABLE_EVENTI . " (" . COL_EVENTI_ID_MANIFESTAZIONE . ", " . COL_EVENTI_ID_LOCATION . ", " . COL_EVENTI_NOME . ", " . COL_EVENTI_PREZZO_NO_MOD . ", " . COL_EVENTI_DATA . ", " . COL_EVENTI_ORA_INIZIO . ", " . COL_EVENTI_ORA_FINE . ", " . COL_EVENTI_PROGRAMMA . ", " . COL_EVENTI_IMMAGINE . ", " . COL_EVENTI_CATEGORIA . ", " . COL_EVENTI_ID_CREATORE . ")
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
     $stmt->execute([
         $data['idManifestazione'],
@@ -116,7 +116,8 @@ function createEvento(PDO $pdo, array $data): int
         $data['OraF'],
         $data['Programma'] ?? null,
         $data['Immagine'] ?? null,
-        $data['Categoria'] ?? CATEGORIA_FAMIGLIA
+        $data['Categoria'] ?? CATEGORIA_FAMIGLIA,
+        $data['idCreatore'] ?? 0
     ]);
     return (int) $pdo->lastInsertId();
 }
@@ -173,9 +174,11 @@ function getIntrattenitoriEvento(PDO $pdo, int $idEvento): array
 {
     $stmt = $pdo->prepare("
         SELECT i.*, e." . COL_EVENTI_ORA_INIZIO . ", e." . COL_EVENTI_ORA_FINE . "
-        FROM " . TABLE_INTRATTENITORE . " i, " . TABLE_EVENTI . " e, " . TABLE_EVENTO_INTRATTENITORE . " es
+        FROM " . TABLE_INTRATTENITORE . " i
+        JOIN " . TABLE_EVENTO_INTRATTENITORE . " es ON es.idIntrattenitore = i." . COL_INTRATTENITORE_ID . "
+        JOIN " . TABLE_EVENTI . " e ON e." . COL_EVENTI_ID . " = es.idEvento
         WHERE es.idEvento = ?
-        ORDER BY e." . COL_EVENTI_ORA_INIZIO . "
+        ORDER BY i." . COL_INTRATTENITORE_NOME . "
     ");
     $stmt->execute([$idEvento]);
     return $stmt->fetchAll();

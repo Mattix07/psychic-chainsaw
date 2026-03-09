@@ -80,7 +80,8 @@ function createLocation(PDO $pdo, array $data): int
         COL_LOCATIONS_CITTA => $data['Citta'] ?? '',
         COL_LOCATIONS_CAP => $data['CAP'] ?? '',
         COL_LOCATIONS_REGIONE => $data['Regione'] ?? '',
-        COL_LOCATIONS_CAPIENZA => $data['Capienza'] ?? 0
+        COL_LOCATIONS_CAPIENZA => $data['Capienza'] ?? 0,
+        COL_LOCATIONS_ID_CREATORE => $data['idCreatore'] ?? 0
     ]);
 }
 
@@ -143,8 +144,7 @@ function getLocationsByCreator(PDO $pdo, int $userId): array
     $stmt = $pdo->prepare("
         SELECT l.*
         FROM " . TABLE_LOCATIONS . " l
-        INNER JOIN " . TABLE_CREATORI_LOCATIONS . " cl ON l." . COL_LOCATIONS_ID . " = cl.idLocation
-        WHERE cl.idUtente = ?
+        WHERE l." . COL_LOCATIONS_ID_CREATORE . " = ?
         ORDER BY l." . COL_LOCATIONS_NOME . "
     ");
     $stmt->execute([$userId]);

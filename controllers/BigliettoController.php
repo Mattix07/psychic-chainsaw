@@ -144,11 +144,10 @@ function acquistaFromServerCart(PDO $pdo, array $cartData, string $metodo): void
         }
 
         // Crea ordine e associa biglietti
-        $idOrdine = createOrdine($pdo, $metodo);
+        $idOrdine = createOrdine($pdo, $metodo, $_SESSION['user_id']);
         foreach ($bigliettiIds as $idBiglietto) {
             associaOrdineBiglietto($pdo, $idOrdine, $idBiglietto);
         }
-        associaOrdineUtente($pdo, $idOrdine, $_SESSION['user_id']);
 
         $pdo->commit();
 
@@ -211,11 +210,10 @@ function acquistaFromLocalCart(PDO $pdo, array $cartData, string $metodo): void
         }
 
         // Crea ordine e associa biglietti
-        $idOrdine = createOrdine($pdo, $metodo);
+        $idOrdine = createOrdine($pdo, $metodo, $_SESSION['user_id']);
         foreach ($bigliettiIds as $idBiglietto) {
             associaOrdineBiglietto($pdo, $idOrdine, $idBiglietto);
         }
-        associaOrdineUtente($pdo, $idOrdine, $_SESSION['user_id']);
 
         $pdo->commit();
 
@@ -268,6 +266,11 @@ function viewBiglietto(PDO $pdo): void
 
     if (!$biglietto) {
         redirect('index.php', null, 'Biglietto non trovato');
+    }
+
+    // Verifica che il biglietto appartenga all'utente corrente
+    if ((int)$biglietto[COL_BIGLIETTI_ID_UTENTE] !== (int)$_SESSION['user_id']) {
+        redirect('index.php', null, 'Accesso negato.');
     }
 
     $_SESSION['biglietto_corrente'] = $biglietto;

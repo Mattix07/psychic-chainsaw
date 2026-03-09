@@ -309,40 +309,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ==========================================
-    // CLIENT-SIDE PASSWORD HASHING (SHA-256)
-    // ==========================================
-    async function hashPassword(password) {
-        const msgBuffer = new TextEncoder().encode(password);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
-    (function() {
-        document.querySelectorAll('form').forEach(function(form) {
-            const actionField = form.querySelector('input[name="action"]');
-            if (!actionField) return;
-            const action = actionField.value;
-            let fields = [];
-            if (action === 'login') fields = ['password'];
-            else if (action === 'register') fields = ['password', 'password_confirm'];
-            else if (action === 'update_password') fields = ['current_password', 'new_password', 'confirm_password'];
-            else if (action === 'do_reset_password') fields = ['password', 'password_confirm'];
-            if (fields.length === 0) return;
-            form.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                for (const name of fields) {
-                    const field = form.querySelector('[name="' + name + '"]');
-                    if (field && field.value) {
-                        field.value = await hashPassword(field.value);
-                    }
-                }
-                form.submit();
-            });
-        });
-    })();
-
-    // ==========================================
     // PASSWORD CONFIRMATION
     // ==========================================
     const passwordConfirm = document.getElementById('password_confirm');
@@ -464,12 +430,29 @@ function formatPrice(price) {
 }
 
 /**
+ * Escapa una stringa per l'inserimento sicuro in HTML
+ */
+function escapeHtml(str) {
+    if (str == null) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+/**
  * Show toast notification
  */
 function showToast(message, type = 'info') {
     const toast = document.createElement('div');
     toast.className = `alert alert-${type}`;
-    toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'}"></i> ${message}`;
+
+    const icon = document.createElement('i');
+    icon.className = `fas fa-${type === 'success' ? 'check-circle' : 'info-circle'}`;
+    toast.appendChild(icon);
+    toast.appendChild(document.createTextNode(' ' + message));
     toast.style.position = 'fixed';
     toast.style.bottom = '20px';
     toast.style.right = '20px';
@@ -515,7 +498,7 @@ const Cart = {
             const parsed = JSON.parse(cart);
             return parsed.filter(item => item && (item.eventoId || item.idEvento));
         } catch (e) {
-            console.error('Error reading cart:', e);
+            if (window.EventsMaster?.debug) console.error('Error reading cart:', e);
             return [];
         }
     },
@@ -526,7 +509,7 @@ const Cart = {
             localStorage.setItem(this.STORAGE_KEY, JSON.stringify(cart));
             this.updateUI();
         } catch (e) {
-            console.error('Error saving cart:', e);
+            if (window.EventsMaster?.debug) console.error('Error saving cart:', e);
         }
     },
 
@@ -572,6 +555,7 @@ const Cart = {
                 body: formData
             });
 
+            if (!response.ok) throw new Error('HTTP ' + response.status);
             const result = await response.json();
 
             if (result.success) {
@@ -584,7 +568,7 @@ const Cart = {
                 return null;
             }
         } catch (e) {
-            console.error('Error adding to server cart:', e);
+            if (window.EventsMaster?.debug) console.error('Error adding to server cart:', e);
             showToast('Errore di connessione', 'error');
             return null;
         }
@@ -616,6 +600,7 @@ const Cart = {
                 body: formData
             });
 
+            if (!response.ok) throw new Error('HTTP ' + response.status);
             const result = await response.json();
 
             if (result.success) {
@@ -625,7 +610,7 @@ const Cart = {
             }
             return result.cart;
         } catch (e) {
-            console.error('Error removing from server cart:', e);
+            if (window.EventsMaster?.debug) console.error('Error removing from server cart:', e);
             return null;
         }
     },
@@ -649,6 +634,7 @@ const Cart = {
                 body: formData
             });
 
+            if (!response.ok) throw new Error('HTTP ' + response.status);
             const result = await response.json();
 
             if (result.success) {
@@ -656,7 +642,7 @@ const Cart = {
             }
             return result;
         } catch (e) {
-            console.error('Error updating cart item:', e);
+            if (window.EventsMaster?.debug) console.error('Error updating cart item:', e);
             return null;
         }
     },
@@ -681,13 +667,14 @@ const Cart = {
                 const formData = new FormData();
                 formData.append('csrf_token', this.getCsrfToken());
 
-                await fetch('index.php?action=cart_clear', {
+                const clearResponse = await fetch('index.php?action=cart_clear', {
                     method: 'POST',
                     body: formData
                 });
+                if (!clearResponse.ok) throw new Error('HTTP ' + clearResponse.status);
                 this._cache = [];
             } catch (e) {
-                console.error('Error clearing server cart:', e);
+                if (window.EventsMaster?.debug) console.error('Error clearing server cart:', e);
             }
         }
 
@@ -717,12 +704,13 @@ const Cart = {
 
         try {
             const response = await fetch('index.php?action=cart_get');
+            if (!response.ok) throw new Error('HTTP ' + response.status);
             const result = await response.json();
 
             this._cache = result.cart || [];
             this.updateUI();
         } catch (e) {
-            console.error('Error loading cart from server:', e);
+            if (window.EventsMaster?.debug) console.error('Error loading cart from server:', e);
         }
     },
 
@@ -730,9 +718,10 @@ const Cart = {
     async checkAvailability(idEvento, quantita = 1) {
         try {
             const response = await fetch(`index.php?action=check_availability&idEvento=${idEvento}&quantita=${quantita}`);
+            if (!response.ok) throw new Error('HTTP ' + response.status);
             return await response.json();
         } catch (e) {
-            console.error('Error checking availability:', e);
+            if (window.EventsMaster?.debug) console.error('Error checking availability:', e);
             return { disponibile: true, illimitati: true };
         }
     },
@@ -765,17 +754,20 @@ const Cart = {
                 cartFooter.style.display = 'block';
 
                 cartItems.innerHTML = cart.map((item, index) => {
-                    const eventName = item.eventName || item.eventoNome || 'Evento';
-                    const ticketType = item.ticketType || item.idClasse || 'Standard';
-                    const eventDate = item.eventDate || item.eventoData || '';
+                    const eventName = escapeHtml(item.eventName || item.eventoNome || 'Evento');
+                    const ticketType = escapeHtml(item.ticketType || item.idClasse || 'Standard');
+                    const eventDate = escapeHtml(item.eventDate || item.eventoData || '');
                     const price = item.price || item.prezzo || 0;
                     const qty = item.quantity || 1;
                     const itemId = item.id || index;
+                    const safeIndex = parseInt(index, 10);
+                    const safeItemId = escapeHtml(String(itemId));
+                    const safeImage = escapeHtml(item.image || 'public/img/placeholder-event.jpg');
 
                     return `
-                    <div class="cart-item" data-index="${index}" data-id="${itemId}">
+                    <div class="cart-item" data-index="${safeIndex}" data-id="${safeItemId}">
                         <div class="cart-item-image">
-                            <img src="${item.image || 'public/img/placeholder-event.jpg'}" alt="${eventName}">
+                            <img src="${safeImage}" alt="${eventName}">
                         </div>
                         <div class="cart-item-info">
                             <h4>${eventName}</h4>
@@ -785,16 +777,16 @@ const Cart = {
                         </div>
                         <div class="cart-item-actions">
                             ${this.isLoggedIn() ? `
-                            <button class="cart-item-remove" data-id="${itemId}">
+                            <button class="cart-item-remove" data-id="${safeItemId}">
                                 <i class="fas fa-trash"></i>
                             </button>
                             ` : `
                             <div class="quantity-control">
-                                <button class="qty-btn minus" data-index="${index}">-</button>
-                                <span class="qty-value">${qty}</span>
-                                <button class="qty-btn plus" data-index="${index}">+</button>
+                                <button class="qty-btn minus" data-index="${safeIndex}">-</button>
+                                <span class="qty-value">${parseInt(qty, 10)}</span>
+                                <button class="qty-btn plus" data-index="${safeIndex}">+</button>
                             </div>
-                            <button class="cart-item-remove" data-index="${index}">
+                            <button class="cart-item-remove" data-index="${safeIndex}">
                                 <i class="fas fa-trash"></i>
                             </button>
                             `}

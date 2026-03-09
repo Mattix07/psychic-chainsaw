@@ -71,11 +71,12 @@ function createManifestazione(PDO $pdo, $data): int
         $dataFine = $data['DataFine'] ?? null;
     }
 
+    $idCreatore = is_array($data) ? ($data['idCreatore'] ?? 0) : 0;
     $stmt = $pdo->prepare("
-        INSERT INTO " . TABLE_MANIFESTAZIONI . " (" . COL_MANIFESTAZIONI_NOME . ", " . COL_MANIFESTAZIONI_DESCRIZIONE . ", " . COL_MANIFESTAZIONI_DATA_INIZIO . ", " . COL_MANIFESTAZIONI_DATA_FINE . ")
-        VALUES (?, ?, ?, ?)
+        INSERT INTO " . TABLE_MANIFESTAZIONI . " (" . COL_MANIFESTAZIONI_NOME . ", " . COL_MANIFESTAZIONI_DESCRIZIONE . ", " . COL_MANIFESTAZIONI_DATA_INIZIO . ", " . COL_MANIFESTAZIONI_DATA_FINE . ", " . COL_MANIFESTAZIONI_ID_CREATORE . ")
+        VALUES (?, ?, ?, ?, ?)
     ");
-    $stmt->execute([$nome, $descrizione, $dataInizio, $dataFine]);
+    $stmt->execute([$nome, $descrizione, $dataInizio, $dataFine, $idCreatore]);
     return (int) $pdo->lastInsertId();
 }
 
@@ -141,8 +142,7 @@ function getManifestazioniByCreator(PDO $pdo, int $userId): array
     $stmt = $pdo->prepare("
         SELECT m.*
         FROM " . TABLE_MANIFESTAZIONI . " m
-        INNER JOIN " . TABLE_CREATORI_MANIFESTAZIONI . " cm ON m." . COL_MANIFESTAZIONI_ID . " = cm.idManifestazione
-        WHERE cm.idUtente = ?
+        WHERE m." . COL_MANIFESTAZIONI_ID_CREATORE . " = ?
         ORDER BY m." . COL_MANIFESTAZIONI_DATA_INIZIO . " DESC, m." . COL_MANIFESTAZIONI_NOME . "
     ");
     $stmt->execute([$userId]);

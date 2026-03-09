@@ -103,7 +103,7 @@ $categorie = [
         <button class="carousel-nav prev" data-carousel="featured"><i class="fas fa-chevron-left"></i></button>
         <div class="carousel" id="featured">
             <?php foreach ($tuttiEventi as $evento): ?>
-            <article class="event-card large" onclick="window.location='index.php?action=view_evento&id=<?= $evento['id'] ?>'">
+            <article class="event-card large">
                 <div class="event-card-poster">
                     <img src="img/events/<?= $evento['id'] ?>.jpg"
                          alt="<?= e($evento['Nome']) ?>"
@@ -111,13 +111,15 @@ $categorie = [
                     <span class="event-card-badge">In vendita</span>
                     <div class="event-card-overlay">
                         <div class="event-card-actions">
-                            <button class="card-action-btn primary" onclick="event.stopPropagation(); addToCart(<?= $evento['id'] ?>, 1, '<?= e($evento['Nome']) ?>', 'Standard', <?= $evento['PrezzoNoMod'] ?>, '<?= formatDate($evento['Data']) ?>', 'img/events/<?= $evento['id'] ?>.jpg')"><i class="fas fa-cart-plus"></i></button>
-                            <button class="card-action-btn"><i class="fas fa-heart"></i></button>
+                            <button class="card-action-btn primary" aria-label="Aggiungi al carrello" onclick="addToCart(<?= $evento['id'] ?>, 1, '<?= e($evento['Nome']) ?>', 'Standard', <?= (float)$evento['PrezzoNoMod'] ?>, '<?= formatDate($evento['Data']) ?>', 'img/events/<?= $evento['id'] ?>.jpg')"><i class="fas fa-cart-plus" aria-hidden="true"></i></button>
+                            <button class="card-action-btn" aria-label="Aggiungi ai preferiti"><i class="fas fa-heart" aria-hidden="true"></i></button>
                         </div>
                     </div>
                 </div>
                 <div class="event-card-info">
-                    <h3 class="event-card-title"><?= e($evento['Nome']) ?></h3>
+                    <h3 class="event-card-title">
+                        <a href="index.php?action=view_evento&id=<?= $evento['id'] ?>" class="event-card-link"><?= e($evento['Nome']) ?></a>
+                    </h3>
                     <div class="event-card-meta">
                         <span class="event-card-date"><?= formatDate($evento['Data']) ?></span>
                         <span><?= e($evento['LocationName']) ?></span>
@@ -148,20 +150,22 @@ $categorie = [
         <button class="carousel-nav prev" data-carousel="upcoming"><i class="fas fa-chevron-left"></i></button>
         <div class="carousel" id="upcoming">
             <?php foreach ($eventiProssimi as $evento): ?>
-            <article class="event-card" onclick="window.location='index.php?action=view_evento&id=<?= $evento['id'] ?>'">
+            <article class="event-card">
                 <div class="event-card-poster">
                     <img src="img/events/<?= $evento['id'] ?>.jpg"
                          alt="<?= e($evento['Nome']) ?>"
                          onerror="this.src='https://picsum.photos/250/375?random=<?= $evento['id'] + 100 ?>'">
                     <div class="event-card-overlay">
                         <div class="event-card-actions">
-                            <button class="card-action-btn primary"><i class="fas fa-ticket"></i></button>
-                            <button class="card-action-btn"><i class="fas fa-heart"></i></button>
+                            <a href="index.php?action=view_evento&id=<?= $evento['id'] ?>" class="card-action-btn primary" aria-label="Vedi biglietti"><i class="fas fa-ticket" aria-hidden="true"></i></a>
+                            <button class="card-action-btn" aria-label="Aggiungi ai preferiti"><i class="fas fa-heart" aria-hidden="true"></i></button>
                         </div>
                     </div>
                 </div>
                 <div class="event-card-info">
-                    <h3 class="event-card-title"><?= e($evento['Nome']) ?></h3>
+                    <h3 class="event-card-title">
+                        <a href="index.php?action=view_evento&id=<?= $evento['id'] ?>" class="event-card-link"><?= e($evento['Nome']) ?></a>
+                    </h3>
                     <div class="event-card-meta">
                         <span class="event-card-date"><?= formatDate($evento['Data']) ?></span>
                         <span class="event-card-price"><?= formatPrice($evento['PrezzoNoMod']) ?></span>
@@ -197,20 +201,22 @@ if (empty($eventiManifestazione)) continue;
         <button class="carousel-nav prev" data-carousel="manif-<?= $manifestazione['id'] ?>"><i class="fas fa-chevron-left"></i></button>
         <div class="carousel" id="manif-<?= $manifestazione['id'] ?>">
             <?php foreach ($eventiManifestazione as $evento): ?>
-            <article class="event-card" onclick="window.location='index.php?action=view_evento&id=<?= $evento['id'] ?>'">
+            <article class="event-card">
                 <div class="event-card-poster">
                     <img src="img/events/<?= $evento['id'] ?>.jpg"
                          alt="<?= e($evento['Nome']) ?>"
                          onerror="this.src='https://picsum.photos/250/375?random=<?= $evento['id'] + 200 ?>'">
                     <div class="event-card-overlay">
                         <div class="event-card-actions">
-                            <button class="card-action-btn primary"><i class="fas fa-ticket"></i></button>
-                            <button class="card-action-btn"><i class="fas fa-heart"></i></button>
+                            <a href="index.php?action=view_evento&id=<?= $evento['id'] ?>" class="card-action-btn primary" aria-label="Vedi biglietti"><i class="fas fa-ticket" aria-hidden="true"></i></a>
+                            <button class="card-action-btn" aria-label="Aggiungi ai preferiti"><i class="fas fa-heart" aria-hidden="true"></i></button>
                         </div>
                     </div>
                 </div>
                 <div class="event-card-info">
-                    <h3 class="event-card-title"><?= e($evento['Nome']) ?></h3>
+                    <h3 class="event-card-title">
+                        <a href="index.php?action=view_evento&id=<?= $evento['id'] ?>" class="event-card-link"><?= e($evento['Nome']) ?></a>
+                    </h3>
                     <div class="event-card-meta">
                         <span class="event-card-date"><?= formatDate($evento['Data']) ?></span>
                         <span class="event-card-price"><?= formatPrice($evento['PrezzoNoMod']) ?></span>
@@ -242,19 +248,21 @@ if (empty($eventiManifestazione)) continue;
         $eventiRandom = array_slice($tuttiEventi, 0, 6);
         foreach ($eventiRandom as $evento):
         ?>
-        <article class="event-card" onclick="window.location='index.php?action=view_evento&id=<?= $evento['id'] ?>'">
+        <article class="event-card">
             <div class="event-card-poster">
                 <img src="img/events/<?= $evento['id'] ?>.jpg"
                      alt="<?= e($evento['Nome']) ?>"
                      onerror="this.src='https://picsum.photos/200/300?random=<?= $evento['id'] + 300 ?>'">
                 <div class="event-card-overlay">
                     <div class="event-card-actions">
-                        <button class="card-action-btn primary"><i class="fas fa-ticket"></i></button>
+                        <a href="index.php?action=view_evento&id=<?= $evento['id'] ?>" class="card-action-btn primary" aria-label="Vedi biglietti"><i class="fas fa-ticket" aria-hidden="true"></i></a>
                     </div>
                 </div>
             </div>
             <div class="event-card-info">
-                <h3 class="event-card-title"><?= e($evento['Nome']) ?></h3>
+                <h3 class="event-card-title">
+                    <a href="index.php?action=view_evento&id=<?= $evento['id'] ?>" class="event-card-link"><?= e($evento['Nome']) ?></a>
+                </h3>
                 <div class="event-card-meta">
                     <span class="event-card-date"><?= formatDate($evento['Data']) ?></span>
                     <span class="event-card-price"><?= formatPrice($evento['PrezzoNoMod']) ?></span>

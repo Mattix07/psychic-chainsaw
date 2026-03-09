@@ -34,7 +34,7 @@ $categoriaNome = $_SESSION['categoria_nome'] ?? 'Tutti gli Eventi';
     <?php else: ?>
         <div class="events-grid">
             <?php foreach ($eventi as $evento): ?>
-            <article class="event-card" onclick="window.location='index.php?action=view_evento&id=<?= $evento['id'] ?>'">
+            <article class="event-card">
                 <div class="event-card-poster">
                     <img src="img/events/<?= $evento['id'] ?>.jpg"
                         alt="<?= e($evento['Nome']) ?>"
@@ -42,23 +42,25 @@ $categoriaNome = $_SESSION['categoria_nome'] ?? 'Tutti gli Eventi';
                     <span class="event-card-badge"><?= e($evento['ManifestazioneName'] ?? 'Evento') ?></span>
                     <div class="event-card-overlay">
                         <div class="event-card-actions">
-                            <button class="card-action-btn primary" onclick="event.stopPropagation(); addToCart(<?= $evento['id'] ?>, 1, '<?= e($evento['Nome']) ?>', 'Standard', <?= $evento['PrezzoNoMod'] ?>, '<?= formatDate($evento['Data']) ?>', 'img/events/<?= $evento['id'] ?>.jpg')">
-                                <i class="fas fa-cart-plus"></i>
+                            <button class="card-action-btn primary" aria-label="Aggiungi al carrello" onclick="addToCart(<?= $evento['id'] ?>, 1, '<?= e($evento['Nome']) ?>', 'Standard', <?= (float)$evento['PrezzoNoMod'] ?>, '<?= formatDate($evento['Data']) ?>', 'img/events/<?= $evento['id'] ?>.jpg')">
+                                <i class="fas fa-cart-plus" aria-hidden="true"></i>
                             </button>
-                            <button class="card-action-btn" onclick="event.stopPropagation();">
-                                <i class="fas fa-heart"></i>
+                            <button class="card-action-btn" aria-label="Aggiungi ai preferiti">
+                                <i class="fas fa-heart" aria-hidden="true"></i>
                             </button>
                         </div>
                     </div>
                 </div>
                 <div class="event-card-info">
-                    <h3 class="event-card-title"><?= e($evento['Nome']) ?></h3>
+                    <h2 class="event-card-title">
+                        <a href="index.php?action=view_evento&id=<?= $evento['id'] ?>" class="event-card-link"><?= e($evento['Nome']) ?></a>
+                    </h2>
                     <div class="event-card-meta">
                         <span class="event-card-date"><?= formatDate($evento['Data']) ?></span>
                         <span class="event-card-price">da <?= formatPrice($evento['PrezzoNoMod']) ?></span>
                     </div>
                     <div class="event-card-location">
-                        <i class="fas fa-map-marker-alt"></i> <?= e($evento['LocationName']) ?>
+                        <i class="fas fa-map-marker-alt" aria-hidden="true"></i> <?= e($evento['LocationName']) ?>
                     </div>
                 </div>
             </article>

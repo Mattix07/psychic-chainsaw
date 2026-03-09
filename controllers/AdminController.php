@@ -39,6 +39,7 @@ function showAdminDashboard(PDO $pdo): void
 
     $_SESSION['admin_stats'] = $stats;
     $_SESSION['admin_utenti'] = getAllUtenti($pdo);
+    setSeoMeta('Dashboard Admin', '', 'noindex,nofollow');
     setPage('admin/dashboard');
 }
 
@@ -199,6 +200,14 @@ function adminCreateEvent(PDO $pdo): void
 
         // Settori: se nessuno selezionato, usa tutti quelli della location
         require_once __DIR__ . '/../models/Location.php';
+
+        // Verifica che il promoter abbia i permessi sulla location scelta
+        if (!canEditLocation($pdo, $_SESSION['user_id'], (int) $_POST['location'])) {
+            setErrorMessage(ERR_PERMISSION_DENIED);
+            header('Location: index.php?action=admin_create_event');
+            exit;
+        }
+
         $settori = $_POST['settori'] ?? [];
         if (empty($settori)) {
             $locationSettori = getSettoriByLocation($pdo, (int) $_POST['location']);
@@ -220,7 +229,8 @@ function adminCreateEvent(PDO $pdo): void
             'PrezzoNoMod' => (float) ($_POST['prezzo'] ?? 0),
             'idLocation' => (int) $_POST['location'],
             'idManifestazione' => (int) ($_POST['manifestazione'] ?? 0) ?: null,
-            'Immagine' => sanitize($_POST['immagine'] ?? '')
+            'Immagine' => sanitize($_POST['immagine'] ?? ''),
+            'idCreatore' => $_SESSION['user_id']
         ];
 
         try {
@@ -229,9 +239,6 @@ function adminCreateEvent(PDO $pdo): void
 
             // Crea l'evento
             $eventoId = createEvento($pdo, $data);
-
-            // Registra il creatore dell'evento
-            registerEventoCreator($pdo, $eventoId, $_SESSION['user_id']);
 
             // Salva i settori selezionati
             setEventoSettori($pdo, $eventoId, array_map('intval', $settori));
@@ -397,15 +404,15 @@ function showPromoterDashboard(PDO $pdo): void
 {
     requireRole(ROLE_PROMOTER);
 
-    // Admin e mod vedono tutti gli eventi
+    // Admin e mod vedono tutti gli eventi, promoter solo i propri
     if (hasRole(ROLE_MOD)) {
         $eventi = getAllEventiAdmin($pdo);
     } else {
-        // TODO: filtrare per eventi creati dal promoter specifico
-        $eventi = getAllEventiAdmin($pdo);
+        $eventi = getEventiCreatiDaUtente($pdo, $_SESSION['user_id']);
     }
 
     $_SESSION['promoter_eventi'] = $eventi;
+    setSeoMeta('Dashboard Promoter', '', 'noindex,nofollow');
     setPage('admin/promoter_dashboard');
 }
 
@@ -427,6 +434,7 @@ function showModDashboard(PDO $pdo): void
     ];
 
     $_SESSION['mod_stats'] = $stats;
+    setSeoMeta('Dashboard Moderatore', '', 'noindex,nofollow');
     setPage('admin/mod_dashboard');
 }
 

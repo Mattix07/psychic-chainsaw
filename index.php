@@ -12,6 +12,11 @@ require_once 'config/database.php';
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
 
+// Header di sicurezza HTTP
+header('X-Frame-Options: SAMEORIGIN');
+header('X-Content-Type-Options: nosniff');
+header('Referrer-Policy: strict-origin-when-cross-origin');
+
 // Recupera e pulisce i messaggi flash dalla sessione
 $msg = $_SESSION['msg'] ?? null;
 $error = $_SESSION['error'] ?? null;
@@ -34,11 +39,13 @@ switch ($action) {
 
     case 'show_login':
         require_once 'controllers/PageController.php';
+        setSeoMeta('Accedi', '', 'noindex,nofollow');
         setPage('login');
         break;
 
     case 'show_register':
         require_once 'controllers/PageController.php';
+        setSeoMeta('Registrati', '', 'noindex,nofollow');
         setPage('register');
         break;
 
@@ -53,6 +60,7 @@ switch ($action) {
             elseif ($ruolo === 'mod') { redirect('index.php?action=mod_dashboard'); }
             elseif ($ruolo === 'promoter') { redirect('index.php?action=promoter_dashboard'); }
         }
+        setSeoMeta('Biglietti eventi online', 'Acquista biglietti per concerti, teatro, sport e molto altro. Trova i migliori eventi nella tua città su EventsMaster.');
         setPage('home');
         break;
 
@@ -102,6 +110,7 @@ switch ($action) {
         if (!isLoggedIn()) {
             redirect('index.php?action=show_login&redirect=checkout', null, 'Effettua il login per completare l\'acquisto.');
         }
+        setSeoMeta('Checkout', '', 'noindex,nofollow');
         setPage('checkout');
         break;
 
@@ -143,6 +152,7 @@ switch ($action) {
         if (!isLoggedIn()) {
             redirect('index.php?action=show_login', null, 'Devi effettuare il login.');
         }
+        setSeoMeta('I miei biglietti', '', 'noindex,nofollow');
         setPage('miei_biglietti');
         break;
 
@@ -166,6 +176,7 @@ switch ($action) {
         if (!isLoggedIn()) {
             redirect('index.php?action=show_login', null, 'Devi effettuare il login.');
         }
+        setSeoMeta('Cambia password', '', 'noindex,nofollow');
         setPage('cambia_password');
         break;
 
@@ -176,6 +187,7 @@ switch ($action) {
 
     case 'recupera_password':
         require_once 'controllers/PageController.php';
+        setSeoMeta('Recupera password', '', 'noindex,nofollow');
         setPage('recupera_password');
         break;
 
@@ -186,6 +198,7 @@ switch ($action) {
 
     case 'reset_password':
         require_once 'controllers/PageController.php';
+        setSeoMeta('Reimposta password', '', 'noindex,nofollow');
         setPage('reset_password');
         break;
 
@@ -215,6 +228,7 @@ switch ($action) {
         if (!isLoggedIn()) {
             redirect('index.php?action=show_login', null, 'Devi effettuare il login.');
         }
+        setSeoMeta('Elimina account', '', 'noindex,nofollow');
         setPage('elimina_account');
         break;
 
@@ -450,6 +464,7 @@ switch ($action) {
             elseif ($ruolo === 'mod') { redirect('index.php?action=mod_dashboard'); }
             elseif ($ruolo === 'promoter') { redirect('index.php?action=promoter_dashboard'); }
         }
+        setSeoMeta('Biglietti eventi online', 'Acquista biglietti per concerti, teatro, sport e molto altro. Trova i migliori eventi nella tua città su EventsMaster.');
         setPage('home');
         break;
 }

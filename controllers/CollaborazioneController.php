@@ -80,13 +80,28 @@ function inviteCollaboratorApi(PDO $pdo): void
 /**
  * Accetta un invito a collaborare
  * GET: token
+ * Richiede autenticazione: verifica che l'utente loggato sia il destinatario dell'invito
  */
 function acceptCollaborationApi(PDO $pdo): void
 {
+    if (!isLoggedIn()) {
+        redirect('index.php?action=show_login', null, 'Devi effettuare il login per accettare l\'invito.');
+    }
+
     $token = $_GET['token'] ?? '';
 
     if (!$token) {
         header('Location: index.php?error=token_mancante');
+        exit;
+    }
+
+    // Verifica che il token appartenga all'utente loggato
+    $stmt = $pdo->prepare("SELECT " . COL_COLLABORATORI_EVENTI_ID_UTENTE . " FROM " . TABLE_COLLABORATORI_EVENTI . " WHERE " . COL_COLLABORATORI_EVENTI_TOKEN . " = ? AND " . COL_COLLABORATORI_EVENTI_STATUS . " = 'pending'");
+    $stmt->execute([$token]);
+    $invito = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$invito || (int)$invito[COL_COLLABORATORI_EVENTI_ID_UTENTE] !== (int)$_SESSION['user_id']) {
+        header('Location: index.php?error=invito_non_valido');
         exit;
     }
 
@@ -101,13 +116,28 @@ function acceptCollaborationApi(PDO $pdo): void
 /**
  * Rifiuta un invito a collaborare
  * GET: token
+ * Richiede autenticazione: verifica che l'utente loggato sia il destinatario dell'invito
  */
 function declineCollaborationApi(PDO $pdo): void
 {
+    if (!isLoggedIn()) {
+        redirect('index.php?action=show_login', null, 'Devi effettuare il login per rifiutare l\'invito.');
+    }
+
     $token = $_GET['token'] ?? '';
 
     if (!$token) {
         header('Location: index.php?error=token_mancante');
+        exit;
+    }
+
+    // Verifica che il token appartenga all'utente loggato
+    $stmt = $pdo->prepare("SELECT " . COL_COLLABORATORI_EVENTI_ID_UTENTE . " FROM " . TABLE_COLLABORATORI_EVENTI . " WHERE " . COL_COLLABORATORI_EVENTI_TOKEN . " = ? AND " . COL_COLLABORATORI_EVENTI_STATUS . " = 'pending'");
+    $stmt->execute([$token]);
+    $invito = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$invito || (int)$invito[COL_COLLABORATORI_EVENTI_ID_UTENTE] !== (int)$_SESSION['user_id']) {
+        header('Location: index.php?error=invito_non_valido');
         exit;
     }
 

@@ -10,7 +10,9 @@
  * la nuova password (minimo 6 caratteri, da confermare).
  * Dopo il reset, il token viene invalidato.
  */
-$token = $_GET['token'] ?? '';
+// Token può arrivare via GET (dal link email) o via sessione (dopo redirect con errore)
+$token = $_GET['token'] ?? $_SESSION['reset_token_temp'] ?? '';
+unset($_SESSION['reset_token_temp']);
 ?>
 
 <div class="auth-page">

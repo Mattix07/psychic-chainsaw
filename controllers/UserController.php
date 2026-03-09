@@ -292,7 +292,8 @@ function doResetPassword(PDO $pdo): void
 
     if ($validator->fails()) {
         setErrorMessage($validator->firstError());
-        header('Location: index.php?action=reset_password&token=' . urlencode($token));
+        $_SESSION['reset_token_temp'] = $token;
+        header('Location: index.php?action=reset_password');
         exit;
     }
 

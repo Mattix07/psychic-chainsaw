@@ -54,16 +54,16 @@ function getSettoreById(PDO $pdo, int $id): ?array
 function createSettore(PDO $pdo, array $data): int
 {
     $stmt = $pdo->prepare("
-        INSERT INTO " . TABLE_SETTORI . " (" . COL_SETTORI_NOME . ", " . COL_SETTORI_FILA . ", " . COL_SETTORI_POSTO . ", " . COL_SETTORI_ID_LOCATION . ", " . COL_SETTORI_MOLTIPLICATORE_PREZZO . ", " . COL_SETTORI_POSTI_DISPONIBILI . ")
+        INSERT INTO " . TABLE_SETTORI . " (" . COL_SETTORI_NOME . ", " . COL_SETTORI_NUM_FILE . ", " . COL_SETTORI_POSTI_PER_FILA . ", " . COL_SETTORI_ID_LOCATION . ", " . COL_SETTORI_MOLTIPLICATORE_PREZZO . ", " . COL_SETTORI_POSTI_TOTALI . ")
         VALUES (?, ?, ?, ?, ?, ?)
     ");
     $stmt->execute([
         $data['Nome'] ?? '',
-        $data['Fila'] ?? '',
-        $data['Posto'] ?? 0,
+        $data['NumFile'] ?? $data['Fila'] ?? null,
+        $data['PostiPerFila'] ?? $data['Posto'] ?? null,
         $data['idLocation'] ?? 0,
         $data['MoltiplicatorePrezzo'] ?? 1.0,
-        $data['PostiDisponibili'] ?? 0
+        $data['PostiTotali'] ?? $data['PostiDisponibili'] ?? 0
     ]);
     return (int) $pdo->lastInsertId();
 }
@@ -81,20 +81,20 @@ function updateSettore(PDO $pdo, int $id, array $data): bool
     $stmt = $pdo->prepare("
         UPDATE " . TABLE_SETTORI . "
         SET " . COL_SETTORI_NOME . " = ?,
-            " . COL_SETTORI_FILA . " = ?,
-            " . COL_SETTORI_POSTO . " = ?,
+            " . COL_SETTORI_NUM_FILE . " = ?,
+            " . COL_SETTORI_POSTI_PER_FILA . " = ?,
             " . COL_SETTORI_ID_LOCATION . " = ?,
             " . COL_SETTORI_MOLTIPLICATORE_PREZZO . " = ?,
-            " . COL_SETTORI_POSTI_DISPONIBILI . " = ?
+            " . COL_SETTORI_POSTI_TOTALI . " = ?
         WHERE " . COL_SETTORI_ID . " = ?
     ");
     return $stmt->execute([
         $data['Nome'] ?? '',
-        $data['Fila'] ?? '',
-        $data['Posto'] ?? 0,
+        $data['NumFile'] ?? $data['Fila'] ?? null,
+        $data['PostiPerFila'] ?? $data['Posto'] ?? null,
         $data['idLocation'] ?? 0,
         $data['MoltiplicatorePrezzo'] ?? 1.0,
-        $data['PostiDisponibili'] ?? 0,
+        $data['PostiTotali'] ?? $data['PostiDisponibili'] ?? 0,
         $id
     ]);
 }

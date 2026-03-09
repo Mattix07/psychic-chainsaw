@@ -1,0 +1,34 @@
+# EventsMaster - Configurazione sicurezza Apache
+
+# Disabilita directory listing
+Options -Indexes
+
+# Blocca accesso diretto a .env e file di configurazione sensibili
+<Files ".env">
+    Require all denied
+</Files>
+
+<Files ".env.example">
+    Require all denied
+</Files>
+
+# Blocca file con estensioni pericolose o sensibili
+<FilesMatch "\.(sql|log|sh|ps1|bat|bak|tmp|git)$">
+    Require all denied
+</FilesMatch>
+
+# Blocca accesso alle directory sensibili
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Blocca accesso a db/, logs/, deploy/, cron/, config/ se non siamo su index.php
+    RewriteRule ^(db|logs|deploy|cron|config|models|controllers|views|lib)(/|$) - [F,L]
+</IfModule>
+
+
+# Header di sicurezza HTTP (backup se non impostati da PHP)
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>

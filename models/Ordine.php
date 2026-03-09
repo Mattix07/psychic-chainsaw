@@ -61,8 +61,8 @@ function getUtenteByOrdine(PDO $pdo, int $idOrdine): ?array
     $stmt = $pdo->prepare("
         SELECT u.*
         FROM " . TABLE_UTENTI . " u
-        JOIN " . TABLE_UTENTE_ORDINI . " uo ON u." . COL_UTENTI_ID . " = uo.idUtente
-        WHERE uo.idOrdine = ?
+        JOIN " . TABLE_ORDINI . " o ON u." . COL_UTENTI_ID . " = o." . COL_ORDINI_ID_UTENTE . "
+        WHERE o." . COL_ORDINI_ID . " = ?
     ");
     $stmt->execute([$idOrdine]);
     return $stmt->fetch() ?: null;
@@ -75,25 +75,22 @@ function getUtenteByOrdine(PDO $pdo, int $idOrdine): ?array
  * @param string $metodo Metodo di pagamento utilizzato
  * @return int ID del nuovo ordine
  */
-function createOrdine(PDO $pdo, string $metodo): int
+function createOrdine(PDO $pdo, string $metodo, int $idUtente = 0, float $totale = 0.0): int
 {
-    $stmt = $pdo->prepare("INSERT INTO " . TABLE_ORDINI . " (" . COL_ORDINI_METODO_PAGAMENTO . ") VALUES (?)");
-    $stmt->execute([$metodo]);
+    $stmt = $pdo->prepare("INSERT INTO " . TABLE_ORDINI . " (" . COL_ORDINI_ID_UTENTE . ", " . COL_ORDINI_METODO_PAGAMENTO . ", " . COL_ORDINI_TOTALE . ") VALUES (?, ?, ?)");
+    $stmt->execute([$idUtente, $metodo, $totale]);
     return (int) $pdo->lastInsertId();
 }
 
 /**
  * Associa un ordine a un utente
- * Crea il record nella tabella ponte Utente_Ordini
+ * Nel nuovo schema idUtente è direttamente su ordini; aggiorna se non ancora impostato
  *
  * @return bool Esito operazione
  */
 function associaOrdineUtente(PDO $pdo, int $idOrdine, int $idUtente): bool
 {
-    $stmt = $pdo->prepare("
-        INSERT INTO " . TABLE_UTENTE_ORDINI . " (idUtente, idOrdine)
-        VALUES (?, ?)
-    ");
+    $stmt = $pdo->prepare("UPDATE " . TABLE_ORDINI . " SET " . COL_ORDINI_ID_UTENTE . " = ? WHERE " . COL_ORDINI_ID . " = ? AND " . COL_ORDINI_ID_UTENTE . " = 0");
     return $stmt->execute([$idUtente, $idOrdine]);
 }
 
@@ -137,7 +134,7 @@ function calcolaTotaleOrdine(PDO $pdo, int $idOrdine): float
         FROM " . TABLE_ORDINE_BIGLIETTI . " ob
         JOIN " . TABLE_BIGLIETTI . " b ON ob.idBiglietto = b." . COL_BIGLIETTI_ID . "
         JOIN " . TABLE_EVENTI . " e ON b." . COL_BIGLIETTI_ID_EVENTO . " = e." . COL_EVENTI_ID . "
-        JOIN " . TABLE_TIPO . " t ON b." . COL_BIGLIETTI_ID_CLASSE . " = t." . COL_TIPO_NOME . "
+        JOIN " . TABLE_TIPO . " t ON b." . COL_BIGLIETTI_ID_TIPO . " = t." . COL_TIPO_ID . "
         LEFT JOIN " . TABLE_SETTORE_BIGLIETTI . " sb ON b." . COL_BIGLIETTI_ID . " = sb." . COL_SETTORE_BIGLIETTI_ID_BIGLIETTO . "
         LEFT JOIN " . TABLE_SETTORI . " s ON sb." . COL_SETTORE_BIGLIETTI_ID_SETTORE . " = s." . COL_SETTORI_ID . "
         WHERE ob.idOrdine = ?
@@ -158,9 +155,8 @@ function getOrdiniByUtente(PDO $pdo, int $idUtente): array
     $stmt = $pdo->prepare("
         SELECT o.*, COUNT(ob.idBiglietto) as num_biglietti
         FROM " . TABLE_ORDINI . " o
-        JOIN " . TABLE_UTENTE_ORDINI . " uo ON o." . COL_ORDINI_ID . " = uo.idOrdine
         LEFT JOIN " . TABLE_ORDINE_BIGLIETTI . " ob ON o." . COL_ORDINI_ID . " = ob.idOrdine
-        WHERE uo.idUtente = ?
+        WHERE o." . COL_ORDINI_ID_UTENTE . " = ?
         GROUP BY o." . COL_ORDINI_ID . "
         ORDER BY o." . COL_ORDINI_ID . " DESC
     ");
@@ -178,8 +174,8 @@ function isOrdineOfUtente(PDO $pdo, int $idOrdine, int $idUtente): bool
 {
     $stmt = $pdo->prepare("
         SELECT COUNT(*) as count
-        FROM " . TABLE_UTENTE_ORDINI . "
-        WHERE idOrdine = ? AND idUtente = ?
+        FROM " . TABLE_ORDINI . "
+        WHERE " . COL_ORDINI_ID . " = ? AND " . COL_ORDINI_ID_UTENTE . " = ?
     ");
     $stmt->execute([$idOrdine, $idUtente]);
     $result = $stmt->fetch();

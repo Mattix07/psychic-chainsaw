@@ -62,7 +62,8 @@ function saveLocation(PDO $pdo): void
         'Citta' => sanitize($_POST['citta'] ?? ''),
         'CAP' => sanitize($_POST['cap'] ?? ''),
         'Regione' => sanitize($_POST['regione'] ?? ''),
-        'Capienza' => (int) ($_POST['capienza'] ?? 0)
+        'Capienza' => (int) ($_POST['capienza'] ?? 0),
+        'idCreatore' => $_SESSION['user_id']
     ];
 
     if (empty($data['Nome']) || empty($data['Citta'])) {

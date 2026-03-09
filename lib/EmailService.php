@@ -35,17 +35,21 @@ class EmailService
 
         $modificheHtml = '<ul>';
         foreach ($modifiche as $campo => $valore) {
-            $modificheHtml .= "<li><strong>$campo:</strong> $valore</li>";
+            $safeCampo = htmlspecialchars((string)$campo, ENT_QUOTES, 'UTF-8');
+            $safeValore = htmlspecialchars((string)$valore, ENT_QUOTES, 'UTF-8');
+            $modificheHtml .= "<li><strong>{$safeCampo}:</strong> {$safeValore}</li>";
         }
         $modificheHtml .= '</ul>';
 
-        $oggetto = "Evento \"$nomeEvento\" modificato";
+        // Rimuove newline dal subject per prevenire email header injection
+        $safeNomeEvento = str_replace(["\r", "\n"], '', $nomeEvento);
+        $oggetto = "Evento \"{$safeNomeEvento}\" modificato";
         $messaggio = $this->getTemplate('modifica_evento', [
-            'nome' => $destinatario['Nome'],
-            'cognome' => $destinatario['Cognome'],
-            'nomeEvento' => $nomeEvento,
-            'modificatoDa' => $mittente['Nome'] . ' ' . $mittente['Cognome'],
-            'ruoloMittente' => $this->getRuoloLabel($mittenteId),
+            'nome' => htmlspecialchars($destinatario['Nome'], ENT_QUOTES, 'UTF-8'),
+            'cognome' => htmlspecialchars($destinatario['Cognome'], ENT_QUOTES, 'UTF-8'),
+            'nomeEvento' => htmlspecialchars($nomeEvento, ENT_QUOTES, 'UTF-8'),
+            'modificatoDa' => htmlspecialchars($mittente['Nome'] . ' ' . $mittente['Cognome'], ENT_QUOTES, 'UTF-8'),
+            'ruoloMittente' => htmlspecialchars($this->getRuoloLabel($mittenteId), ENT_QUOTES, 'UTF-8'),
             'modifiche' => $modificheHtml,
             'linkEvento' => $this->getEventoUrl($eventoId)
         ]);
@@ -75,12 +79,13 @@ class EmailService
         $stmt->execute([$mittenteId]);
         $mittente = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        $oggetto = "Sei stato invitato a collaborare su \"$nomeEvento\"";
+        $safeNomeEvento = str_replace(["\r", "\n"], '', $nomeEvento);
+        $oggetto = "Sei stato invitato a collaborare su \"{$safeNomeEvento}\"";
         $messaggio = $this->getTemplate('invito_collaborazione', [
-            'nome' => $destinatario['Nome'],
-            'cognome' => $destinatario['Cognome'],
-            'nomeEvento' => $nomeEvento,
-            'invitatoDa' => $mittente['Nome'] . ' ' . $mittente['Cognome'],
+            'nome' => htmlspecialchars($destinatario['Nome'], ENT_QUOTES, 'UTF-8'),
+            'cognome' => htmlspecialchars($destinatario['Cognome'], ENT_QUOTES, 'UTF-8'),
+            'nomeEvento' => htmlspecialchars($nomeEvento, ENT_QUOTES, 'UTF-8'),
+            'invitatoDa' => htmlspecialchars($mittente['Nome'] . ' ' . $mittente['Cognome'], ENT_QUOTES, 'UTF-8'),
             'linkAccetta' => $this->getAcceptInviteUrl($token),
             'linkRifiuta' => $this->getDeclineInviteUrl($token)
         ]);
@@ -109,8 +114,8 @@ class EmailService
 
         $oggetto = "Account verificato con successo!";
         $messaggio = $this->getTemplate('account_verificato', [
-            'nome' => $destinatario['Nome'],
-            'cognome' => $destinatario['Cognome']
+            'nome' => htmlspecialchars($destinatario['Nome'], ENT_QUOTES, 'UTF-8'),
+            'cognome' => htmlspecialchars($destinatario['Cognome'], ENT_QUOTES, 'UTF-8')
         ]);
 
         return $this->send(

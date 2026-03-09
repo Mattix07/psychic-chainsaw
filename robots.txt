@@ -1,0 +1,38 @@
+User-agent: *
+Allow: /
+Allow: /index.php?action=home
+Allow: /index.php?action=list_eventi
+Allow: /index.php?action=category
+Allow: /index.php?action=view_evento
+Allow: /index.php?action=search_eventi
+
+# Pagine private — non indicizzare
+Disallow: /index.php?action=show_login
+Disallow: /index.php?action=show_register
+Disallow: /index.php?action=checkout
+Disallow: /index.php?action=acquista
+Disallow: /index.php?action=profilo
+Disallow: /index.php?action=miei_biglietti
+Disallow: /index.php?action=miei_ordini
+Disallow: /index.php?action=view_ordine
+Disallow: /index.php?action=view_biglietto
+Disallow: /index.php?action=cambia_password
+Disallow: /index.php?action=recupera_password
+Disallow: /index.php?action=reset_password
+Disallow: /index.php?action=elimina_account
+Disallow: /index.php?action=admin_dashboard
+Disallow: /index.php?action=admin_users
+Disallow: /index.php?action=admin_events
+Disallow: /index.php?action=promoter_dashboard
+Disallow: /index.php?action=mod_dashboard
+
+# Cartelle non pubbliche
+Disallow: /controllers/
+Disallow: /models/
+Disallow: /views/
+Disallow: /config/
+Disallow: /lib/
+Disallow: /db/
+Disallow: /logs/
+
+Sitemap: /sitemap.php

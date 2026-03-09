@@ -49,7 +49,47 @@ if (!empty($evento['idManifestazione'])) {
     $eventiCorrelati = getEventiByManifestazione($pdo, $evento['idManifestazione']);
     $eventiCorrelati = array_filter($eventiCorrelati, fn($e) => $e['id'] !== $evento['id']);
 }
+
+// Schema.org JSON-LD per Google Events rich results
+$schemaStartDate = '';
+$schemaEndDate   = '';
+if (!empty($evento['Data'])) {
+    $baseDate = $evento['Data'];
+    $schemaStartDate = $baseDate . (!empty($evento['OraI']) ? 'T' . $evento['OraI'] : '');
+    $schemaEndDate   = $baseDate . (!empty($evento['OraF']) ? 'T' . $evento['OraF'] : '');
+}
+$schemaData = [
+    '@context'    => 'https://schema.org',
+    '@type'       => 'Event',
+    'name'        => $evento['Nome'] ?? '',
+    'description' => $evento['Programma'] ?? '',
+    'image'       => !empty($evento['Immagine']) ? BASE_URL . '/' . $evento['Immagine'] : '',
+    'startDate'   => $schemaStartDate,
+    'endDate'     => $schemaEndDate,
+    'location'    => [
+        '@type' => 'Place',
+        'name'  => $evento['LocationName'] ?? '',
+    ],
+    'offers' => [
+        '@type'         => 'Offer',
+        'price'         => $evento['PrezzoNoMod'] ?? 0,
+        'priceCurrency' => 'EUR',
+        'availability'  => 'https://schema.org/InStock',
+        'url'           => BASE_URL . '/index.php?action=view_evento&id=' . (int)$evento['id'],
+    ],
+];
+if ($mediaVoti && !empty($mediaVoti['media'])) {
+    $schemaData['aggregateRating'] = [
+        '@type'       => 'AggregateRating',
+        'ratingValue' => round((float)$mediaVoti['media'], 1),
+        'reviewCount' => (int)$mediaVoti['totale'],
+        'bestRating'  => 5,
+        'worstRating' => 1,
+    ];
+}
 ?>
+
+<script type="application/ld+json"><?= json_encode($schemaData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?></script>
 
 <!--
     HERO SECTION
@@ -148,7 +188,7 @@ if (!empty($evento['idManifestazione'])) {
                     </div>
                     <div class="intrattenitore-info">
                         <h4><?= e($i['Nome']) ?></h4>
-                        <span class="mestiere"><?= e($i['Mestiere']) ?></span>
+                        <span class="mestiere"><?= e($i['Categoria'] ?? '') ?></span>
                         <span class="orario"><i class="far fa-clock"></i> <?= formatTime($i['OraI']) ?> - <?= formatTime($i['OraF']) ?></span>
                     </div>
                 </div>
@@ -277,7 +317,7 @@ if (!empty($evento['idManifestazione'])) {
                     <label for="idSettore">Settore</label>
                     <select id="idSettore" name="idSettore" required>
                         <?php foreach ($settori as $s): ?>
-                        <option value="<?= $s['id'] ?>" data-mult="<?= $s['MoltiplicatorePrezzo'] ?>" data-posti="<?= $s['PostiDisponibili'] ?>">
+                        <option value="<?= $s['id'] ?>" data-mult="<?= $s['MoltiplicatorePrezzo'] ?>" data-posti="<?= $s['PostiTotali'] ?>">
                             <?= e($s['Nome']) ?> - x<?= $s['MoltiplicatorePrezzo'] ?>
                         </option>
                         <?php endforeach; ?>
@@ -326,7 +366,7 @@ if (!empty($evento['idManifestazione'])) {
         <button class="carousel-nav prev" data-carousel="featured"><i class="fas fa-chevron-left"></i></button>
         <div class="carousel" id="featured">
             <?php foreach ($eventiCorrelati as $evento): ?>
-            <article class="event-card large" onclick="window.location='index.php?action=view_evento&id=<?= $evento['id'] ?>'">
+            <article class="event-card large">
                 <div class="event-card-poster">
                     <img src="img/events/<?= $evento['id'] ?>.jpg"
                          alt="<?= e($evento['Nome']) ?>"
@@ -334,13 +374,15 @@ if (!empty($evento['idManifestazione'])) {
                     <span class="event-card-badge">In vendita</span>
                     <div class="event-card-overlay">
                         <div class="event-card-actions">
-                            <button class="card-action-btn primary" onclick="event.stopPropagation(); addToCart(<?= $evento['id'] ?>, 1, '<?= e($evento['Nome']) ?>', 'Standard', <?= $evento['PrezzoNoMod'] ?>, '<?= formatDate($evento['Data']) ?>', 'img/events/<?= $evento['id'] ?>.jpg')"><i class="fas fa-cart-plus"></i></button>
-                            <button class="card-action-btn"><i class="fas fa-heart"></i></button>
+                            <button class="card-action-btn primary" aria-label="Aggiungi al carrello" onclick="addToCart(<?= $evento['id'] ?>, 1, '<?= e($evento['Nome']) ?>', 'Standard', <?= (float)$evento['PrezzoNoMod'] ?>, '<?= formatDate($evento['Data']) ?>', 'img/events/<?= $evento['id'] ?>.jpg')"><i class="fas fa-cart-plus" aria-hidden="true"></i></button>
+                            <button class="card-action-btn" aria-label="Aggiungi ai preferiti"><i class="fas fa-heart" aria-hidden="true"></i></button>
                         </div>
                     </div>
                 </div>
                 <div class="event-card-info">
-                    <h3 class="event-card-title"><?= e($evento['Nome']) ?></h3>
+                    <h3 class="event-card-title">
+                        <a href="index.php?action=view_evento&id=<?= $evento['id'] ?>" class="event-card-link"><?= e($evento['Nome']) ?></a>
+                    </h3>
                     <div class="event-card-meta">
                         <span class="event-card-date"><?= formatDate($evento['Data']) ?></span>
                         <span><?= e($evento['LocationName']) ?></span>

@@ -24,7 +24,8 @@
     min-width: 250px;
 }
 
-.newsletter-text h3 {
+.newsletter-text h3,
+.newsletter-text .newsletter-title {
     color: white;
     font-size: 1.5rem;
     font-weight: 700;
@@ -84,7 +85,8 @@
         text-align: center;
     }
 
-    .newsletter-text h3 {
+    .newsletter-text h3,
+    .newsletter-text .newsletter-title {
         justify-content: center;
     }
 
@@ -110,11 +112,22 @@
     margin-bottom: 40px;
 }
 
-.footer-section h4 {
+.footer-section h4,
+.footer-section .footer-heading {
     font-size: 1rem;
     font-weight: 600;
     margin-bottom: 20px;
     color: var(--text-primary);
+}
+
+.footer-section ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.footer-section li {
+    margin-bottom: 0;
 }
 
 .footer-section a {

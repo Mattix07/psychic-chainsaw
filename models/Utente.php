@@ -90,8 +90,7 @@ function getOrdiniUtente(PDO $pdo, int $idUtente): array
     $stmt = $pdo->prepare("
         SELECT o.*
         FROM " . TABLE_ORDINI . " o
-        JOIN " . TABLE_UTENTE_ORDINI . " uo ON o." . COL_ORDINI_ID . " = uo.idOrdine
-        WHERE uo.idUtente = ?
+        WHERE o." . COL_ORDINI_ID_UTENTE . " = ?
         ORDER BY o." . COL_ORDINI_ID . " DESC
     ");
     $stmt->execute([$idUtente]);
@@ -134,8 +133,9 @@ function updateUtentePassword(PDO $pdo, int $id, string $newPassword): bool
  */
 function setVerificationToken(PDO $pdo, int $id, string $token): bool
 {
-    $stmt = $pdo->prepare("UPDATE " . TABLE_UTENTI . " SET " . COL_UTENTI_EMAIL_VERIFICATION_TOKEN . " = ? WHERE " . COL_UTENTI_ID . " = ?");
-    return $stmt->execute([$token, $id]);
+    $expiry = date('Y-m-d H:i:s', strtotime('+24 hours'));
+    $stmt = $pdo->prepare("UPDATE " . TABLE_UTENTI . " SET " . COL_UTENTI_EMAIL_VERIFICATION_TOKEN . " = ?, " . COL_UTENTI_EMAIL_VERIFICATION_TOKEN_EXPIRY . " = ? WHERE " . COL_UTENTI_ID . " = ?");
+    return $stmt->execute([$token, $expiry, $id]);
 }
 
 /**
@@ -149,6 +149,7 @@ function verifyEmailToken(PDO $pdo, string $token): ?array
         SELECT * FROM " . TABLE_UTENTI . "
         WHERE " . COL_UTENTI_EMAIL_VERIFICATION_TOKEN . " = ?
           AND " . COL_UTENTI_VERIFICATO . " = 0
+          AND (" . COL_UTENTI_EMAIL_VERIFICATION_TOKEN_EXPIRY . " IS NULL OR " . COL_UTENTI_EMAIL_VERIFICATION_TOKEN_EXPIRY . " > NOW())
     ");
     $stmt->execute([$token]);
     return $stmt->fetch() ?: null;

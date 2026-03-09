@@ -15,15 +15,31 @@
  * - Cart Sidebar: carrello laterale con gestione JavaScript
  * - Modal: gestione duplicati carrello al login
  */
+$appName     = e(env('APP_NAME', 'EventsMaster'));
+$seoTitle    = $_SESSION['seo_title']       ?? null;
+$seoDesc     = $_SESSION['seo_description'] ?? '';
+$seoRobots   = $_SESSION['seo_robots']      ?? 'index,follow';
+$seoCanonical= $_SESSION['seo_canonical']   ?? null;
+unset($_SESSION['seo_title'], $_SESSION['seo_description'], $_SESSION['seo_robots'], $_SESSION['seo_canonical']);
+
+$pageTitle = $seoTitle ? e($seoTitle) . ' | ' . $appName : $appName . ' - Biglietti Eventi';
 ?>
 <!DOCTYPE html>
 <html lang="it">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= e(env('APP_NAME', 'EventsMaster')) ?> - Biglietti Eventi</title>
-    <link rel="stylesheet" href="public/css/main.css?v=<?= time() ?>">
-    <link rel="stylesheet" href="public/css/mobile.css?v=<?= time() ?>">
+    <title><?= $pageTitle ?></title>
+    <?php if ($seoDesc): ?>
+    <meta name="description" content="<?= e($seoDesc) ?>">
+    <?php endif; ?>
+    <meta name="robots" content="<?= e($seoRobots) ?>">
+    <?php if ($seoCanonical): ?>
+    <link rel="canonical" href="<?= e($seoCanonical) ?>">
+    <?php endif; ?>
+    <link rel="sitemap" type="application/xml" href="sitemap.php">
+    <link rel="stylesheet" href="public/css/main.css?v=<?= filemtime(__DIR__ . '/../../public/css/main.css') ?>">
+    <link rel="stylesheet" href="public/css/mobile.css?v=<?= filemtime(__DIR__ . '/../../public/css/mobile.css') ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
@@ -198,17 +214,18 @@
     Sezione per l'iscrizione alla newsletter con protezione CSRF.
     L'azione 'subscribe_newsletter' viene gestita dal controller.
 -->
-<section class="newsletter-section">
+<section class="newsletter-section" aria-label="Iscrizione newsletter">
     <div class="newsletter-content">
         <div class="newsletter-text">
-            <h3><i class="fas fa-envelope"></i> Iscriviti alla Newsletter</h3>
+            <p class="newsletter-title"><i class="fas fa-envelope" aria-hidden="true"></i> Iscriviti alla Newsletter</p>
             <p>Ricevi anteprime esclusive, offerte speciali e aggiornamenti sui tuoi eventi preferiti.</p>
         </div>
-        <form class="newsletter-form" method="post" action="index.php">
+        <form class="newsletter-form" method="post" action="index.php" aria-label="Iscrizione newsletter">
             <?= csrfField() ?>
             <input type="hidden" name="action" value="subscribe_newsletter">
-            <input type="email" name="newsletter_email" placeholder="La tua email..." required>
-            <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Iscriviti</button>
+            <label for="newsletter_email" class="visually-hidden">Indirizzo email</label>
+            <input type="email" id="newsletter_email" name="newsletter_email" placeholder="La tua email..." required autocomplete="email">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane" aria-hidden="true"></i> Iscriviti</button>
         </form>
     </div>
 </section>
@@ -217,37 +234,46 @@
     FOOTER
     Link informativi (chi siamo, supporto, legale) e collegamenti social.
     L'anno del copyright viene generato dinamicamente.
+    Nota: i link con href="#" sono placeholder per pagine non ancora implementate.
 -->
 <footer class="footer">
     <div class="footer-content">
-        <div class="footer-section">
-            <h4>Chi Siamo</h4>
-            <a href="#">La nostra storia</a>
-            <a href="#">Team</a>
-            <a href="#">Lavora con noi</a>
-            <a href="#">Press</a>
-        </div>
-        <div class="footer-section">
-            <h4>Supporto</h4>
-            <a href="#">Centro assistenza</a>
-            <a href="#">FAQ</a>
-            <a href="#">Contattaci</a>
-            <a href="#">Rimborsi</a>
-        </div>
-        <div class="footer-section">
-            <h4>Legale</h4>
-            <a href="#">Termini di servizio</a>
-            <a href="#">Privacy Policy</a>
-            <a href="#">Cookie Policy</a>
-            <a href="#">Condizioni vendita</a>
-        </div>
-        <div class="footer-section">
-            <h4>Seguici</h4>
-            <a href="#"><i class="fab fa-facebook"></i> Facebook</a>
-            <a href="#"><i class="fab fa-instagram"></i> Instagram</a>
-            <a href="#"><i class="fab fa-twitter"></i> Twitter</a>
-            <a href="#"><i class="fab fa-youtube"></i> YouTube</a>
-        </div>
+        <nav class="footer-section" aria-label="Chi siamo">
+            <p class="footer-heading">Chi Siamo</p>
+            <ul>
+                <li><a href="#" aria-disabled="true">La nostra storia</a></li>
+                <li><a href="#" aria-disabled="true">Team</a></li>
+                <li><a href="#" aria-disabled="true">Lavora con noi</a></li>
+                <li><a href="#" aria-disabled="true">Press</a></li>
+            </ul>
+        </nav>
+        <nav class="footer-section" aria-label="Supporto">
+            <p class="footer-heading">Supporto</p>
+            <ul>
+                <li><a href="#" aria-disabled="true">Centro assistenza</a></li>
+                <li><a href="#" aria-disabled="true">FAQ</a></li>
+                <li><a href="#" aria-disabled="true">Contattaci</a></li>
+                <li><a href="#" aria-disabled="true">Rimborsi</a></li>
+            </ul>
+        </nav>
+        <nav class="footer-section" aria-label="Legale">
+            <p class="footer-heading">Legale</p>
+            <ul>
+                <li><a href="#" aria-disabled="true">Termini di servizio</a></li>
+                <li><a href="#" aria-disabled="true">Privacy Policy</a></li>
+                <li><a href="#" aria-disabled="true">Cookie Policy</a></li>
+                <li><a href="#" aria-disabled="true">Condizioni vendita</a></li>
+            </ul>
+        </nav>
+        <nav class="footer-section" aria-label="Social">
+            <p class="footer-heading">Seguici</p>
+            <ul>
+                <li><a href="#" aria-disabled="true" aria-label="Facebook"><i class="fab fa-facebook" aria-hidden="true"></i> Facebook</a></li>
+                <li><a href="#" aria-disabled="true" aria-label="Instagram"><i class="fab fa-instagram" aria-hidden="true"></i> Instagram</a></li>
+                <li><a href="#" aria-disabled="true" aria-label="Twitter"><i class="fab fa-twitter" aria-hidden="true"></i> Twitter</a></li>
+                <li><a href="#" aria-disabled="true" aria-label="YouTube"><i class="fab fa-youtube" aria-hidden="true"></i> YouTube</a></li>
+            </ul>
+        </nav>
     </div>
     <div class="footer-bottom">
         <div class="footer-logo">EventsMaster</div>
@@ -329,9 +355,9 @@
         isLoggedIn: <?= isLoggedIn() ? 'true' : 'false' ?>,
         userId: <?= isLoggedIn() ? ($_SESSION['user_id'] ?? 'null') : 'null' ?>,
         csrfToken: '<?= generateCsrfToken() ?>',
-        redirectAfterLogin: '<?= $_GET['redirect'] ?? '' ?>'
+        redirectAfterLogin: <?= json_encode($_GET['redirect'] ?? '') ?>
     };
 </script>
-<script src="public/script.js?v=<?= time() ?>"></script>
+<script src="public/script.js?v=<?= filemtime(__DIR__ . '/../../public/script.js') ?>"></script>
 </body>
 </html>

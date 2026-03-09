@@ -219,6 +219,19 @@ function updateCartApi(PDO $pdo): void
         return;
     }
 
+    // Verifica ownership: il biglietto deve appartenere all'utente corrente ed essere nel carrello
+    $bigliettoOwner = table($pdo, TABLE_BIGLIETTI)
+        ->select([COL_BIGLIETTI_ID])
+        ->where(COL_BIGLIETTI_ID, $idBiglietto)
+        ->where(COL_BIGLIETTI_ID_UTENTE, $idUtente)
+        ->where(COL_BIGLIETTI_STATO, STATO_BIGLIETTO_CARRELLO)
+        ->first();
+
+    if (!$bigliettoOwner) {
+        jsonResponse(['error' => ERR_TICKET_NOT_FOUND], 404);
+        return;
+    }
+
     // Aggiorna dati partecipante se forniti
     if (isset($_POST['nome']) || isset($_POST['cognome'])) {
         $nome = sanitize($_POST['nome'] ?? '');

@@ -78,6 +78,9 @@ function loginAction(PDO $pdo): void
         redirect('index.php?action=show_login');
     }
 
+    // Rigenera l'ID di sessione per prevenire session fixation
+    session_regenerate_id(true);
+
     // Salva dati utente in sessione
     $_SESSION['user_id'] = $utente['id'];
     $_SESSION['user_nome'] = $utente['Nome'];
@@ -86,7 +89,10 @@ function loginAction(PDO $pdo): void
     $_SESSION['user_ruolo'] = $utente['ruolo'];
     $_SESSION['page'] = 'home';
 
-    logError("Login riuscito: {$email}");
+    // logError è riservato agli errori; l'evento login viene tracciato solo su debug
+    if (defined('APP_DEBUG') && APP_DEBUG) {
+        error_log("[INFO] Login riuscito: {$email}");
+    }
     setSuccessMessage(message(MSG_SUCCESS_LOGIN, $utente['Nome']));
     redirect('index.php');
 }
