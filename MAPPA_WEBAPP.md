@@ -232,63 +232,63 @@
 
 ## API (senza rendering layout)
 
-| Action | Controller | Descrizione |
-|---|---|---|
-| `cart_add`, `cart_get`, `cart_update`, `cart_remove`, `cart_clear`, `cart_count`, `check_availability`, `get_settori`, `cart_update_settore` | `CartController.php` | Operazioni carrello (localStorage + server) |
-| `delete_biglietti_evento` | `AdminController.php` | Elimina biglietti di un evento |
-| `delete_location` | `AdminController.php` | Elimina location (API JSON) |
-| `delete_manifestazione` | `AdminController.php` | Elimina manifestazione (API JSON) |
-| `delete_recensione` | `AdminController.php` | Elimina recensione (API JSON) |
-| `verify_account` | `AdminController.php` | Verifica manuale account (API JSON) |
-| `get_unverified_accounts` | `AdminController.php` | Lista account non verificati (API JSON) |
-| `invite_collaborator`, `accept_collaboration`, `decline_collaboration`, `get_collaborators` | `CollaborazioneController.php` | Gestione collaboratori evento |
-| `upload_avatar`, `get_avatar`, `delete_avatar` | `AvatarController.php` | Gestione avatar utente |
-| `verify_email`, `resend_verification` | `UserController.php` | Verifica email |
-| `add_recensione`, `update_recensione`, `delete_recensione` | `RecensioneController.php` | CRUD recensioni |
+| Action                                                                                                                                       | Controller                     | Descrizione                                 |
+|----------------------------------------------------------------------------------------------------------------------------------------------| -------------------------------|---------------------------------------------|
+| `cart_add`, `cart_get`, `cart_update`, `cart_remove`, `cart_clear`, `cart_count`, `check_availability`, `get_settori`, `cart_update_settore` | `CartController.php`           | Operazioni carrello (localStorage + server) |
+| `delete_biglietti_evento`                                                                                                                    | `AdminController.php`          | Elimina biglietti di un evento              |
+| `delete_location`                                                                                                                            | `AdminController.php`          | Elimina location (API JSON)                 |
+| `delete_manifestazione`                                                                                                                      | `AdminController.php`          | Elimina manifestazione (API JSON)           |
+| `delete_recensione`                                                                                                                          | `AdminController.php`          | Elimina recensione (API JSON)               |
+| `verify_account`                                                                                                                             | `AdminController.php`          | Verifica manuale account (API JSON)         |
+| `get_unverified_accounts`                                                                                                                    | `AdminController.php`          | Lista account non verificati (API JSON)     |
+| `invite_collaborator`, `accept_collaboration`, `decline_collaboration`, `get_collaborators`                                                  | `CollaborazioneController.php` | Gestione collaboratori evento               |
+| `upload_avatar`, `get_avatar`, `delete_avatar`                                                                                               | `AvatarController.php`         | Gestione avatar utente                      |
+| `verify_email`, `resend_verification`                                                                                                        | `UserController.php`           | Verifica email                              |
+| `add_recensione`, `update_recensione`, `delete_recensione`                                                                                   | `RecensioneController.php`     | CRUD recensioni                             |
 
 ---
 
 ## Controller
 
-| File | Responsabilita |
-|---|---|
-| `controllers/AuthController.php` | Login, registrazione, logout |
-| `controllers/UserController.php` | Profilo, password, eliminazione account, verifica email |
-| `controllers/EventoController.php` | Navigazione eventi, dettaglio, ricerca, categorie |
-| `controllers/CartController.php` | API carrello |
-| `controllers/BigliettoController.php` | Acquisto biglietti, validazione |
-| `controllers/AdminController.php` | Dashboard admin/mod/promoter, gestione utenti, gestione eventi, API admin |
-| `controllers/LocationController.php` | CRUD location |
-| `controllers/ManifestazioneController.php` | CRUD manifestazioni |
-| `controllers/OrdineController.php` | Storico ordini, dettaglio ordine |
-| `controllers/RecensioneController.php` | CRUD recensioni |
-| `controllers/AvatarController.php` | Upload/get/delete avatar |
-| `controllers/CollaborazioneController.php` | Inviti e gestione collaboratori evento |
-| `controllers/PageController.php` | Helper per impostare la pagina corrente in sessione |
+| File                                       | Responsabilita                                                            |
+|--------------------------------------------|---------------------------------------------------------------------------|
+| `controllers/AuthController.php`           | Login, registrazione, logout                                              |
+| `controllers/UserController.php`           | Profilo, password, eliminazione account, verifica email                   |
+| `controllers/EventoController.php`         | Navigazione eventi, dettaglio, ricerca, categorie                         |
+| `controllers/CartController.php`           | API carrello                                                              |
+| `controllers/BigliettoController.php`      | Acquisto biglietti, validazione                                           |
+| `controllers/AdminController.php`          | Dashboard admin/mod/promoter, gestione utenti, gestione eventi, API admin |
+| `controllers/LocationController.php`       | CRUD location                                                             |
+| `controllers/ManifestazioneController.php` | CRUD manifestazioni                                                       |
+| `controllers/OrdineController.php`         | Storico ordini, dettaglio ordine                                          |
+| `controllers/RecensioneController.php`     | CRUD recensioni                                                           |
+| `controllers/AvatarController.php`         | Upload/get/delete avatar                                                  |
+| `controllers/CollaborazioneController.php` | Inviti e gestione collaboratori evento                                    |
+| `controllers/PageController.php`           | Helper per impostare la pagina corrente in sessione                       |
 
 ---
 
 ## Model
 
-| File | Entita |
-|---|---|
-| `models/Utente.php` | Utenti |
-| `models/Evento.php` | Eventi |
-| `models/Location.php` | Location/Luoghi |
+| File                        | Entita                          |
+|-----------------------------|---------------------------------|
+| `models/Utente.php`         | Utenti                          |
+| `models/Evento.php`         | Eventi                          |
+| `models/Location.php`       | Location/Luoghi                 |
 | `models/Manifestazione.php` | Manifestazioni (festival, tour) |
-| `models/Ordine.php` | Ordini |
-| `models/Biglietto.php` | Biglietti |
-| `models/Recensione.php` | Recensioni |
-| `models/Settore.php` | Settori (aree della venue) |
-| `models/EventoSettori.php` | Associazione evento-settori |
-| `models/Intrattenitore.php` | Intrattenitori/Artisti |
-| `models/Permessi.php` | Permessi e ruoli |
+| `models/Ordine.php`         | Ordini                          |
+| `models/Biglietto.php`      | Biglietti                       |
+| `models/Recensione.php`     | Recensioni                      |
+| `models/Settore.php`        | Settori (aree della venue)      |
+| `models/EventoSettori.php`  | Associazione evento-settori     |
+| `models/Intrattenitore.php` | Intrattenitori/Artisti          |
+| `models/Permessi.php`       | Permessi e ruoli                |
 
 ---
 
 ## Flusso di navigazione
 
-```
+```txt
 HOME (default)
 |
 |-- [Non autenticato]

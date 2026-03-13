@@ -208,37 +208,37 @@ erDiagram
 
 ## Tabelle principali
 
-| Tabella | Descrizione |
-|---|---|
-| Utenti | Utenti registrati con ruolo (user, promoter, mod, admin), stato verifica e credenziali |
-| Locations | Luoghi/venue dove si svolgono gli eventi, con indirizzo e capienza |
-| Settori | Aree/settori di una location (es. Platea, Tribuna), con moltiplicatore prezzo e posti disponibili |
-| Manifestazioni | Raggruppamenti di eventi (festival, tour, rassegne) con date inizio/fine |
-| Eventi | Singolo evento con data, orari, prezzo base, categoria, immagine e riferimento a location e manifestazione |
-| Intrattenitore | Artisti/performer con nome e categoria (mestiere) |
-| Tipo | Tipologie di biglietto (Standard, VIP, Premium) con modificatore di prezzo |
-| Biglietti | Biglietto singolo con intestatario, stato (carrello/acquistato/validato) e QR code |
-| Ordini | Ordine di acquisto con metodo di pagamento, data e totale |
-| Recensioni | Recensione utente su un evento con voto (1-5) e commento |
-| Notifiche | Notifiche interne e email tra utenti |
+| Tabella        | Descrizione                                                                                                |
+|----------------|------------------------------------------------------------------------------------------------------------|
+| Utenti         | Utenti registrati con ruolo (user, promoter, mod, admin), stato verifica e credenziali                     |
+| Locations      | Luoghi/venue dove si svolgono gli eventi, con indirizzo e capienza                                         |
+| Settori        | Aree/settori di una location (es. Platea, Tribuna), con moltiplicatore prezzo e posti disponibili          |
+| Manifestazioni | Raggruppamenti di eventi (festival, tour, rassegne) con date inizio/fine                                   |
+| Eventi         | Singolo evento con data, orari, prezzo base, categoria, immagine e riferimento a location e manifestazione |
+| Intrattenitore | Artisti/performer con nome e categoria (mestiere)                                                          |
+| Tipo           | Tipologie di biglietto (Standard, VIP, Premium) con modificatore di prezzo                                 |
+| Biglietti      | Biglietto singolo con intestatario, stato (carrello/acquistato/validato) e QR code                         |
+| Ordini         | Ordine di acquisto con metodo di pagamento, data e totale                                                  |
+| Recensioni     | Recensione utente su un evento con voto (1-5) e commento                                                   |
+| Notifiche      | Notifiche interne e email tra utenti                                                                       |
 
 ## Tabelle ponte (relazioni M:N)
 
-| Tabella | Collega | Descrizione |
-|---|---|---|
-| Evento_Intrattenitore | Eventi - Intrattenitore | Associa performer a eventi con orario esibizione (OraI, OraF) |
-| EventiSettori | Eventi - Settori | Settori disponibili per un evento specifico |
-| Settore_Biglietti | Biglietti - Settori | Assegnazione posto: fila e numero |
-| Ordine_Biglietti | Ordini - Biglietti | Biglietti contenuti in un ordine |
-| Utente_Ordini | Utenti - Ordini | Ordini effettuati da un utente |
-| CreatoriEventi | Utenti - Eventi | Chi ha creato l'evento |
-| CreatoriLocations | Utenti - Locations | Chi ha creato la location |
-| CreatoriManifestazioni | Utenti - Manifestazioni | Chi ha creato la manifestazione |
-| CollaboratoriEventi | Utenti - Eventi | Inviti a collaborare su un evento, con stato (pending/accepted/declined) e token |
+| Tabella                | Collega                 | Descrizione                                                                      |
+|------------------------|-------------------------|----------------------------------------------------------------------------------|
+| Evento_Intrattenitore  | Eventi - Intrattenitore | Associa performer a eventi con orario esibizione (OraI, OraF)                    |
+| EventiSettori          | Eventi - Settori        | Settori disponibili per un evento specifico                                      |
+| Settore_Biglietti      | Biglietti - Settori     | Assegnazione posto: fila e numero                                                |
+| Ordine_Biglietti       | Ordini - Biglietti      | Biglietti contenuti in un ordine                                                 |
+| Utente_Ordini          | Utenti - Ordini         | Ordini effettuati da un utente                                                   |
+| CreatoriEventi         | Utenti - Eventi         | Chi ha creato l'evento                                                           |
+| CreatoriLocations      | Utenti - Locations      | Chi ha creato la location                                                        |
+| CreatoriManifestazioni | Utenti - Manifestazioni | Chi ha creato la manifestazione                                                  |
+| CollaboratoriEventi    | Utenti - Eventi         | Inviti a collaborare su un evento, con stato (pending/accepted/declined) e token |
 
 ## Calcolo prezzo biglietto
 
-```
+```math
 Prezzo finale = (Eventi.PrezzoNoMod + Tipo.ModificatorePrezzo) * Settori.MoltiplicatorePrezzo
 ```
 
@@ -248,10 +248,10 @@ Prezzo finale = (Eventi.PrezzoNoMod + Tipo.ModificatorePrezzo) * Settori.Moltipl
 
 ## Valori enum
 
-| Campo | Valori |
-|---|---|
-| Utenti.ruolo | user, promoter, mod, admin |
-| Biglietti.Stato | carrello, acquistato, validato |
-| Biglietti.Sesso | M, F, Altro |
-| Eventi.Categoria | concerti, teatro, sport, comedy, cinema, famiglia |
-| CollaboratoriEventi.status | pending, accepted, declined |
+| Campo                      | Valori                                            |
+|----------------------------|---------------------------------------------------|
+| Utenti.ruolo               | user, promoter, mod, admin                        |
+| Biglietti.Stato            | carrello, acquistato, validato                    |
+| Biglietti.Sesso            | M, F, Altro                                       |
+| Eventi.Categoria           | concerti, teatro, sport, comedy, cinema, famiglia |
+| CollaboratoriEventi.status | pending, accepted, declined                       |
