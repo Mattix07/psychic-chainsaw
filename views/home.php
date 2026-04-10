@@ -105,6 +105,7 @@ $categorie = [
             <?php foreach ($tuttiEventi as $evento): ?>
             <article class="event-card large">
                 <div class="event-card-poster">
+                    <a href="index.php?action=view_evento&id=<?= $evento['id'] ?>" class="event-card-poster-link" aria-label="<?= e($evento['Nome']) ?>"></a>
                     <img src="img/events/<?= $evento['id'] ?>.jpg"
                          alt="<?= e($evento['Nome']) ?>"
                          onerror="this.src='https://picsum.photos/400/600?random=<?= $evento['id'] ?>'">
