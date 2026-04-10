@@ -241,7 +241,7 @@ function notifyEventModification(PDO $pdo, int $eventoId, int $modifiedBy, array
 function getEventiCreatiDaUtente(PDO $pdo, int $userId): array
 {
     $stmt = $pdo->prepare("
-        SELECT e.*, l." . COL_LOCATIONS_NOME . " as LocationNome, m." . COL_MANIFESTAZIONI_NOME . " as ManifestazioneName
+        SELECT e.*, l." . COL_LOCATIONS_NOME . " as LocationName, m." . COL_MANIFESTAZIONI_NOME . " as ManifestazioneName
         FROM " . TABLE_EVENTI . " e
         JOIN " . TABLE_LOCATIONS . " l ON e." . COL_EVENTI_ID_LOCATION . " = l." . COL_LOCATIONS_ID . "
         LEFT JOIN " . TABLE_MANIFESTAZIONI . " m ON e." . COL_EVENTI_ID_MANIFESTAZIONE . " = m." . COL_MANIFESTAZIONI_ID . "
