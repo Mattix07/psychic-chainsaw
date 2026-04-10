@@ -44,8 +44,9 @@
     </div>
 </div>
 <script>
-(function() {
+document.getElementById('loginForm').addEventListener('submit', function() {
     var cart = localStorage.getItem('em_cart');
+    console.log('[cart-merge] guest_cart al submit:', cart ? cart.substring(0, 50) : 'null');
     if (cart) document.getElementById('guestCartInput').value = cart;
-})();
+});
 </script>
