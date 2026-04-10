@@ -96,31 +96,21 @@ function loginAction(PDO $pdo): void
     }
     // Merge carrello guest → server
     $guestCartJson = $_POST['guest_cart'] ?? '';
-    $dbg = fopen(__DIR__ . '/../cart_merge.log', 'a');
-    fwrite($dbg, date('H:i:s') . ' guest_cart=' . substr($guestCartJson, 0, 300) . "\n");
     if ($guestCartJson) {
         $guestItems = json_decode($guestCartJson, true);
-        fwrite($dbg, 'items=' . count((array)$guestItems) . "\n");
         if (is_array($guestItems)) {
             foreach ($guestItems as $item) {
                 $idEvento = (int) ($item['eventoId'] ?? $item['idEvento'] ?? 0);
                 $idClasse = trim($item['ticketType'] ?? $item['idClasse'] ?? 'Standard');
                 $qty = max(1, (int) ($item['quantity'] ?? 1));
-                fwrite($dbg, "idEvento=$idEvento idClasse=$idClasse qty=$qty\n");
                 if ($idEvento > 0) {
                     for ($i = 0; $i < $qty; $i++) {
-                        try {
-                            $bid = addBigliettoToCart($pdo, $idEvento, $idClasse, $utente['id']);
-                            fwrite($dbg, "OK biglietto=$bid\n");
-                        } catch (\Throwable $e) {
-                            fwrite($dbg, 'ERR=' . $e->getMessage() . "\n");
-                        }
+                        try { addBigliettoToCart($pdo, $idEvento, $idClasse, $utente['id']); } catch (\Throwable $e) {}
                     }
                 }
             }
         }
     }
-    fclose($dbg);
 
     setSuccessMessage(message(MSG_SUCCESS_LOGIN, $utente['Nome']));
     redirect('index.php');
