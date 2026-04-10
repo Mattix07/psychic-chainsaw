@@ -55,7 +55,7 @@ $ordini = $_SESSION['ordini_utente'] ?? [];
                         </div>
                         <div class="order-stat">
                             <i class="fas fa-euro-sign"></i>
-                            <strong><?= formatPrice($ordine['Totale']) ?></strong>
+                            <strong><?= formatPrice($ordine['TotaleCalcolato'] ?? 0) ?></strong>
                         </div>
                     </div>
                     <div class="order-footer">

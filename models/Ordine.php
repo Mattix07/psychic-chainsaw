@@ -153,9 +153,15 @@ function calcolaTotaleOrdine(PDO $pdo, int $idOrdine): float
 function getOrdiniByUtente(PDO $pdo, int $idUtente): array
 {
     $stmt = $pdo->prepare("
-        SELECT o.*, COUNT(ob.idBiglietto) as num_biglietti
+        SELECT o.*, COUNT(ob.idBiglietto) as num_biglietti,
+               SUM((e." . COL_EVENTI_PREZZO_NO_MOD . " + t." . COL_TIPO_MODIFICATORE_PREZZO . ") * COALESCE(s." . COL_SETTORI_MOLTIPLICATORE_PREZZO . ", 1)) as TotaleCalcolato
         FROM " . TABLE_ORDINI . " o
         LEFT JOIN " . TABLE_ORDINE_BIGLIETTI . " ob ON o." . COL_ORDINI_ID . " = ob.idOrdine
+        LEFT JOIN " . TABLE_BIGLIETTI . " b ON ob.idBiglietto = b." . COL_BIGLIETTI_ID . "
+        LEFT JOIN " . TABLE_EVENTI . " e ON b." . COL_BIGLIETTI_ID_EVENTO . " = e." . COL_EVENTI_ID . "
+        LEFT JOIN " . TABLE_TIPO . " t ON b." . COL_BIGLIETTI_ID_TIPO . " = t." . COL_TIPO_ID . "
+        LEFT JOIN " . TABLE_SETTORE_BIGLIETTI . " sb ON b." . COL_BIGLIETTI_ID . " = sb." . COL_SETTORE_BIGLIETTI_ID_BIGLIETTO . "
+        LEFT JOIN " . TABLE_SETTORI . " s ON sb." . COL_SETTORE_BIGLIETTI_ID_SETTORE . " = s." . COL_SETTORI_ID . "
         WHERE o." . COL_ORDINI_ID_UTENTE . " = ?
         GROUP BY o." . COL_ORDINI_ID . "
         ORDER BY o." . COL_ORDINI_ID . " DESC
