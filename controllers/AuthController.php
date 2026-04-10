@@ -12,6 +12,7 @@ require_once __DIR__ . '/../config/messages.php';
 require_once __DIR__ . '/../lib/Validator.php';
 require_once __DIR__ . '/../lib/QueryBuilder.php';
 require_once __DIR__ . '/../models/Utente.php';
+require_once __DIR__ . '/../models/Biglietto.php';
 require_once __DIR__ . '/../config/mail.php';
 
 /**
@@ -93,6 +94,24 @@ function loginAction(PDO $pdo): void
     if (defined('APP_DEBUG') && APP_DEBUG) {
         error_log("[INFO] Login riuscito: {$email}");
     }
+    // Merge carrello guest → server
+    $guestCartJson = $_POST['guest_cart'] ?? '';
+    if ($guestCartJson) {
+        $guestItems = json_decode($guestCartJson, true);
+        if (is_array($guestItems)) {
+            foreach ($guestItems as $item) {
+                $idEvento = (int) ($item['eventoId'] ?? $item['idEvento'] ?? 0);
+                $idClasse = trim($item['ticketType'] ?? $item['idClasse'] ?? 'Standard');
+                $qty = max(1, (int) ($item['quantity'] ?? 1));
+                if ($idEvento > 0) {
+                    for ($i = 0; $i < $qty; $i++) {
+                        try { addBigliettoToCart($pdo, $idEvento, $idClasse, $utente['id']); } catch (\Throwable $e) {}
+                    }
+                }
+            }
+        }
+    }
+
     setSuccessMessage(message(MSG_SUCCESS_LOGIN, $utente['Nome']));
     redirect('index.php');
 }

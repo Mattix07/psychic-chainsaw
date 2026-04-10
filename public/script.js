@@ -913,14 +913,9 @@ const Cart = {
 
     // Initialize cart
     if (Cart.isLoggedIn()) {
-        // Carica carrello dal server
-        Cart.loadFromServer().then(() => {
-            // Se c'è un carrello locale, uniscilo
-            const localCart = JSON.parse(localStorage.getItem(Cart.STORAGE_KEY) || '[]');
-            if (localCart.length > 0) {
-                Cart.mergeWithServer();
-            }
-        });
+        // Carrello guest già mergiato server-side al login, pulisci localStorage
+        localStorage.removeItem(Cart.STORAGE_KEY);
+        Cart.loadFromServer();
     } else {
         Cart.updateUI();
     }

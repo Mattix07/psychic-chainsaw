@@ -17,9 +17,10 @@
         <h1>Accedi</h1>
         <p class="subtitle">Bentornato! Inserisci le tue credenziali.</p>
 
-        <form method="post" action="index.php">
+        <form method="post" action="index.php" id="loginForm">
             <?= csrfField() ?>
             <input type="hidden" name="action" value="login">
+            <input type="hidden" name="guest_cart" id="guestCartInput">
 
             <div class="form-group">
                 <label for="email">Email</label>
@@ -42,3 +43,9 @@
         </p>
     </div>
 </div>
+<script>
+document.getElementById('loginForm').addEventListener('submit', function() {
+    var cart = localStorage.getItem('em_cart');
+    if (cart) document.getElementById('guestCartInput').value = cart;
+});
+</script>
