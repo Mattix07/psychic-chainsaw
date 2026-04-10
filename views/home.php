@@ -110,12 +110,6 @@ $categorie = [
                          alt="<?= e($evento['Nome']) ?>"
                          onerror="this.src='https://picsum.photos/400/600?random=<?= $evento['id'] ?>'">
                     <span class="event-card-badge">In vendita</span>
-                    <div class="event-card-overlay">
-                        <div class="event-card-actions">
-                            <button class="card-action-btn primary" aria-label="Aggiungi al carrello" onclick="addToCart(<?= $evento['id'] ?>, 1, '<?= e($evento['Nome']) ?>', 'Standard', <?= (float)$evento['PrezzoNoMod'] ?>, '<?= formatDate($evento['Data']) ?>', 'img/events/<?= $evento['id'] ?>.jpg')"><i class="fas fa-cart-plus" aria-hidden="true"></i></button>
-                            <button class="card-action-btn" aria-label="Aggiungi ai preferiti"><i class="fas fa-heart" aria-hidden="true"></i></button>
-                        </div>
-                    </div>
                 </div>
                 <div class="event-card-info">
                     <h3 class="event-card-title">
@@ -156,12 +150,6 @@ $categorie = [
                     <img src="img/events/<?= $evento['id'] ?>.jpg"
                          alt="<?= e($evento['Nome']) ?>"
                          onerror="this.src='https://picsum.photos/250/375?random=<?= $evento['id'] + 100 ?>'">
-                    <div class="event-card-overlay">
-                        <div class="event-card-actions">
-                            <a href="index.php?action=view_evento&id=<?= $evento['id'] ?>" class="card-action-btn primary" aria-label="Vedi biglietti"><i class="fas fa-ticket" aria-hidden="true"></i></a>
-                            <button class="card-action-btn" aria-label="Aggiungi ai preferiti"><i class="fas fa-heart" aria-hidden="true"></i></button>
-                        </div>
-                    </div>
                 </div>
                 <div class="event-card-info">
                     <h3 class="event-card-title">
@@ -207,12 +195,6 @@ if (empty($eventiManifestazione)) continue;
                     <img src="img/events/<?= $evento['id'] ?>.jpg"
                          alt="<?= e($evento['Nome']) ?>"
                          onerror="this.src='https://picsum.photos/250/375?random=<?= $evento['id'] + 200 ?>'">
-                    <div class="event-card-overlay">
-                        <div class="event-card-actions">
-                            <a href="index.php?action=view_evento&id=<?= $evento['id'] ?>" class="card-action-btn primary" aria-label="Vedi biglietti"><i class="fas fa-ticket" aria-hidden="true"></i></a>
-                            <button class="card-action-btn" aria-label="Aggiungi ai preferiti"><i class="fas fa-heart" aria-hidden="true"></i></button>
-                        </div>
-                    </div>
                 </div>
                 <div class="event-card-info">
                     <h3 class="event-card-title">
@@ -254,11 +236,6 @@ if (empty($eventiManifestazione)) continue;
                 <img src="img/events/<?= $evento['id'] ?>.jpg"
                      alt="<?= e($evento['Nome']) ?>"
                      onerror="this.src='https://picsum.photos/200/300?random=<?= $evento['id'] + 300 ?>'">
-                <div class="event-card-overlay">
-                    <div class="event-card-actions">
-                        <a href="index.php?action=view_evento&id=<?= $evento['id'] ?>" class="card-action-btn primary" aria-label="Vedi biglietti"><i class="fas fa-ticket" aria-hidden="true"></i></a>
-                    </div>
-                </div>
             </div>
             <div class="event-card-info">
                 <h3 class="event-card-title">

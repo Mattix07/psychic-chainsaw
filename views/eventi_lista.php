@@ -40,16 +40,6 @@ $categoriaNome = $_SESSION['categoria_nome'] ?? 'Tutti gli Eventi';
                         alt="<?= e($evento['Nome']) ?>"
                         onerror="this.src='https://picsum.photos/250/375?random=<?= $evento['id'] ?>'">
                     <span class="event-card-badge"><?= e($evento['ManifestazioneName'] ?? 'Evento') ?></span>
-                    <div class="event-card-overlay">
-                        <div class="event-card-actions">
-                            <button class="card-action-btn primary" aria-label="Aggiungi al carrello" onclick="addToCart(<?= $evento['id'] ?>, 1, '<?= e($evento['Nome']) ?>', 'Standard', <?= (float)$evento['PrezzoNoMod'] ?>, '<?= formatDate($evento['Data']) ?>', 'img/events/<?= $evento['id'] ?>.jpg')">
-                                <i class="fas fa-cart-plus" aria-hidden="true"></i>
-                            </button>
-                            <button class="card-action-btn" aria-label="Aggiungi ai preferiti">
-                                <i class="fas fa-heart" aria-hidden="true"></i>
-                            </button>
-                        </div>
-                    </div>
                 </div>
                 <div class="event-card-info">
                     <h2 class="event-card-title">

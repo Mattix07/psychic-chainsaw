@@ -37,16 +37,6 @@ $nomeRicerca = $_SESSION['ricerca_nome'] ?? '';
                         alt="<?= e($evento['Nome']) ?>"
                         onerror="this.src='https://picsum.photos/250/375?random=<?= $evento['id'] ?>'">
                     <span class="event-card-badge"><?= e($evento['ManifestazioneName'] ?? 'Evento') ?></span>
-                    <div class="event-card-overlay">
-                        <div class="event-card-actions">
-                            <button class="card-action-btn primary" onclick="event.stopPropagation(); addToCart(<?= $evento['id'] ?>, 1, '<?= e($evento['Nome']) ?>', 'Standard', <?= $evento['PrezzoNoMod'] ?>, '<?= formatDate($evento['Data']) ?>', 'img/events/<?= $evento['id'] ?>.jpg')">
-                                <i class="fas fa-cart-plus"></i>
-                            </button>
-                            <button class="card-action-btn" onclick="event.stopPropagation();">
-                                <i class="fas fa-heart"></i>
-                            </button>
-                        </div>
-                    </div>
                 </div>
                 <div class="event-card-info">
                     <h3 class="event-card-title"><?= e($evento['Nome']) ?></h3>

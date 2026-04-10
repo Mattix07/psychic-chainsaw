@@ -339,10 +339,6 @@
     opacity: 1;
 }
 
-.event-card:hover .event-card-overlay .card-action-btn,
-.event-card:hover .event-card-overlay a {
-    pointer-events: auto;
-}
 
 .event-card-badge {
     position: absolute;
