@@ -96,6 +96,7 @@ function loginAction(PDO $pdo): void
     }
     // Merge carrello guest → server
     $guestCartJson = $_POST['guest_cart'] ?? '';
+    error_log('[CART_MERGE] guest_cart ricevuto: ' . substr($guestCartJson, 0, 200));
     if ($guestCartJson) {
         $guestItems = json_decode($guestCartJson, true);
         if (is_array($guestItems)) {
