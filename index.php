@@ -454,6 +454,20 @@ switch ($action) {
         break;
 
     // ==========================================
+    // NEWSLETTER
+    // ==========================================
+    case 'subscribe_newsletter':
+        validateCsrfToken();
+        $email = filter_input(INPUT_POST, 'newsletter_email', FILTER_VALIDATE_EMAIL);
+        if ($email) {
+            setFlashMessage('success', 'Grazie! Ti sei iscritto alla newsletter con successo.');
+        } else {
+            setFlashMessage('error', 'Indirizzo email non valido.');
+        }
+        redirect('index.php');
+        break;
+
+    // ==========================================
     // DEFAULT: HOMEPAGE
     // ==========================================
     default:

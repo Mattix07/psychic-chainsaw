@@ -170,8 +170,9 @@ function formatDate(string $date): string
  * @param string $time Orario in formato H:i:s
  * @return string Orario in formato H:i
  */
-function formatTime(string $time): string
+function formatTime(?string $time): string
 {
+    if ($time === null) return '';
     return date('H:i', strtotime($time));
 }
 

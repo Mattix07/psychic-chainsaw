@@ -31,6 +31,7 @@ function showProfilo(PDO $pdo): void
 
     $user = getUtenteById($pdo, $_SESSION['user_id']);
     $_SESSION['user_data'] = $user;
+    setSeoMeta('Il mio profilo', 'Gestisci il tuo profilo, i tuoi dati e le impostazioni del tuo account EventsMaster.');
     setPage('profilo');
 }
 

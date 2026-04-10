@@ -97,7 +97,7 @@ if ($mediaVoti && !empty($mediaVoti['media'])) {
     Mostra: manifestazione, titolo, data/ora, location, rating medio.
 -->
 <section class="evento-hero">
-    <div class="evento-hero-bg" style="background-image: url('<?= e($evento['Immagine'] ?? 'public/img/placeholder.jpg') ?>')"></div>
+    <div class="evento-hero-bg" <?= $evento['Immagine'] ? "style=\"background-image: url('" . e($evento['Immagine']) . "')\"" : '' ?>></div>
     <div class="evento-hero-overlay"></div>
     <div class="evento-hero-content">
         <div class="evento-hero-info">
@@ -107,7 +107,7 @@ if ($mediaVoti && !empty($mediaVoti['media'])) {
             <h1><?= e($evento['Nome']) ?></h1>
             <div class="evento-meta">
                 <span><i class="far fa-calendar"></i> <?= formatDate($evento['Data']) ?></span>
-                <span><i class="far fa-clock"></i> <?= formatTime($evento['OraI']) ?> - <?= formatTime($evento['OraF']) ?></span>
+                <span><i class="far fa-clock"></i> <?= formatTime($evento['OraI']) ?><?= $evento['OraF'] ? ' - ' . formatTime($evento['OraF']) : '' ?></span>
                 <span><i class="fas fa-map-marker-alt"></i> <?= e($evento['LocationName']) ?></span>
             </div>
             <?php if ($mediaVoti): ?>
@@ -159,7 +159,7 @@ if ($mediaVoti && !empty($mediaVoti['media'])) {
                     <i class="fas fa-clock"></i>
                     <div>
                         <span class="label">Orario</span>
-                        <span class="value"><?= formatTime($evento['OraI']) ?> - <?= formatTime($evento['OraF']) ?></span>
+                        <span class="value"><?= formatTime($evento['OraI']) ?><?= $evento['OraF'] ? ' - ' . formatTime($evento['OraF']) : '' ?></span>
                     </div>
                 </div>
             </div>
@@ -189,7 +189,7 @@ if ($mediaVoti && !empty($mediaVoti['media'])) {
                     <div class="intrattenitore-info">
                         <h4><?= e($i['Nome']) ?></h4>
                         <span class="mestiere"><?= e($i['Categoria'] ?? '') ?></span>
-                        <span class="orario"><i class="far fa-clock"></i> <?= formatTime($i['OraI']) ?> - <?= formatTime($i['OraF']) ?></span>
+                        <span class="orario"><i class="far fa-clock"></i> <?= formatTime($i['OraI']) ?><?= $i['OraF'] ? ' - ' . formatTime($i['OraF']) : '' ?></span>
                     </div>
                 </div>
                 <?php endforeach; ?>

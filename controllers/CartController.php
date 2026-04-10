@@ -416,7 +416,7 @@ function getSettoriApi(PDO $pdo): void
             return [
                 'id' => $s['id'],
                 'nome' => $s['Nome'],
-                'posti' => $s['PostiDisponibili'],
+                'posti' => $s['PostiTotali'],
                 'moltiplicatore' => (float) $s['MoltiplicatorePrezzo']
             ];
         }, $settori)

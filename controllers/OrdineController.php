@@ -28,6 +28,7 @@ function showOrdiniUtente(PDO $pdo): void
 
     $ordini = getOrdiniByUtente($pdo, $_SESSION['user_id']);
     $_SESSION['ordini_utente'] = $ordini;
+    setSeoMeta('I miei ordini', 'Visualizza la cronologia dei tuoi ordini e acquisti su EventsMaster.');
     setPage('miei_ordini');
 }
 

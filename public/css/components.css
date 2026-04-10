@@ -562,6 +562,7 @@
 .evento-hero-bg {
     position: absolute;
     inset: 0;
+    background-color: var(--bg-secondary);
     background-size: cover;
     background-position: center;
 }
