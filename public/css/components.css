@@ -325,7 +325,7 @@
 .event-card-overlay {
     position: absolute;
     inset: 0;
-    z-index: 2;
+    pointer-events: none;
     background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 60%);
     opacity: 0;
     transition: var(--transition);
@@ -337,6 +337,11 @@
 
 .event-card:hover .event-card-overlay {
     opacity: 1;
+}
+
+.event-card:hover .event-card-overlay .card-action-btn,
+.event-card:hover .event-card-overlay a {
+    pointer-events: auto;
 }
 
 .event-card-badge {
