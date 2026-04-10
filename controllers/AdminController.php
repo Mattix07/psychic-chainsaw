@@ -352,6 +352,8 @@ function adminEditEvent(PDO $pdo): void
     $_SESSION['admin_evento'] = $evento;
     $_SESSION['admin_locations'] = getAllLocations($pdo);
     $_SESSION['admin_manifestazioni'] = getAllManifestazioni($pdo);
+    $_SESSION['admin_evento_collaboratori'] = getEventCollaborators($pdo, $eventoId);
+    $_SESSION['admin_evento_creatore'] = getEventCreator($pdo, $eventoId);
     setPage('admin/evento_form');
 }
 
@@ -495,6 +497,69 @@ function getAllEventiAdmin(PDO $pdo): array
         LEFT JOIN " . TABLE_MANIFESTAZIONI . " m ON e." . COL_EVENTI_ID_MANIFESTAZIONE . " = m." . COL_MANIFESTAZIONI_ID . "
         ORDER BY e." . COL_EVENTI_DATA . " DESC
     ")->fetchAll();
+}
+
+// ==========================================
+// GESTIONE COLLABORATORI EVENTO
+// ==========================================
+
+function inviteCollaboratorAction(PDO $pdo): void
+{
+    requireRole(ROLE_PROMOTER);
+    if (!verifyCsrf()) {
+        redirect('index.php?action=admin_events', null, 'Token non valido');
+    }
+
+    $eventoId  = (int) ($_POST['evento_id'] ?? 0);
+    $invitedId = (int) ($_POST['user_id'] ?? 0);
+
+    require_once __DIR__ . '/../models/Permessi.php';
+
+    if (!canEditEvento($pdo, $_SESSION['user_id'], $eventoId) ||
+        getEventCreator($pdo, $eventoId)['id'] !== $_SESSION['user_id']) {
+        redirect("index.php?action=admin_edit_event&id=$eventoId", null, 'Solo il proprietario può invitare collaboratori');
+    }
+
+    $ok = inviteCollaborator($pdo, $eventoId, $invitedId, $_SESSION['user_id']);
+    if ($ok) {
+        redirect("index.php?action=admin_edit_event&id=$eventoId", 'Invito inviato');
+    } else {
+        redirect("index.php?action=admin_edit_event&id=$eventoId", null, 'Invito non riuscito (utente non trovato o già invitato)');
+    }
+}
+
+function removeCollaboratorAction(PDO $pdo): void
+{
+    requireRole(ROLE_PROMOTER);
+    if (!verifyCsrf()) {
+        redirect('index.php?action=admin_events', null, 'Token non valido');
+    }
+
+    $eventoId = (int) ($_POST['evento_id'] ?? 0);
+    $userId   = (int) ($_POST['user_id'] ?? 0);
+
+    require_once __DIR__ . '/../models/Permessi.php';
+
+    $creatore = getEventCreator($pdo, $eventoId);
+    if (!$creatore || $creatore['id'] !== $_SESSION['user_id']) {
+        redirect("index.php?action=admin_edit_event&id=$eventoId", null, 'Solo il proprietario può rimuovere collaboratori');
+    }
+
+    removeCollaborator($pdo, $eventoId, $userId);
+    redirect("index.php?action=admin_edit_event&id=$eventoId", 'Collaboratore rimosso');
+}
+
+function searchPromotersApi(PDO $pdo): void
+{
+    requireRole(ROLE_PROMOTER);
+    $query = trim($_GET['q'] ?? '');
+    if (strlen($query) < 2) {
+        jsonResponse(['success' => true, 'data' => []]);
+        return;
+    }
+    require_once __DIR__ . '/../models/Permessi.php';
+    $results = searchPromoters($pdo, $query);
+    jsonResponse(['success' => true, 'data' => $results]);
 }
 
 // ==========================================

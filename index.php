@@ -285,6 +285,22 @@ switch ($action) {
         adminDeleteEvent($pdo);
         break;
 
+    case 'invite_collaborator':
+        require_once 'controllers/AdminController.php';
+        inviteCollaboratorAction($pdo);
+        break;
+
+    case 'remove_collaborator':
+        require_once 'controllers/AdminController.php';
+        removeCollaboratorAction($pdo);
+        break;
+
+    case 'search_promoters':
+        require_once 'controllers/AdminController.php';
+        searchPromotersApi($pdo);
+        exit;
+        break;
+
     // ==========================================
     // NUOVE FUNZIONALITÀ ADMIN/MOD
     // ==========================================

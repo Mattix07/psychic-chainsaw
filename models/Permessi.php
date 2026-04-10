@@ -198,6 +198,35 @@ function getEventCollaborators(PDO $pdo, int $eventoId): array
 }
 
 /**
+ * Rimuove un collaboratore da un evento
+ */
+function removeCollaborator(PDO $pdo, int $eventoId, int $userId): bool
+{
+    $stmt = $pdo->prepare("
+        DELETE FROM " . TABLE_COLLABORATORI_EVENTI . "
+        WHERE idEvento = ? AND idUtente = ?
+    ");
+    return $stmt->execute([$eventoId, $userId]);
+}
+
+/**
+ * Cerca utenti promoter per email o nome (per invito collaboratori)
+ */
+function searchPromoters(PDO $pdo, string $query): array
+{
+    $q = '%' . $query . '%';
+    $stmt = $pdo->prepare("
+        SELECT " . COL_UTENTI_ID . ", " . COL_UTENTI_NOME . ", " . COL_UTENTI_COGNOME . ", " . COL_UTENTI_EMAIL . "
+        FROM " . TABLE_UTENTI . "
+        WHERE " . COL_UTENTI_RUOLO . " IN ('" . RUOLO_PROMOTER . "', '" . RUOLO_MOD . "', '" . RUOLO_ADMIN . "')
+          AND (" . COL_UTENTI_EMAIL . " LIKE ? OR " . COL_UTENTI_NOME . " LIKE ? OR " . COL_UTENTI_COGNOME . " LIKE ?)
+        LIMIT 10
+    ");
+    $stmt->execute([$q, $q, $q]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+/**
  * Ottieni il creatore di un evento
  */
 function getEventCreator(PDO $pdo, int $eventoId): ?array

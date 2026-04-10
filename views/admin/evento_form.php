@@ -13,10 +13,14 @@
  * In modalità modifica, l'ID evento viene passato come hidden field.
  * Location e manifestazioni sono precaricate dal controller via sessione.
  */
-$locations = $_SESSION['admin_locations'] ?? [];
+$locations      = $_SESSION['admin_locations'] ?? [];
 $manifestazioni = $_SESSION['admin_manifestazioni'] ?? [];
-$evento = $_SESSION['admin_evento'] ?? null;
-$isEdit = !empty($evento);
+$evento         = $_SESSION['admin_evento'] ?? null;
+$collaboratori  = $_SESSION['admin_evento_collaboratori'] ?? [];
+$creatore       = $_SESSION['admin_evento_creatore'] ?? null;
+$isEdit         = !empty($evento);
+$isOwner        = $isEdit && $creatore && ($creatore['id'] === ($_SESSION['user_id'] ?? 0) || hasRole(ROLE_MOD));
+unset($_SESSION['admin_evento_collaboratori'], $_SESSION['admin_evento_creatore']);
 
 // Carica settori della location selezionata
 require_once __DIR__ . '/../../models/Location.php';
@@ -150,6 +154,169 @@ if ($isEdit && !empty($evento['idLocation'])) {
                 </button>
             </div>
         </form>
+
+        <?php if ($isEdit): ?>
+        <!-- SEZIONE COLLABORATORI -->
+        <div class="form-section" style="margin-top:2rem;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+                <h3><i class="fas fa-users"></i> Collaboratori</h3>
+                <?php if ($isOwner): ?>
+                <button class="btn btn-primary btn-sm" onclick="openInviteModal()">
+                    <i class="fas fa-user-plus"></i> Invita Promoter
+                </button>
+                <?php endif; ?>
+            </div>
+
+            <!-- Creatore -->
+            <?php if ($creatore): ?>
+            <div style="margin-bottom:1rem;">
+                <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:0.5rem;">Proprietario</p>
+                <div class="ticket-item" style="display:flex; align-items:center; gap:0.75rem; padding:0.75rem 1rem;">
+                    <i class="fas fa-crown" style="color:var(--warning);"></i>
+                    <div>
+                        <strong><?= e($creatore['Nome'] . ' ' . $creatore['Cognome']) ?></strong>
+                        <small style="display:block; color:var(--text-muted);"><?= e($creatore['Email']) ?></small>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <!-- Lista collaboratori -->
+            <?php if (empty($collaboratori)): ?>
+                <p class="no-data">Nessun collaboratore aggiunto.</p>
+            <?php else: ?>
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Email</th>
+                                <th>Stato</th>
+                                <th>Invitato da</th>
+                                <?php if ($isOwner): ?><th>Azioni</th><?php endif; ?>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($collaboratori as $c): ?>
+                            <tr>
+                                <td><strong><?= e($c['Nome'] . ' ' . $c['Cognome']) ?></strong></td>
+                                <td><?= e($c['Email']) ?></td>
+                                <td>
+                                    <?php
+                                    $statusLabels = ['pending' => ['tag-warning','clock','In attesa'], 'accepted' => ['tag-success','check','Accettato'], 'declined' => ['tag-danger','times','Rifiutato'], 'revoked' => ['tag-secondary','ban','Revocato']];
+                                    [$cls, $icon, $label] = $statusLabels[$c['status']] ?? ['tag-secondary','question',$c['status']];
+                                    ?>
+                                    <span class="tag <?= $cls ?>"><i class="fas fa-<?= $icon ?>"></i> <?= $label ?></span>
+                                </td>
+                                <td><?= e($c['InvitatoDaNome'] . ' ' . $c['InvitatoDaCognome']) ?></td>
+                                <?php if ($isOwner): ?>
+                                <td>
+                                    <form method="post" action="index.php?action=remove_collaborator" style="display:inline;"
+                                          onsubmit="return confirm('Rimuovere <?= e(addslashes($c['Nome'] . ' ' . $c['Cognome'])) ?> dai collaboratori?')">
+                                        <?= csrfField() ?>
+                                        <input type="hidden" name="evento_id" value="<?= $evento['id'] ?>">
+                                        <input type="hidden" name="user_id" value="<?= $c['id'] ?>">
+                                        <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-user-minus"></i></button>
+                                    </form>
+                                </td>
+                                <?php endif; ?>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <?php if ($isOwner): ?>
+        <!-- Modal Invito -->
+        <div class="modal" id="inviteModal">
+            <div class="modal-content" style="max-width:460px;">
+                <div class="modal-header">
+                    <h3><i class="fas fa-user-plus"></i> Invita Collaboratore</h3>
+                    <button class="modal-close" onclick="closeInviteModal()"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>Cerca per nome o email</label>
+                        <input type="text" id="searchPromoter" placeholder="Es: mario, mario@email.com" autocomplete="off">
+                    </div>
+                    <div id="searchResults" style="margin-top:0.5rem;"></div>
+                    <form method="post" action="index.php?action=invite_collaborator" id="inviteForm">
+                        <?= csrfField() ?>
+                        <input type="hidden" name="evento_id" value="<?= $evento['id'] ?>">
+                        <input type="hidden" name="user_id" id="inviteUserId" value="">
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeInviteModal()">Annulla</button>
+                    <button type="button" class="btn btn-primary" id="inviteSubmit" disabled onclick="document.getElementById('inviteForm').submit()">
+                        <i class="fas fa-paper-plane"></i> Invia Invito
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+        function openInviteModal() {
+            document.getElementById('searchPromoter').value = '';
+            document.getElementById('searchResults').innerHTML = '';
+            document.getElementById('inviteUserId').value = '';
+            document.getElementById('inviteSubmit').disabled = true;
+            document.getElementById('inviteModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => document.getElementById('searchPromoter').focus(), 100);
+        }
+        function closeInviteModal() {
+            document.getElementById('inviteModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        document.getElementById('inviteModal').addEventListener('click', function(e) {
+            if (e.target === this) closeInviteModal();
+        });
+
+        let searchTimer;
+        document.getElementById('searchPromoter').addEventListener('input', function() {
+            clearTimeout(searchTimer);
+            const q = this.value.trim();
+            const results = document.getElementById('searchResults');
+            if (q.length < 2) { results.innerHTML = ''; return; }
+            results.innerHTML = '<p style="color:var(--text-muted); font-size:0.85rem;">Ricerca...</p>';
+            searchTimer = setTimeout(() => {
+                fetch('index.php?action=search_promoters&q=' + encodeURIComponent(q))
+                    .then(r => r.json())
+                    .then(res => {
+                        if (!res.data || res.data.length === 0) {
+                            results.innerHTML = '<p style="color:var(--text-muted); font-size:0.85rem;">Nessun promoter trovato.</p>';
+                            return;
+                        }
+                        results.innerHTML = res.data.map(u => `
+                            <div class="search-result-item" onclick="selectPromoter(${u.id}, '${u.Nome} ${u.Cognome}')"
+                                 style="display:flex; align-items:center; gap:0.75rem; padding:0.6rem 0.75rem; border-radius:6px; cursor:pointer; border:1px solid var(--border-color); margin-bottom:0.4rem; background:var(--bg-card);">
+                                <i class="fas fa-user" style="color:var(--primary);"></i>
+                                <div>
+                                    <strong>${u.Nome} ${u.Cognome}</strong>
+                                    <small style="display:block; color:var(--text-muted);">${u.Email}</small>
+                                </div>
+                            </div>
+                        `).join('');
+                    });
+            }, 300);
+        });
+
+        function selectPromoter(id, name) {
+            document.getElementById('inviteUserId').value = id;
+            document.getElementById('inviteSubmit').disabled = false;
+            document.getElementById('searchResults').innerHTML = `
+                <div style="display:flex; align-items:center; gap:0.75rem; padding:0.6rem 0.75rem; border-radius:6px; border:2px solid var(--primary); background:var(--bg-secondary);">
+                    <i class="fas fa-check-circle" style="color:var(--primary);"></i>
+                    <strong>${name}</strong>
+                </div>`;
+            document.getElementById('searchPromoter').value = name;
+        }
+        </script>
+        <?php endif; ?>
+        <?php endif; ?>
     </div>
 </div>
 
