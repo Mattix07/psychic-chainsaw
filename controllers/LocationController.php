@@ -88,7 +88,7 @@ function saveLocation(PDO $pdo): void
             // Registra come creatore
             registerLocationCreator($pdo, $newId, $_SESSION['user_id']);
 
-            redirect('index.php?action=list_locations', 'Location creata con successo');
+            redirect("index.php?action=edit_location&id=$newId", 'Location creata. Ora puoi aggiungere i settori.');
         }
     } catch (Exception $e) {
         logError("Errore salvataggio location: " . $e->getMessage());
