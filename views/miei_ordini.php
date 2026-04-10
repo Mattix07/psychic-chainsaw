@@ -46,8 +46,16 @@ $ordini = $_SESSION['ordini_utente'] ?? [];
                     </div>
                     <div class="order-body">
                         <div class="order-stat">
+                            <i class="fas fa-calendar"></i>
+                            <span><?= formatDate($ordine['DataOrdine']) ?></span>
+                        </div>
+                        <div class="order-stat">
                             <i class="fas fa-ticket-alt"></i>
                             <span><?= $ordine['num_biglietti'] ?> bigliett<?= $ordine['num_biglietti'] == 1 ? 'o' : 'i' ?></span>
+                        </div>
+                        <div class="order-stat">
+                            <i class="fas fa-euro-sign"></i>
+                            <strong><?= formatPrice($ordine['Totale']) ?></strong>
                         </div>
                     </div>
                     <div class="order-footer">
