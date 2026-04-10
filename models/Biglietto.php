@@ -249,6 +249,7 @@ function getBigliettiUtenteFuturi(PDO $pdo, int $idUtente): array
         SELECT DISTINCT b.*, e." . COL_EVENTI_NOME . " as EventoNome, e." . COL_EVENTI_DATA . ", e." . COL_EVENTI_ORA_INIZIO . ", e." . COL_EVENTI_ORA_FINE . ",
                e." . COL_EVENTI_IMMAGINE . " as EventoImmagine,
                l." . COL_LOCATIONS_NOME . " as LocationName,
+               t." . COL_TIPO_NOME . " as idClasse,
                sb." . COL_SETTORE_BIGLIETTI_ID_SETTORE . ", sb." . COL_SETTORE_BIGLIETTI_FILA . ", sb." . COL_SETTORE_BIGLIETTI_NUMERO . " as PostoNumero,
                o." . COL_ORDINI_ID . " as idOrdine,
                (e." . COL_EVENTI_PREZZO_NO_MOD . " + t." . COL_TIPO_MODIFICATORE_PREZZO . ") * COALESCE(s." . COL_SETTORI_MOLTIPLICATORE_PREZZO . ", 1) as PrezzoFinale
@@ -283,6 +284,7 @@ function getBigliettiUtentePassati(PDO $pdo, int $idUtente): array
         SELECT DISTINCT b.*, e." . COL_EVENTI_NOME . " as EventoNome, e." . COL_EVENTI_DATA . ", e." . COL_EVENTI_ORA_INIZIO . ",
                e." . COL_EVENTI_IMMAGINE . " as EventoImmagine,
                l." . COL_LOCATIONS_NOME . " as LocationName,
+               t." . COL_TIPO_NOME . " as idClasse,
                sb." . COL_SETTORE_BIGLIETTI_ID_SETTORE . ", sb." . COL_SETTORE_BIGLIETTI_FILA . ", sb." . COL_SETTORE_BIGLIETTI_NUMERO . " as PostoNumero,
                o." . COL_ORDINI_ID . " as idOrdine,
                (e." . COL_EVENTI_PREZZO_NO_MOD . " + t." . COL_TIPO_MODIFICATORE_PREZZO . ") * COALESCE(s." . COL_SETTORI_MOLTIPLICATORE_PREZZO . ", 1) as PrezzoFinale

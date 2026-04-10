@@ -240,6 +240,11 @@ $bigliettiPassati = getBigliettiUtentePassati($pdo, $_SESSION['user_id']);
 
 /* Stili per stampa */
 @media print {
+    @page {
+        size: A4;
+        margin: 10mm;
+    }
+
     body * {
         visibility: hidden;
     }
@@ -250,18 +255,25 @@ $bigliettiPassati = getBigliettiUtentePassati($pdo, $_SESSION['user_id']);
     }
 
     .ticket-modal-overlay {
-        position: absolute;
+        position: fixed;
         left: 0;
         top: 0;
+        width: 100%;
+        height: 100%;
         background: white;
-        display: block !important;
+        display: flex !important;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 0;
     }
 
     .ticket-modal {
         box-shadow: none;
         max-height: none;
+        overflow: visible;
         width: 100%;
-        max-width: none;
+        max-width: 520px;
+        border-radius: 0;
     }
 
     .ticket-modal-close,
@@ -270,27 +282,50 @@ $bigliettiPassati = getBigliettiUtentePassati($pdo, $_SESSION['user_id']);
     }
 
     .printable-ticket {
-        padding: 1rem;
+        padding: 0.75rem;
+    }
+
+    .ticket-event-image {
+        max-height: 120px;
+        margin-bottom: 0.75rem;
+    }
+
+    .ticket-event-image img {
+        height: 120px;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .ticket-event-header {
+        padding-bottom: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .ticket-event-header h2 {
+        font-size: 1.25rem;
+        margin-bottom: 0.25rem;
     }
 
     .ticket-qr-container {
         background: white;
+        margin: 0.75rem 0;
+        padding: 0.5rem;
+    }
+
+    .ticket-info-grid {
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
     }
 
     .ticket-info-item {
         background: white;
         border: 1px solid #e5e7eb;
+        padding: 0.5rem 0.75rem;
     }
 
-    .ticket-event-image {
-        max-height: 180px;
-        margin-bottom: 1rem;
-    }
-
-    .ticket-event-image img {
-        height: 180px;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
+    .ticket-footer-info {
+        padding-top: 0.75rem;
+        margin-top: 0.5rem;
     }
 }
 </style>
@@ -438,12 +473,11 @@ function openTicketModal(ticket) {
 
     // Popola immagine evento
     const eventImage = document.getElementById('modalEventImage');
-    if (ticket.EventoLocandina) {
-        eventImage.src = ticket.EventoLocandina;
+    if (ticket.EventoImmagine) {
+        eventImage.src = 'uploads/events/' + ticket.EventoImmagine;
         eventImage.style.display = 'block';
     } else {
-        eventImage.src = 'https://picsum.photos/500/200?random=' + ticket.idEvento;
-        eventImage.style.display = 'block';
+        eventImage.parentElement.style.display = 'none';
     }
 
     // Popola i dati
@@ -454,7 +488,7 @@ function openTicketModal(ticket) {
     document.getElementById('modalType').textContent = ticket.idClasse || '';
 
     // Stato biglietto
-    const isUsed = ticket.Check == 1 || ticket.Check === true;
+    const isUsed = ticket.Stato === 'validato';
     const statusContainer = document.getElementById('modalStatus');
     if (isUsed) {
         statusContainer.innerHTML = '<span class="ticket-status used"><i class="fas fa-check-circle"></i> Utilizzato</span>';
