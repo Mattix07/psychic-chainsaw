@@ -238,96 +238,7 @@ $bigliettiPassati = getBigliettiUtentePassati($pdo, $_SESSION['user_id']);
     transform: translateY(-2px);
 }
 
-/* Stili per stampa */
-@media print {
-    @page {
-        size: A4;
-        margin: 10mm;
-    }
-
-    body * {
-        visibility: hidden;
-    }
-
-    .ticket-modal-overlay,
-    .ticket-modal-overlay * {
-        visibility: visible;
-    }
-
-    .ticket-modal-overlay {
-        position: fixed;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background: white;
-        display: flex !important;
-        align-items: flex-start;
-        justify-content: center;
-        padding: 0;
-    }
-
-    .ticket-modal {
-        box-shadow: none;
-        max-height: none;
-        overflow: visible;
-        width: 100%;
-        max-width: 520px;
-        border-radius: 0;
-    }
-
-    .ticket-modal-close,
-    .ticket-print-btn {
-        display: none !important;
-    }
-
-    .printable-ticket {
-        padding: 0.75rem;
-    }
-
-    .ticket-event-image {
-        max-height: 120px;
-        margin-bottom: 0.75rem;
-    }
-
-    .ticket-event-image img {
-        height: 120px;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-    }
-
-    .ticket-event-header {
-        padding-bottom: 0.75rem;
-        margin-bottom: 0.75rem;
-    }
-
-    .ticket-event-header h2 {
-        font-size: 1.25rem;
-        margin-bottom: 0.25rem;
-    }
-
-    .ticket-qr-container {
-        background: white;
-        margin: 0.75rem 0;
-        padding: 0.5rem;
-    }
-
-    .ticket-info-grid {
-        gap: 0.5rem;
-        margin-bottom: 0.75rem;
-    }
-
-    .ticket-info-item {
-        background: white;
-        border: 1px solid #e5e7eb;
-        padding: 0.5rem 0.75rem;
-    }
-
-    .ticket-footer-info {
-        padding-top: 0.75rem;
-        margin-top: 0.5rem;
-    }
-}
+/* Stili per stampa — non usati direttamente (si stampa via finestra separata) */
 </style>
 
 <div class="profile-page">
@@ -553,7 +464,63 @@ function closeTicketModal() {
 }
 
 function printTicket() {
-    window.print();
+    const content = document.getElementById('printableTicket').innerHTML;
+    const win = window.open('', '_blank', 'width=600,height=800');
+    win.document.write(`<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Biglietto</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+@page { size: A4; margin: 12mm; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: white; }
+.printable-ticket { padding: 1.5rem; }
+.ticket-event-image { width: 100%; max-height: 140px; overflow: hidden; border-radius: 8px; margin-bottom: 1rem; }
+.ticket-event-image img { width: 100%; height: 140px; object-fit: cover; }
+.ticket-event-header { text-align: center; padding-bottom: 1rem; border-bottom: 2px dashed #e5e7eb; margin-bottom: 1rem; }
+.ticket-event-header h2 { font-size: 1.3rem; color: #1f2937; margin-bottom: 0.3rem; }
+.event-date { color: #4f46e5; font-weight: 600; font-size: 1rem; }
+.event-location { color: #6b7280; font-size: 0.9rem; margin-top: 0.2rem; }
+.ticket-qr-container { display: flex; justify-content: center; margin: 1rem 0; padding: 0.75rem; background: #f9fafb; border-radius: 8px; }
+.ticket-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 1rem; }
+.ticket-info-item { background: #f9fafb; border: 1px solid #e5e7eb; padding: 0.5rem 0.75rem; border-radius: 6px; }
+.ticket-info-item.full-width { grid-column: 1 / -1; }
+.ticket-info-item label { display: block; font-size: 0.7rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.15rem; }
+.ticket-info-item span { font-weight: 600; color: #1f2937; font-size: 0.9rem; }
+.ticket-status { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.75rem; border-radius: 9999px; font-weight: 600; font-size: 0.8rem; }
+.ticket-status.valid { background: #d1fae5; color: #065f46; }
+.ticket-status.used { background: #fee2e2; color: #991b1b; }
+.ticket-footer-info { text-align: center; padding-top: 1rem; border-top: 2px dashed #e5e7eb; margin-top: 0.5rem; }
+.ticket-id-display { font-family: 'Courier New', monospace; font-size: 0.8rem; color: #6b7280; background: #f3f4f6; padding: 0.4rem 0.75rem; border-radius: 4px; display: inline-block; }
+</style>
+</head>
+<body>
+<div class="printable-ticket">${content}</div>
+<script>
+window.onload = function() {
+    // Attendi che QR sia renderizzato nel DOM originale, poi stampa
+    setTimeout(function() {
+        // Copia i canvas QR dall'originale (già generato)
+        var srcCanvas = opener.document.querySelector('#qrcodeContainer canvas');
+        var destCanvas = document.querySelector('#qrcodeContainer canvas');
+        if (srcCanvas && !destCanvas) {
+            var img = document.createElement('img');
+            img.src = srcCanvas.toDataURL();
+            img.style.width = '160px';
+            img.style.height = '160px';
+            var container = document.getElementById('qrcodeContainer');
+            if (container) { container.innerHTML = ''; container.appendChild(img); }
+        }
+        window.print();
+        window.close();
+    }, 300);
+};
+<\/script>
+</body>
+</html>`);
+    win.document.close();
 }
 
 // Chiudi modal cliccando fuori
