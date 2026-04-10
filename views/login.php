@@ -17,7 +17,7 @@
         <h1>Accedi</h1>
         <p class="subtitle">Bentornato! Inserisci le tue credenziali.</p>
 
-        <form method="post" action="index.php" id="loginForm" onsubmit="var c=localStorage.getItem('em_cart');console.log('[cart]',c);if(c)document.getElementById('guestCartInput').value=c;">
+        <form method="post" action="index.php" id="loginForm" onsubmit="var c=localStorage.getItem('em_cart');if(c)document.getElementById('guestCartInput').value=c;">
             <?= csrfField() ?>
             <input type="hidden" name="action" value="login">
             <input type="hidden" name="guest_cart" id="guestCartInput">
