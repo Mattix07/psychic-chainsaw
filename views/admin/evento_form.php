@@ -123,7 +123,7 @@ if ($isEdit && !empty($evento['idLocation'])) {
                             <input type="checkbox" name="settori[]" value="<?= $settore['id'] ?>" <?= $isSelected ? 'checked' : '' ?> style="margin-right: 8px;">
                             <div>
                                 <strong><?= e($settore['Nome']) ?></strong>
-                                <small style="display: block; color: #666;">Posti: <?= $settore['PostiDisponibili'] ?> | ×<?= $settore['MoltiplicatorePrezzo'] ?></small>
+                                <small style="display: block; color: #666;">Posti: <?= $settore['PostiTotali'] ?> | ×<?= $settore['MoltiplicatorePrezzo'] ?></small>
                             </div>
                         </label>
                         <?php endforeach; ?>
