@@ -214,6 +214,29 @@ function searchEventiByQuery(PDO $pdo, string $query): array
  * @param string $tipo Categoria da filtrare
  * @return array Eventi della categoria
  */
+function getAllEventiAdmin(PDO $pdo): array
+{
+    return $pdo->query("
+        SELECT e.*, l." . COL_LOCATIONS_NOME . " as LocationName
+        FROM " . TABLE_EVENTI . " e
+        JOIN " . TABLE_LOCATIONS . " l ON e." . COL_EVENTI_ID_LOCATION . " = l." . COL_LOCATIONS_ID . "
+        ORDER BY e." . COL_EVENTI_DATA . " DESC, e." . COL_EVENTI_ORA_INIZIO . "
+    ")->fetchAll();
+}
+
+function getEventiCreatiDaUtente(PDO $pdo, int $idUtente): array
+{
+    $stmt = $pdo->prepare("
+        SELECT e.*, l." . COL_LOCATIONS_NOME . " as LocationName
+        FROM " . TABLE_EVENTI . " e
+        JOIN " . TABLE_LOCATIONS . " l ON e." . COL_EVENTI_ID_LOCATION . " = l." . COL_LOCATIONS_ID . "
+        WHERE e." . COL_EVENTI_ID_CREATORE . " = ?
+        ORDER BY e." . COL_EVENTI_DATA . " DESC, e." . COL_EVENTI_ORA_INIZIO . "
+    ");
+    $stmt->execute([$idUtente]);
+    return $stmt->fetchAll();
+}
+
 function getEventiByTipo(PDO $pdo, string $tipo): array
 {
     $stmt = $pdo->prepare("
