@@ -162,6 +162,7 @@ unset($_SESSION['current_location'], $_SESSION['current_location_settori']);
                             <div class="form-group">
                                 <label for="settore_posti_totali">Posti Totali *</label>
                                 <input type="number" id="settore_posti_totali" name="settore_posti_totali" min="0" required placeholder="Es: 200">
+                                <small class="form-hint" id="posti_totali_hint"></small>
                             </div>
                             <div class="form-group">
                                 <label for="settore_moltiplicatore">Moltiplicatore Prezzo</label>
@@ -206,6 +207,7 @@ function openSettoreModal(settore) {
         document.getElementById('settore_moltiplicatore').value = '1.00';
     }
 
+    aggiornaHintPostiTotali();
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
 }
@@ -218,5 +220,31 @@ function closeSettoreModal() {
 document.getElementById('settoreModal').addEventListener('click', function(e) {
     if (e.target === this) closeSettoreModal();
 });
+
+function aggiornaHintPostiTotali() {
+    const file = parseInt(document.getElementById('settore_num_file').value) || 0;
+    const postiPerFila = parseInt(document.getElementById('settore_posti_per_fila').value) || 0;
+    const hint = document.getElementById('posti_totali_hint');
+    const input = document.getElementById('settore_posti_totali');
+
+    if (file > 0 && postiPerFila > 0) {
+        const max = file * postiPerFila;
+        const min = file; // almeno 1 posto per fila
+        input.max = max;
+        input.min = min;
+        hint.textContent = 'Min: ' + min + ' — Max: ' + max + ' (' + file + ' file × ' + postiPerFila + ' posti)';
+        // Correggi il valore se fuori range
+        const val = parseInt(input.value) || 0;
+        if (val > max) input.value = max;
+        else if (val < min) input.value = min;
+    } else {
+        hint.textContent = '';
+        input.removeAttribute('max');
+        input.min = 0;
+    }
+}
+
+document.getElementById('settore_num_file').addEventListener('input', aggiornaHintPostiTotali);
+document.getElementById('settore_posti_per_fila').addEventListener('input', aggiornaHintPostiTotali);
 </script>
 <?php endif; ?>
