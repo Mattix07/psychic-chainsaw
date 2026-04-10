@@ -404,14 +404,18 @@ function showPromoterDashboard(PDO $pdo): void
 {
     requireRole(ROLE_PROMOTER);
 
-    // Admin e mod vedono tutti gli eventi, promoter solo i propri
+    // Admin e mod vedono tutti gli eventi, promoter solo i propri + collaborazioni
     if (hasRole(ROLE_MOD)) {
         $eventi = getAllEventiAdmin($pdo);
+        $eventiCollaborazione = [];
     } else {
+        require_once __DIR__ . '/../models/Permessi.php';
         $eventi = getEventiCreatiDaUtente($pdo, $_SESSION['user_id']);
+        $eventiCollaborazione = getEventiCollaborazione($pdo, $_SESSION['user_id']);
     }
 
     $_SESSION['promoter_eventi'] = $eventi;
+    $_SESSION['promoter_eventi_collaborazione'] = $eventiCollaborazione;
     setSeoMeta('Dashboard Promoter', '', 'noindex,nofollow');
     setPage('admin/promoter_dashboard');
 }

@@ -258,7 +258,7 @@ function getEventiCreatiDaUtente(PDO $pdo, int $userId): array
 function getEventiCollaborazione(PDO $pdo, int $userId): array
 {
     $stmt = $pdo->prepare("
-        SELECT e.*, l." . COL_LOCATIONS_NOME . " as LocationNome, m." . COL_MANIFESTAZIONI_NOME . " as ManifestazioneName
+        SELECT e.*, l." . COL_LOCATIONS_NOME . " as LocationName, m." . COL_MANIFESTAZIONI_NOME . " as ManifestazioneName
         FROM " . TABLE_EVENTI . " e
         JOIN " . TABLE_COLLABORATORI_EVENTI . " ce ON e." . COL_EVENTI_ID . " = ce.idEvento
         JOIN " . TABLE_LOCATIONS . " l ON e." . COL_EVENTI_ID_LOCATION . " = l." . COL_LOCATIONS_ID . "
