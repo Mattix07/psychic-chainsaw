@@ -11,6 +11,7 @@ require_once __DIR__ . '/../lib/Validator.php';
 require_once __DIR__ . '/../lib/QueryBuilder.php';
 require_once __DIR__ . '/../models/Location.php';
 require_once __DIR__ . '/../models/Permessi.php';
+require_once __DIR__ . '/../models/Settore.php';
 
 /**
  * Mostra form creazione location
@@ -41,6 +42,7 @@ function showEditLocation(PDO $pdo): void
     }
 
     $_SESSION['current_location'] = $location;
+    $_SESSION['current_location_settori'] = getSettoriByLocation($pdo, $id);
     setPage('admin/location_form');
 }
 
@@ -131,5 +133,81 @@ function deleteLocationAction(PDO $pdo): void
     } catch (Exception $e) {
         logError("Errore eliminazione location: " . $e->getMessage());
         redirect('index.php?action=list_locations', null, 'Errore durante l\'eliminazione');
+    }
+}
+
+/**
+ * Salva un settore (crea o modifica) associato a una location
+ */
+function saveSettore(PDO $pdo): void
+{
+    requireRole(ROLE_PROMOTER);
+
+    if (!verifyCsrf()) {
+        redirect('index.php?action=list_locations', null, 'Token non valido');
+    }
+
+    $idSettore  = (int) ($_POST['settore_id'] ?? 0);
+    $idLocation = (int) ($_POST['location_id'] ?? 0);
+
+    if (!$idLocation) {
+        redirect('index.php?action=list_locations', null, 'Location non valida');
+    }
+
+    if (!canEditLocation($pdo, $_SESSION['user_id'], $idLocation)) {
+        redirect('index.php?action=list_locations', null, 'Non hai i permessi');
+    }
+
+    $data = [
+        'Nome'                => sanitize($_POST['settore_nome'] ?? ''),
+        'NumFile'             => (int) ($_POST['settore_num_file'] ?? 0) ?: null,
+        'PostiPerFila'        => (int) ($_POST['settore_posti_per_fila'] ?? 0) ?: null,
+        'PostiTotali'         => (int) ($_POST['settore_posti_totali'] ?? 0),
+        'MoltiplicatorePrezzo'=> (float) ($_POST['settore_moltiplicatore'] ?? 1.0),
+        'idLocation'          => $idLocation,
+    ];
+
+    if (empty($data['Nome'])) {
+        redirect("index.php?action=edit_location&id=$idLocation", null, 'Il nome del settore è obbligatorio');
+    }
+
+    try {
+        if ($idSettore > 0) {
+            updateSettore($pdo, $idSettore, $data);
+            redirect("index.php?action=edit_location&id=$idLocation", 'Settore aggiornato');
+        } else {
+            createSettore($pdo, $data);
+            redirect("index.php?action=edit_location&id=$idLocation", 'Settore aggiunto');
+        }
+    } catch (Exception $e) {
+        logError("Errore salvataggio settore: " . $e->getMessage());
+        redirect("index.php?action=edit_location&id=$idLocation", null, 'Errore durante il salvataggio del settore');
+    }
+}
+
+/**
+ * Elimina un settore da una location
+ */
+function deleteSettoreAction(PDO $pdo): void
+{
+    requireRole(ROLE_PROMOTER);
+
+    if (!verifyCsrf()) {
+        redirect('index.php?action=list_locations', null, 'Token non valido');
+    }
+
+    $idSettore  = (int) ($_POST['settore_id'] ?? 0);
+    $idLocation = (int) ($_POST['location_id'] ?? 0);
+
+    if (!canEditLocation($pdo, $_SESSION['user_id'], $idLocation)) {
+        redirect('index.php?action=list_locations', null, 'Non hai i permessi');
+    }
+
+    try {
+        deleteSettore($pdo, $idSettore);
+        redirect("index.php?action=edit_location&id=$idLocation", 'Settore eliminato');
+    } catch (Exception $e) {
+        logError("Errore eliminazione settore: " . $e->getMessage());
+        redirect("index.php?action=edit_location&id=$idLocation", null, 'Errore durante l\'eliminazione del settore');
     }
 }

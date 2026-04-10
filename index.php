@@ -422,6 +422,16 @@ switch ($action) {
         deleteLocation($pdo);
         break;
 
+    case 'save_settore':
+        require_once 'controllers/LocationController.php';
+        saveSettore($pdo);
+        break;
+
+    case 'delete_settore':
+        require_once 'controllers/LocationController.php';
+        deleteSettoreAction($pdo);
+        break;
+
     // ==========================================
     // GESTIONE MANIFESTAZIONI (Promoter/Admin/Mod)
     // ==========================================

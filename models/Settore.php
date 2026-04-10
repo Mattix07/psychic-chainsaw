@@ -25,6 +25,24 @@ function getAllSettori(PDO $pdo): array
 }
 
 /**
+ * Recupera tutti i settori di una location
+ *
+ * @param PDO $pdo Connessione database
+ * @param int $idLocation ID della location
+ * @return array Lista settori della location
+ */
+function getSettoriByLocation(PDO $pdo, int $idLocation): array
+{
+    $stmt = $pdo->prepare("
+        SELECT * FROM " . TABLE_SETTORI . "
+        WHERE " . COL_SETTORI_ID_LOCATION . " = ?
+        ORDER BY " . COL_SETTORI_NOME . "
+    ");
+    $stmt->execute([$idLocation]);
+    return $stmt->fetchAll();
+}
+
+/**
  * Recupera un settore per ID
  *
  * @param PDO $pdo Connessione database
