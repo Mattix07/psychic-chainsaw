@@ -83,12 +83,15 @@ function getBigliettiByEvento(PDO $pdo, int $idEvento): array
 function getBigliettiByOrdine(PDO $pdo, int $idOrdine): array
 {
     $stmt = $pdo->prepare("
-        SELECT b.*, e." . COL_EVENTI_NOME . " as EventoNome, e." . COL_EVENTI_DATA . ", e." . COL_EVENTI_ORA_INIZIO . ",
-               t." . COL_TIPO_NOME . " as idClasse, t." . COL_TIPO_MODIFICATORE_PREZZO . "
+        SELECT b.*, e." . COL_EVENTI_NOME . " as EventoNome, e." . COL_EVENTI_DATA . ", e." . COL_EVENTI_ORA_INIZIO . ", e." . COL_EVENTI_PREZZO_NO_MOD . ",
+               t." . COL_TIPO_NOME . " as idClasse, t." . COL_TIPO_MODIFICATORE_PREZZO . ",
+               (e." . COL_EVENTI_PREZZO_NO_MOD . " + t." . COL_TIPO_MODIFICATORE_PREZZO . ") * COALESCE(s." . COL_SETTORI_MOLTIPLICATORE_PREZZO . ", 1) as PrezzoFinale
         FROM " . TABLE_BIGLIETTI . " b
         JOIN " . TABLE_ORDINE_BIGLIETTI . " ob ON b." . COL_BIGLIETTI_ID . " = ob.idBiglietto
         JOIN " . TABLE_EVENTI . " e ON b." . COL_BIGLIETTI_ID_EVENTO . " = e." . COL_EVENTI_ID . "
         JOIN " . TABLE_TIPO . " t ON b." . COL_BIGLIETTI_ID_TIPO . " = t." . COL_TIPO_ID . "
+        LEFT JOIN " . TABLE_SETTORE_BIGLIETTI . " sb ON b." . COL_BIGLIETTI_ID . " = sb." . COL_SETTORE_BIGLIETTI_ID_BIGLIETTO . "
+        LEFT JOIN " . TABLE_SETTORI . " s ON sb." . COL_SETTORE_BIGLIETTI_ID_SETTORE . " = s." . COL_SETTORI_ID . "
         WHERE ob.idOrdine = ?
     ");
     $stmt->execute([$idOrdine]);

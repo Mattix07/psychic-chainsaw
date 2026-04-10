@@ -330,7 +330,6 @@ $bigliettiPassati = getBigliettiUtentePassati($pdo, $_SESSION['user_id']);
                         </div>
                     </div>
                     <div class="ticket-footer">
-                        <span class="ticket-price"><?= formatPrice($b['PrezzoFinale']) ?></span>
                         <span class="ticket-id">ID: <?= $b['id'] ?></span>
                     </div>
                 </div>
@@ -363,7 +362,6 @@ $bigliettiPassati = getBigliettiUtentePassati($pdo, $_SESSION['user_id']);
                         </div>
                     </div>
                     <div class="ticket-footer">
-                        <span class="ticket-price"><?= formatPrice($b['PrezzoFinale']) ?></span>
                         <span class="ticket-id">ID: <?= $b['id'] ?></span>
                     </div>
                 </div>

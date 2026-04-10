@@ -64,6 +64,7 @@ $totale = calcolaTotaleOrdine($pdo, $ordine['id']);
                                 <p><i class="fas fa-tag"></i> <?= e($b['idClasse']) ?></p>
                             </div>
                             <div class="ticket-item-status">
+                                <span class="ticket-item-price"><?= formatPrice($b['PrezzoFinale']) ?></span>
                                 <?php if (($b['Stato'] ?? '') === 'validato'): ?>
                                     <span class="tag tag-success"><i class="fas fa-check"></i> Validato</span>
                                 <?php else: ?>
