@@ -106,7 +106,7 @@ function loginAction(PDO $pdo): void
                 $qty = max(1, (int) ($item['quantity'] ?? 1));
                 if ($idEvento > 0) {
                     for ($i = 0; $i < $qty; $i++) {
-                        try { addBigliettoToCart($pdo, $idEvento, $idClasse, $utente['id']); } catch (\Throwable $e) {}
+                        try { addBigliettoToCart($pdo, $idEvento, $idClasse, $utente['id']); } catch (\Throwable $e) { error_log('[CART_MERGE_ERR] ' . $e->getMessage()); }
                     }
                 }
             }
