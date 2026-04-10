@@ -40,7 +40,7 @@ $totale = calcolaTotaleOrdine($pdo, $ordine['id']);
         <div class="order-detail-header">
             <div class="order-detail-info">
                 <h2>Riepilogo Ordine</h2>
-                <p><strong>Metodo di pagamento:</strong> <?= e($ordine['Metodo']) ?></p>
+                <p><strong>Metodo di pagamento:</strong> <?= e($ordine['MetodoPagamento'] ?? 'N/D') ?></p>
                 <p><strong>Numero biglietti:</strong> <?= count($biglietti) ?></p>
             </div>
             <div class="order-detail-total">
@@ -64,7 +64,7 @@ $totale = calcolaTotaleOrdine($pdo, $ordine['id']);
                                 <p><i class="fas fa-tag"></i> <?= e($b['idClasse']) ?></p>
                             </div>
                             <div class="ticket-item-status">
-                                <?php if ($b['Check']): ?>
+                                <?php if (($b['Stato'] ?? '') === 'validato'): ?>
                                     <span class="tag tag-success"><i class="fas fa-check"></i> Validato</span>
                                 <?php else: ?>
                                     <span class="tag tag-info"><i class="fas fa-clock"></i> Da utilizzare</span>

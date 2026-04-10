@@ -83,7 +83,8 @@ function getBigliettiByEvento(PDO $pdo, int $idEvento): array
 function getBigliettiByOrdine(PDO $pdo, int $idOrdine): array
 {
     $stmt = $pdo->prepare("
-        SELECT b.*, e." . COL_EVENTI_NOME . " as EventoNome, e." . COL_EVENTI_DATA . ", e." . COL_EVENTI_ORA_INIZIO . ", t." . COL_TIPO_MODIFICATORE_PREZZO . "
+        SELECT b.*, e." . COL_EVENTI_NOME . " as EventoNome, e." . COL_EVENTI_DATA . ", e." . COL_EVENTI_ORA_INIZIO . ",
+               t." . COL_TIPO_NOME . " as idClasse, t." . COL_TIPO_MODIFICATORE_PREZZO . "
         FROM " . TABLE_BIGLIETTI . " b
         JOIN " . TABLE_ORDINE_BIGLIETTI . " ob ON b." . COL_BIGLIETTI_ID . " = ob.idBiglietto
         JOIN " . TABLE_EVENTI . " e ON b." . COL_BIGLIETTI_ID_EVENTO . " = e." . COL_EVENTI_ID . "
