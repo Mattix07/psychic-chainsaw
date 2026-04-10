@@ -39,8 +39,9 @@ $ordini = $_SESSION['ordini_utente'] ?? [];
                             <strong>#<?= $ordine['id'] ?></strong>
                         </div>
                         <div class="order-method">
-                            <i class="fas fa-<?= $ordine['Metodo'] === 'Carta' ? 'credit-card' : ($ordine['Metodo'] === 'PayPal' ? 'paypal' : 'university') ?>"></i>
-                            <?= e($ordine['Metodo']) ?>
+                            <?php $metodo = $ordine['MetodoPagamento'] ?? 'N/D'; ?>
+                            <i class="fas fa-<?= $metodo === 'Carta' ? 'credit-card' : ($metodo === 'PayPal' ? 'paypal' : 'university') ?>"></i>
+                            <?= e($metodo) ?>
                         </div>
                     </div>
                     <div class="order-body">
