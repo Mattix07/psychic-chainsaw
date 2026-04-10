@@ -31,7 +31,7 @@ $nomeRicerca = $_SESSION['ricerca_nome'] ?? '';
     <?php else: ?>
         <div class="events-grid">
             <?php foreach ($eventi as $evento): ?>
-            <article class="event-card" onclick="window.location='index.php?action=view_evento&id=<?= $evento['id'] ?>'">
+            <a href="index.php?action=view_evento&id=<?= $evento['id'] ?>" class="event-card">
                 <div class="event-card-poster">
                     <img src="img/events/<?= $evento['id'] ?>.jpg"
                         alt="<?= e($evento['Nome']) ?>"
@@ -48,7 +48,7 @@ $nomeRicerca = $_SESSION['ricerca_nome'] ?? '';
                         <i class="fas fa-map-marker-alt"></i> <?= e($evento['LocationName']) ?>
                     </div>
                 </div>
-            </article>
+            </a>
             <?php endforeach; ?>
         </div>
     <?php endif; ?>

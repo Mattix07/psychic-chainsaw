@@ -34,7 +34,7 @@ $categoriaNome = $_SESSION['categoria_nome'] ?? 'Tutti gli Eventi';
     <?php else: ?>
         <div class="events-grid">
             <?php foreach ($eventi as $evento): ?>
-            <article class="event-card">
+            <a href="index.php?action=view_evento&id=<?= $evento['id'] ?>" class="event-card">
                 <div class="event-card-poster">
                     <img src="img/events/<?= $evento['id'] ?>.jpg"
                         alt="<?= e($evento['Nome']) ?>"
@@ -42,9 +42,7 @@ $categoriaNome = $_SESSION['categoria_nome'] ?? 'Tutti gli Eventi';
                     <span class="event-card-badge"><?= e($evento['ManifestazioneName'] ?? 'Evento') ?></span>
                 </div>
                 <div class="event-card-info">
-                    <h2 class="event-card-title">
-                        <a href="index.php?action=view_evento&id=<?= $evento['id'] ?>" class="event-card-link"><?= e($evento['Nome']) ?></a>
-                    </h2>
+                    <h2 class="event-card-title"><?= e($evento['Nome']) ?></h2>
                     <div class="event-card-meta">
                         <span class="event-card-date"><?= formatDate($evento['Data']) ?></span>
                         <span class="event-card-price">da <?= formatPrice($evento['PrezzoNoMod']) ?></span>
@@ -53,7 +51,7 @@ $categoriaNome = $_SESSION['categoria_nome'] ?? 'Tutti gli Eventi';
                         <i class="fas fa-map-marker-alt" aria-hidden="true"></i> <?= e($evento['LocationName']) ?>
                     </div>
                 </div>
-            </article>
+            </a>
             <?php endforeach; ?>
         </div>
     <?php endif; ?>
