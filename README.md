@@ -1,10 +1,5 @@
 # Documentazione Completa — EventsMaster
 
-> Questa documentazione spiega **come funziona il progetto dall'interno**: ogni file, ogni funzione, ogni meccanismo.
-> È pensata per essere letta da chi non ha mai visto il codice (e magari PHP lo conosce poco) **e** da chi vuole capire le scelte tecniche nel dettaglio.
-
----
-
 ## Indice
 
 1. [Introduzione al progetto](#1-introduzione-al-progetto)
