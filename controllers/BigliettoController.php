@@ -292,3 +292,86 @@ function viewBiglietto(PDO $pdo): void
     $_SESSION['biglietto_corrente'] = $biglietto;
     setPage('biglietto_dettaglio');
 }
+
+// ============================================================
+// F11 — Documento identità allegato al biglietto
+// ============================================================
+
+if (!function_exists('jsonResponse')) {
+    function jsonResponse(array $data, int $statusCode = 200): void
+    {
+        http_response_code($statusCode);
+        header('Content-Type: application/json');
+        echo json_encode($data);
+        exit;
+    }
+}
+
+function uploadDocumentoBigliettoApi(PDO $pdo): void
+{
+    if (!isLoggedIn()) { jsonResponse(['error' => 'Login richiesto'], 401); return; }
+    if (!verifyCsrf()) { jsonResponse(['error' => 'CSRF non valido'], 403); return; }
+
+    $idBiglietto = (int)($_POST['idBiglietto'] ?? 0);
+    $tipo = $_POST['tipo'] ?? '';
+
+    if (!in_array($tipo, ['ci', 'passaporto', 'patente'])) {
+        jsonResponse(['error' => 'Tipo documento non valido'], 400);
+        return;
+    }
+
+    $biglietto = getBigliettoById($pdo, $idBiglietto);
+    if (!$biglietto || (int)$biglietto[COL_BIGLIETTI_ID_UTENTE] !== (int)$_SESSION['user_id']) {
+        jsonResponse(['error' => 'Biglietto non trovato'], 404);
+        return;
+    }
+
+    if ($biglietto[COL_BIGLIETTI_STATO] !== 'acquistato') {
+        jsonResponse(['error' => 'Il documento può essere allegato solo a biglietti acquistati'], 400);
+        return;
+    }
+
+    if (empty($_FILES['documento']['tmp_name'])) {
+        jsonResponse(['error' => 'Nessun file caricato'], 400);
+        return;
+    }
+
+    $file = $_FILES['documento'];
+    if (!in_array($file['type'], ['image/jpeg', 'image/png', 'image/jpg'])) {
+        jsonResponse(['error' => 'Formato non supportato (solo JPG/PNG)'], 400);
+        return;
+    }
+    if ($file['size'] > 5 * 1024 * 1024) {
+        jsonResponse(['error' => 'File troppo grande (max 5MB)'], 400);
+        return;
+    }
+
+    $foto = file_get_contents($file['tmp_name']);
+    table($pdo, TABLE_BIGLIETTI)->where(COL_BIGLIETTI_ID, $idBiglietto)->update([
+        COL_BIGLIETTI_DOCUMENTO_FOTO => $foto,
+        COL_BIGLIETTI_DOCUMENTO_TIPO => $tipo,
+    ]);
+
+    jsonResponse(['success' => true, 'message' => 'Documento caricato con successo']);
+}
+
+function getDocumentoBigliettoApi(PDO $pdo): void
+{
+    if (!isLoggedIn()) { http_response_code(401); exit; }
+
+    $idBiglietto = (int)($_GET['idBiglietto'] ?? 0);
+    $biglietto = getBigliettoById($pdo, $idBiglietto);
+
+    if (!$biglietto || (int)$biglietto[COL_BIGLIETTI_ID_UTENTE] !== (int)$_SESSION['user_id']) {
+        http_response_code(404); exit;
+    }
+
+    if (empty($biglietto[COL_BIGLIETTI_DOCUMENTO_FOTO])) {
+        http_response_code(404); exit;
+    }
+
+    header('Content-Type: image/jpeg');
+    header('Cache-Control: private, max-age=3600');
+    echo $biglietto[COL_BIGLIETTI_DOCUMENTO_FOTO];
+    exit;
+}

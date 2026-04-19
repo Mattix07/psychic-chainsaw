@@ -122,6 +122,16 @@ switch ($action) {
         handleBiglietto($pdo, $action);
         break;
 
+    case 'upload_documento_biglietto':
+        require_once 'controllers/BigliettoController.php';
+        uploadDocumentoBigliettoApi($pdo);
+        exit;
+
+    case 'get_documento_biglietto':
+        require_once 'controllers/BigliettoController.php';
+        getDocumentoBigliettoApi($pdo);
+        exit;
+
     // ==========================================
     // RECENSIONI
     // ==========================================
@@ -303,7 +313,6 @@ switch ($action) {
         require_once 'controllers/AdminController.php';
         searchPromotersApi($pdo);
         exit;
-        break;
 
     // ==========================================
     // NUOVE FUNZIONALITÀ ADMIN/MOD
@@ -311,38 +320,32 @@ switch ($action) {
     case 'get_settori_location':
         require_once 'controllers/AdminController.php';
         getSettoriByLocationApi($pdo);
-        exit; // API JSON
-        break;
+        exit;
 
     case 'delete_biglietti_evento':
         require_once 'controllers/AdminController.php';
         deleteBigliettiEventoApi($pdo);
-        exit; // API JSON
-        break;
+        exit;
 
     case 'delete_location':
         require_once 'controllers/AdminController.php';
         deleteLocationApi($pdo);
-        exit; // API JSON
-        break;
+        exit;
 
     case 'delete_manifestazione':
         require_once 'controllers/AdminController.php';
         deleteManifestazioneApi($pdo);
-        exit; // API JSON
-        break;
+        exit;
 
     case 'verify_account':
         require_once 'controllers/AdminController.php';
         verifyAccountApi($pdo);
-        exit; // API JSON
-        break;
+        exit;
 
     case 'get_unverified_accounts':
         require_once 'controllers/AdminController.php';
         getUnverifiedAccountsApi($pdo);
-        exit; // API JSON
-        break;
+        exit;
 
     // ==========================================
     // COLLABORAZIONE EVENTI
@@ -360,8 +363,7 @@ switch ($action) {
     case 'get_collaborators':
         require_once 'controllers/CollaborazioneController.php';
         getCollaboratorsApi($pdo);
-        exit; // API JSON
-        break;
+        exit;
 
     // ==========================================
     // AVATAR UTENTE
@@ -369,20 +371,17 @@ switch ($action) {
     case 'upload_avatar':
         require_once 'controllers/AvatarController.php';
         uploadAvatarApi($pdo);
-        exit; // API JSON
-        break;
+        exit;
 
     case 'get_avatar':
         require_once 'controllers/AvatarController.php';
         getAvatarApi($pdo);
-        exit; // Image output
-        break;
+        exit;
 
     case 'delete_avatar':
         require_once 'controllers/AvatarController.php';
         deleteAvatarApi($pdo);
-        exit; // API JSON
-        break;
+        exit;
 
     // ==========================================
     // ARTISTA
@@ -478,7 +477,7 @@ switch ($action) {
 
     case 'delete_location_form':
         require_once 'controllers/LocationController.php';
-        deleteLocation($pdo);
+        deleteLocationAction($pdo);
         break;
 
     case 'save_settore':
@@ -519,21 +518,20 @@ switch ($action) {
 
     case 'delete_manifestazione_form':
         require_once 'controllers/ManifestazioneController.php';
-        deleteManifestazione($pdo);
+        deleteManifestazioneAction($pdo);
         break;
 
     // ==========================================
     // NEWSLETTER
     // ==========================================
     case 'subscribe_newsletter':
-        validateCsrfToken();
+        verifyCsrf();
         $email = filter_input(INPUT_POST, 'newsletter_email', FILTER_VALIDATE_EMAIL);
         if ($email) {
-            setFlashMessage('success', 'Grazie! Ti sei iscritto alla newsletter con successo.');
+            redirect('index.php', 'Grazie! Ti sei iscritto alla newsletter con successo.');
         } else {
-            setFlashMessage('error', 'Indirizzo email non valido.');
+            redirect('index.php', null, 'Indirizzo email non valido.');
         }
-        redirect('index.php');
         break;
 
     // ==========================================
