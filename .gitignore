@@ -3,7 +3,7 @@
 # ============================================
 # Temp
 # ============================================
-db/
+# db/ non ignorato — le migrations devono essere in git
 
 # ============================================
 # Configurazione e file sensibili
