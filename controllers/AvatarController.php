@@ -80,6 +80,8 @@ function uploadAvatarApi(PDO $pdo): void
             ->where(COL_UTENTI_ID, $_SESSION['user_id'])
             ->update([COL_UTENTI_AVATAR => $image]);
 
+        $_SESSION['user_has_avatar'] = true;
+
         jsonResponse(apiSuccess([
             'avatarUrl' => 'index.php?action=get_avatar&id=' . $_SESSION['user_id']
         ], MSG_SUCCESS_AVATAR_UPDATED, 200));
@@ -140,6 +142,8 @@ function deleteAvatarApi(PDO $pdo): void
         table($pdo, TABLE_UTENTI)
             ->where(COL_UTENTI_ID, $_SESSION['user_id'])
             ->update([COL_UTENTI_AVATAR => null]);
+
+        $_SESSION['user_has_avatar'] = false;
 
         jsonResponse(apiSuccess(null, MSG_SUCCESS_AVATAR_DELETED, 200));
     } catch (Exception $e) {

@@ -88,6 +88,7 @@ function loginAction(PDO $pdo): void
     $_SESSION['user_cognome'] = $utente['Cognome'];
     $_SESSION['user_email'] = $utente['Email'];
     $_SESSION['user_ruolo'] = $utente['ruolo'];
+    $_SESSION['user_has_avatar'] = !empty($utente[COL_UTENTI_AVATAR]);
     $_SESSION['page'] = 'home';
 
     // logError è riservato agli errori; l'evento login viene tracciato solo su debug

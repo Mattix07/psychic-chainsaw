@@ -94,8 +94,13 @@ $pageTitle = $seoTitle ? e($seoTitle) . ' | ' . $appName : $appName . ' - Biglie
             <?php if (isLoggedIn()): ?>
                 <div class="user-dropdown">
                     <button class="user-dropdown-toggle" id="userDropdownToggle">
-                        <div class="user-avatar">
-                            <?= strtoupper(substr($_SESSION['user_nome'] ?? 'U', 0, 1)) ?>
+                        <div class="user-avatar" id="headerAvatar">
+                            <?php if (!empty($_SESSION['user_has_avatar'])): ?>
+                                <img src="index.php?action=get_avatar&id=<?= (int)$_SESSION['user_id'] ?>"
+                                     alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                            <?php else: ?>
+                                <?= strtoupper(substr($_SESSION['user_nome'] ?? 'U', 0, 1)) ?>
+                            <?php endif; ?>
                         </div>
                         <span class="user-name"><?= e($_SESSION['user_nome'] ?? 'Utente') ?></span>
                         <i class="fas fa-chevron-down"></i>
@@ -104,7 +109,12 @@ $pageTitle = $seoTitle ? e($seoTitle) . ' | ' . $appName : $appName . ' - Biglie
                         <div class="dropdown-header">
                             <div class="dropdown-user-info">
                                 <div class="user-avatar-lg">
-                                    <?= strtoupper(substr($_SESSION['user_nome'] ?? 'U', 0, 1) . substr($_SESSION['user_cognome'] ?? '', 0, 1)) ?>
+                                    <?php if (!empty($_SESSION['user_has_avatar'])): ?>
+                                        <img src="index.php?action=get_avatar&id=<?= (int)$_SESSION['user_id'] ?>"
+                                             alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                                    <?php else: ?>
+                                        <?= strtoupper(substr($_SESSION['user_nome'] ?? 'U', 0, 1) . substr($_SESSION['user_cognome'] ?? '', 0, 1)) ?>
+                                    <?php endif; ?>
                                 </div>
                                 <div>
                                     <strong><?= e(($_SESSION['user_nome'] ?? '') . ' ' . ($_SESSION['user_cognome'] ?? '')) ?></strong>
