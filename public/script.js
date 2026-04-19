@@ -753,46 +753,68 @@ const Cart = {
                 cartEmpty.style.display = 'none';
                 cartFooter.style.display = 'block';
 
-                cartItems.innerHTML = cart.map((item, index) => {
-                    const eventName = escapeHtml(item.eventName || item.eventoNome || 'Evento');
-                    const ticketType = escapeHtml(item.ticketType || item.idClasse || 'Standard');
-                    const eventDate = escapeHtml(item.eventDate || item.eventoData || '');
+                // Raggruppa biglietti per evento
+                const eventGroups = {};
+                cart.forEach((item, index) => {
+                    const evId = item.eventoId || item.idEvento;
+                    if (!eventGroups[evId]) {
+                        eventGroups[evId] = {
+                            eventName: item.eventName || item.eventoNome || 'Evento',
+                            eventDate: item.eventDate || item.eventoData || '',
+                            image: item.image || 'public/img/placeholder-event.jpg',
+                            tipi: {},
+                            items: []
+                        };
+                    }
+                    const tipoKey = escapeHtml(item.ticketType || item.idClasse || 'Standard');
                     const price = item.price || item.prezzo || 0;
-                    const qty = item.quantity || 1;
-                    const itemId = item.id || index;
-                    const safeIndex = parseInt(index, 10);
-                    const safeItemId = escapeHtml(String(itemId));
-                    const safeImage = escapeHtml(item.image || 'public/img/placeholder-event.jpg');
+                    const qty = this.isLoggedIn() ? 1 : (item.quantity || 1);
+                    if (!eventGroups[evId].tipi[tipoKey]) {
+                        eventGroups[evId].tipi[tipoKey] = { qty: 0, price, itemIndex: index, itemId: item.id || index };
+                    }
+                    eventGroups[evId].tipi[tipoKey].qty += qty;
+                    eventGroups[evId].items.push({ index, id: item.id || index });
+                });
 
-                    return `
-                    <div class="cart-item" data-index="${safeIndex}" data-id="${safeItemId}">
-                        <div class="cart-item-image">
-                            <img src="${safeImage}" alt="${eventName}">
-                        </div>
-                        <div class="cart-item-info">
-                            <h4>${eventName}</h4>
-                            <p class="cart-item-type">${ticketType}</p>
-                            <p class="cart-item-date">${eventDate}</p>
-                            <div class="cart-item-price">${formatPrice(price)}</div>
-                        </div>
-                        <div class="cart-item-actions">
+                cartItems.innerHTML = Object.entries(eventGroups).map(([evId, group]) => {
+                    const safeImage = escapeHtml(group.image);
+                    const safeName = escapeHtml(group.eventName);
+                    const safeDate = escapeHtml(group.eventDate);
+                    const tipiHtml = Object.entries(group.tipi).map(([tipo, info]) => {
+                        const safeIndex = parseInt(info.itemIndex, 10);
+                        const safeItemId = escapeHtml(String(info.itemId));
+                        const subtotal = formatPrice(info.price * info.qty);
+                        return `
+                        <div class="cart-item-tipo-row">
+                            <span class="cart-tipo-label">${parseInt(info.qty)}× ${tipo}</span>
+                            <span class="cart-tipo-price">${subtotal}</span>
                             ${this.isLoggedIn() ? `
-                            <button class="cart-item-remove" data-id="${safeItemId}">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                            ` : `
+                            <button class="cart-item-remove cart-tipo-remove" data-id="${safeItemId}" title="Rimuovi">
+                                <i class="fas fa-times"></i>
+                            </button>` : `
                             <div class="quantity-control">
                                 <button class="qty-btn minus" data-index="${safeIndex}">-</button>
-                                <span class="qty-value">${parseInt(qty, 10)}</span>
+                                <span class="qty-value">${parseInt(info.qty, 10)}</span>
                                 <button class="qty-btn plus" data-index="${safeIndex}">+</button>
                             </div>
-                            <button class="cart-item-remove" data-index="${safeIndex}">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                            `}
+                            <button class="cart-item-remove" data-index="${safeIndex}" title="Rimuovi">
+                                <i class="fas fa-times"></i>
+                            </button>`}
+                        </div>`;
+                    }).join('');
+
+                    return `
+                    <div class="cart-item cart-item-grouped">
+                        <div class="cart-item-image">
+                            <img src="${safeImage}" alt="${safeName}">
                         </div>
-                    </div>
-                `}).join('');
+                        <div class="cart-item-info">
+                            <h4>${safeName}</h4>
+                            <p class="cart-item-date"><i class="fas fa-calendar"></i> ${safeDate}</p>
+                            <div class="cart-item-tipi">${tipiHtml}</div>
+                        </div>
+                    </div>`;
+                }).join('');
 
                 // Bind events
                 this.bindCartItemEvents();
