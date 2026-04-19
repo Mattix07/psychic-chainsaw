@@ -416,14 +416,19 @@ function getSettoriApi(PDO $pdo): void
     }
 
     $settori = getSettoriByLocation($pdo, $evento['idLocation']);
+    $prezzoBase = (float)($evento[COL_EVENTI_PREZZO_NO_MOD] ?? 0);
 
     jsonResponse([
-        'settori' => array_map(function($s) {
+        'settori' => array_map(function($s) use ($prezzoBase) {
+            $mult = (float)$s['MoltiplicatorePrezzo'];
+            $prezzoFinale = round($prezzoBase * $mult, 2);
+            $surplus = round($prezzoFinale - $prezzoBase, 2);
             return [
-                'id' => $s['id'],
-                'nome' => $s['Nome'],
-                'posti' => $s['PostiTotali'],
-                'moltiplicatore' => (float) $s['MoltiplicatorePrezzo']
+                'id'           => $s['id'],
+                'nome'         => $s['Nome'],
+                'posti'        => $s['PostiTotali'],
+                'prezzoFinale' => $prezzoFinale,
+                'surplus'      => $surplus,
             ];
         }, $settori)
     ]);

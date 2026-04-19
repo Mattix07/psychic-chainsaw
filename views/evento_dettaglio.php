@@ -317,9 +317,19 @@ if ($mediaVoti && !empty($mediaVoti['media'])) {
                 <div class="form-group">
                     <label for="idSettore">Settore</label>
                     <select id="idSettore" name="idSettore" required>
-                        <?php foreach ($settori as $s): ?>
-                        <option value="<?= $s['id'] ?>" data-mult="<?= $s['MoltiplicatorePrezzo'] ?>" data-posti="<?= $s['PostiTotali'] ?>">
-                            <?= e($s['Nome']) ?> - x<?= $s['MoltiplicatorePrezzo'] ?>
+                        <?php
+                        $prezzoBaseEvento = (float)($evento['PrezzoNoMod'] ?? 0);
+                        foreach ($settori as $s):
+                            $mult = (float)$s['MoltiplicatorePrezzo'];
+                            $prezzoFinaleSettore = round($prezzoBaseEvento * $mult, 2);
+                            $surplus = round($prezzoFinaleSettore - $prezzoBaseEvento, 2);
+                            $surplusTxt = $surplus > 0 ? ' (+' . number_format($surplus, 2, ',', '.') . ' €)' : ($surplus < 0 ? ' (' . number_format($surplus, 2, ',', '.') . ' €)' : '');
+                        ?>
+                        <option value="<?= $s['id'] ?>"
+                                data-prezzo-finale="<?= $prezzoFinaleSettore ?>"
+                                data-surplus="<?= $surplus ?>"
+                                data-posti="<?= $s['PostiTotali'] ?>">
+                            <?= e($s['Nome']) ?> — <?= number_format($prezzoFinaleSettore, 2, ',', '.') ?> €<?= $surplusTxt ?>
                         </option>
                         <?php endforeach; ?>
                     </select>
@@ -417,9 +427,10 @@ function updatePrice() {
     const quantita = parseInt(document.getElementById('quantita').value);
 
     const modPrezzo = parseFloat(tipoSelect.options[tipoSelect.selectedIndex].dataset.mod) || 0;
-    const multPrezzo = parseFloat(settoreSelect.options[settoreSelect.selectedIndex].dataset.mult) || 1;
-
-    const prezzoUnitario = (prezzoBase + modPrezzo) * multPrezzo;
+    const selectedSettore = settoreSelect.options[settoreSelect.selectedIndex];
+    const prezzoFinaleSettore = parseFloat(selectedSettore.dataset.prezzoFinale) || (prezzoBase + modPrezzo);
+    // Applica modificatore tipo sopra il prezzo settore
+    const prezzoUnitario = prezzoFinaleSettore + modPrezzo;
     const totale = prezzoUnitario * quantita;
 
     document.getElementById('totalPrice').textContent = '€' + totale.toFixed(2);
@@ -452,8 +463,9 @@ async function addEventToCart() {
 
     const prezzoBase = parseFloat(formData.get('prezzoBase'));
     const modPrezzo = parseFloat(tipoSelect.options[tipoSelect.selectedIndex].dataset.mod) || 0;
-    const multPrezzo = parseFloat(settoreSelect.options[settoreSelect.selectedIndex].dataset.mult) || 1;
-    const prezzoUnitario = (prezzoBase + modPrezzo) * multPrezzo;
+    const selectedSettore = settoreSelect.options[settoreSelect.selectedIndex];
+    const prezzoFinaleSettore = parseFloat(selectedSettore.dataset.prezzoFinale) || prezzoBase;
+    const prezzoUnitario = prezzoFinaleSettore + modPrezzo;
 
     // Disabilita bottone durante l'operazione
     btn.disabled = true;
