@@ -178,17 +178,30 @@ function getCollaboratorsApi(PDO $pdo): void
     $collaborators = getEventCollaborators($pdo, $idEvento);
     $creator = getEventCreator($pdo, $idEvento);
 
+    // Aggiungi flag is_owner a ogni collaboratore
+    $collaboratorsWithOwner = array_map(function($c) use ($pdo, $idEvento) {
+        $record = table($pdo, TABLE_COLLABORATORI_EVENTI)
+            ->select([COL_COLLABORATORI_EVENTI_IS_OWNER])
+            ->where(COL_COLLABORATORI_EVENTI_ID_EVENTO, $idEvento)
+            ->where(COL_COLLABORATORI_EVENTI_ID_UTENTE, $c['id'])
+            ->first();
+        $c['is_owner'] = (bool)($record[COL_COLLABORATORI_EVENTI_IS_OWNER] ?? false);
+        return $c;
+    }, $collaborators);
+
     jsonResponse([
         'success' => true,
         'creator' => $creator,
-        'collaborators' => $collaborators
+        'collaborators' => $collaboratorsWithOwner
     ]);
 }
 
-function jsonResponse(array $data, int $statusCode = 200): void
-{
-    http_response_code($statusCode);
-    header('Content-Type: application/json');
-    echo json_encode($data);
-    exit;
+if (!function_exists('jsonResponse')) {
+    function jsonResponse(array $data, int $statusCode = 200): void
+    {
+        http_response_code($statusCode);
+        header('Content-Type: application/json');
+        echo json_encode($data);
+        exit;
+    }
 }

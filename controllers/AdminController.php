@@ -263,6 +263,10 @@ function adminCreateEvent(PDO $pdo): void
             // Crea l'evento
             $eventoId = createEvento($pdo, $data);
 
+            // F3: segna il promoter come proprietario nei collaboratori
+            require_once __DIR__ . '/../models/Evento.php';
+            addProprietarioEvento($pdo, $eventoId, $idCreatore);
+
             // Salva i settori selezionati
             setEventoSettori($pdo, $eventoId, array_map('intval', $settori));
 

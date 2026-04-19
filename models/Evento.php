@@ -144,6 +144,22 @@ function createEvento(PDO $pdo, array $data): int
     return (int) $pdo->lastInsertId();
 }
 
+function addProprietarioEvento(PDO $pdo, int $idEvento, int $idUtente): void
+{
+    // Rimuovi eventuale record esistente per prevenire duplicati
+    table($pdo, TABLE_COLLABORATORI_EVENTI)
+        ->where(COL_COLLABORATORI_EVENTI_ID_EVENTO, $idEvento)
+        ->where(COL_COLLABORATORI_EVENTI_ID_UTENTE, $idUtente)
+        ->delete();
+
+    table($pdo, TABLE_COLLABORATORI_EVENTI)->insert([
+        COL_COLLABORATORI_EVENTI_ID_EVENTO  => $idEvento,
+        COL_COLLABORATORI_EVENTI_ID_UTENTE  => $idUtente,
+        COL_COLLABORATORI_EVENTI_STATUS     => STATUS_ACCEPTED,
+        COL_COLLABORATORI_EVENTI_IS_OWNER   => 1,
+    ]);
+}
+
 /**
  * Aggiorna i dati di un evento esistente
  * @return bool Esito operazione

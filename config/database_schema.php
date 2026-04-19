@@ -188,6 +188,7 @@ define('COL_COLLABORATORI_EVENTI_ID_EVENTO',   'idEvento');
 define('COL_COLLABORATORI_EVENTI_ID_UTENTE',   'idUtente');
 define('COL_COLLABORATORI_EVENTI_INVITATO_DA', 'invitato_da');
 define('COL_COLLABORATORI_EVENTI_STATUS',      'status');
+define('COL_COLLABORATORI_EVENTI_IS_OWNER',    'is_owner');
 define('COL_COLLABORATORI_EVENTI_TOKEN',       'token');
 define('COL_COLLABORATORI_EVENTI_TOKEN_EXPIRY','token_expiry');
 define('COL_COLLABORATORI_EVENTI_CREATED_AT',  'created_at');
@@ -236,9 +237,41 @@ define('CATEGORIA_EVENTI',   'eventi');
 
 // Ruoli utente
 define('RUOLO_USER',     'user');
+define('RUOLO_ARTISTA',  'artista');
 define('RUOLO_PROMOTER', 'promoter');
 define('RUOLO_MOD',      'mod');
 define('RUOLO_ADMIN',    'admin');
+
+// F8: stati recensione
+define('STATO_RECENSIONE_VISIBILE',  'visibile');
+define('STATO_RECENSIONE_NASCOSTA',  'nascosta');
+define('STATO_RECENSIONE_SEGNALATA', 'segnalata');
+define('COL_RECENSIONI_STATO',       'stato');
+define('COL_RECENSIONI_MODERATA_DA', 'moderata_da');
+define('COL_RECENSIONI_MODERATA_AT', 'moderata_at');
+
+// F11: documento identità biglietti
+define('COL_BIGLIETTI_DOCUMENTO_FOTO',        'documento_foto');
+define('COL_BIGLIETTI_DOCUMENTO_TIPO',        'documento_tipo');
+define('COL_BIGLIETTI_DOCUMENTO_VERIFICATO',  'documento_verificato');
+define('COL_BIGLIETTI_DOC_VERIFICA_STATO',    'documento_verifica_stato');
+
+// F15: artista/intrattenitori
+define('TABLE_ARTISTA_CLAIMS',              'artista_claims');
+define('COL_INTRATTENITORI_ID',             'id');
+define('COL_INTRATTENITORI_ID_UTENTE',      'idUtente');
+define('COL_INTRATTENITORI_BIO',            'bio');
+define('COL_INTRATTENITORI_FOTO',           'foto');
+define('COL_INTRATTENITORI_SOCIAL',         'social_links');
+define('COL_CLAIMS_ID',                     'id');
+define('COL_CLAIMS_ID_UTENTE',              'idUtente');
+define('COL_CLAIMS_ID_INTRATTENITORE',      'idIntrattenitore');
+define('COL_CLAIMS_STATO',                  'stato');
+define('COL_CLAIMS_MESSAGGIO',              'messaggio');
+
+// F1: SVG location
+define('COL_LOCATIONS_SVG_PATH',         'svg_path');
+define('COL_SETTORE_BIGLIETTI_SVG_SEAT', 'svg_seat_id');
 
 // Status collaborazione
 define('STATUS_PENDING',  'pending');
