@@ -182,6 +182,11 @@ $bigliettiPassati = getBigliettiUtentePassati($pdo, $_SESSION['user_id']);
     color: #991b1b;
 }
 
+.ticket-status.expired {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
 .ticket-footer-info {
     text-align: center;
     padding-top: 1.5rem;
@@ -294,8 +299,10 @@ $bigliettiPassati = getBigliettiUtentePassati($pdo, $_SESSION['user_id']);
                 <div class="ticket-card past" onclick="openTicketModal(<?= htmlspecialchars(json_encode($b), ENT_QUOTES, 'UTF-8') ?>)">
                     <div class="ticket-header">
                         <span class="ticket-type"><?= e($b['idClasse']) ?></span>
-                        <?php if (!empty($b['idSettore'])): ?>
-                        <span class="ticket-sector">Settore <?= $b['idSettore'] ?></span>
+                        <?php if ($b['Stato'] === 'validato'): ?>
+                            <span class="ticket-sector" style="background:#d1fae5;color:#065f46;">Utilizzato</span>
+                        <?php else: ?>
+                            <span class="ticket-sector" style="background:#f3f4f6;color:#6b7280;">Non usufruito</span>
                         <?php endif; ?>
                     </div>
                     <div class="ticket-body">
@@ -398,13 +405,15 @@ function openTicketModal(ticket) {
     document.getElementById('modalHolder').textContent = (ticket.Nome || '') + ' ' + (ticket.Cognome || '');
     document.getElementById('modalType').textContent = ticket.idClasse || '';
 
-    // Stato biglietto
-    const isUsed = ticket.Stato === 'validato';
+    // Stato biglietto (F10)
+    const today = new Date().toISOString().split('T')[0];
     const statusContainer = document.getElementById('modalStatus');
-    if (isUsed) {
+    if (ticket.Stato === 'validato') {
         statusContainer.innerHTML = '<span class="ticket-status used"><i class="fas fa-check-circle"></i> Utilizzato</span>';
+    } else if (ticket.Data && ticket.Data < today) {
+        statusContainer.innerHTML = '<span class="ticket-status expired"><i class="fas fa-clock"></i> Non usufruito</span>';
     } else {
-        statusContainer.innerHTML = '<span class="ticket-status valid"><i class="fas fa-ticket-alt"></i> Valido</span>';
+        statusContainer.innerHTML = '<span class="ticket-status valid"><i class="fas fa-ticket-alt"></i> Da utilizzare</span>';
     }
 
     // Settore e posto
