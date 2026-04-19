@@ -124,6 +124,14 @@ function acquistaFromServerCart(PDO $pdo, array $cartData, string $metodo): void
                 throw new Exception("Biglietto non valido: " . $idBiglietto);
             }
 
+            // Verifica data evento (F6)
+            $evStmt = $pdo->prepare("SELECT Data FROM " . TABLE_EVENTI . " e JOIN " . TABLE_BIGLIETTI . " b ON b." . COL_BIGLIETTI_ID_EVENTO . " = e." . COL_EVENTI_ID . " WHERE b." . COL_BIGLIETTI_ID . " = ?");
+            $evStmt->execute([$idBiglietto]);
+            $evRow = $evStmt->fetch(PDO::FETCH_ASSOC);
+            if ($evRow && $evRow['Data'] < date('Y-m-d')) {
+                throw new Exception('Evento già concluso per il biglietto ' . $idBiglietto);
+            }
+
             // Aggiorna dati intestatario
             $stmt = $pdo->prepare("UPDATE " . TABLE_BIGLIETTI . " SET " . COL_BIGLIETTI_NOME . " = ?, " . COL_BIGLIETTI_COGNOME . " = ?, " . COL_BIGLIETTI_SESSO . " = ? WHERE " . COL_BIGLIETTI_ID . " = ?");
             $stmt->execute([
@@ -189,6 +197,14 @@ function acquistaFromLocalCart(PDO $pdo, array $cartData, string $metodo): void
             $sesso = sanitize($ticket['sesso'] ?? 'Altro');
 
             if ($idEvento <= 0) continue;
+
+            // Verifica data evento (F6)
+            $evStmt = $pdo->prepare("SELECT Data FROM " . TABLE_EVENTI . " WHERE " . COL_EVENTI_ID . " = ?");
+            $evStmt->execute([$idEvento]);
+            $evRow = $evStmt->fetch(PDO::FETCH_ASSOC);
+            if ($evRow && $evRow['Data'] < date('Y-m-d')) {
+                throw new Exception('Evento già concluso, acquisto non disponibile');
+            }
 
             // Crea il biglietto con stato 'acquistato'
             $idBiglietto = createBiglietto($pdo, [

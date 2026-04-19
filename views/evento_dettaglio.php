@@ -295,6 +295,7 @@ if ($mediaVoti && !empty($mediaVoti['media'])) {
             </div>
             <?php endif; ?>
 
+            <?php $eventoPassato = ($evento['Data'] < date('Y-m-d')); ?>
             <form id="add-to-cart-form" class="ticket-form">
                 <input type="hidden" name="idEvento" value="<?= $evento['id'] ?>">
                 <input type="hidden" name="eventoNome" value="<?= e($evento['Nome']) ?>">
@@ -338,9 +339,15 @@ if ($mediaVoti && !empty($mediaVoti['media'])) {
                     <span class="total-price" id="totalPrice"><?= formatPrice($evento['PrezzoNoMod']) ?></span>
                 </div>
 
+                <?php if ($eventoPassato): ?>
+                <button type="button" class="btn btn-secondary btn-block btn-large" disabled>
+                    <i class="fas fa-times-circle"></i> Evento concluso
+                </button>
+                <?php else: ?>
                 <button type="button" class="btn btn-primary btn-block btn-large" onclick="addEventToCart()" id="addToCartBtn">
                     <i class="fas fa-cart-plus"></i> Aggiungi al Carrello
                 </button>
+                <?php endif; ?>
             </form>
 
             <p class="ticket-note">

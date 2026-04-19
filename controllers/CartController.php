@@ -125,6 +125,12 @@ function addToCartApi(PDO $pdo): void
         return;
     }
 
+    // Blocco acquisto eventi passati (F6)
+    if ($evento['Data'] < date('Y-m-d')) {
+        jsonResponse(['error' => 'Evento già concluso, acquisto non disponibile'], 400);
+        return;
+    }
+
     // Verifica disponibilità
     if (!checkDisponibilitaBiglietti($pdo, $idEvento, $quantita)) {
         $disponibili = getBigliettiDisponibili($pdo, $idEvento);
