@@ -75,23 +75,48 @@ function renderEventCardPromoter(array $e, bool $canEdit): void { ?>
     </div>
 
     <!-- I Miei Eventi -->
+    <?php
+    $eventiAttivi  = array_filter($eventi, fn($e) => $e['Data'] >= date('Y-m-d'));
+    $eventiPassati = array_filter($eventi, fn($e) => $e['Data'] < date('Y-m-d'));
+    ?>
     <div class="admin-section">
         <h2><i class="fas fa-calendar-alt"></i> I Miei Eventi</h2>
 
-        <?php if (empty($eventi)): ?>
+        <?php if (empty($eventiAttivi)): ?>
             <div class="no-data-container">
                 <i class="fas fa-calendar-plus"></i>
-                <p>Non hai ancora creato eventi.</p>
+                <p>Non hai eventi attivi al momento.</p>
                 <a href="index.php?action=admin_create_event" class="btn btn-primary">Crea il tuo primo evento</a>
             </div>
         <?php else: ?>
             <div class="events-grid-admin">
-                <?php foreach ($eventi as $e): ?>
+                <?php foreach ($eventiAttivi as $e): ?>
                     <?php renderEventCardPromoter($e, true) ?>
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
     </div>
+
+    <!-- Archivio eventi passati -->
+    <?php if (!empty($eventiPassati)): ?>
+    <div class="admin-section">
+        <h2>
+            <i class="fas fa-archive"></i> Archivio eventi passati (<?= count($eventiPassati) ?>)
+            <button type="button" class="btn btn-sm btn-secondary"
+                    style="margin-left:1rem;font-size:0.8rem;"
+                    onclick="var a=document.getElementById('archivioEventiPromoter');a.style.display=a.style.display==='none'?'block':'none'">
+                Mostra/Nascondi
+            </button>
+        </h2>
+        <div id="archivioEventiPromoter" style="display:none;">
+            <div class="events-grid-admin">
+                <?php foreach ($eventiPassati as $e): ?>
+                    <?php renderEventCardPromoter($e, true) ?>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
 
     <!-- Eventi in Collaborazione -->
     <?php if (!$isModOrAdmin): ?>

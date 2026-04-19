@@ -11,15 +11,37 @@ require_once __DIR__ . '/../lib/QueryBuilder.php';
  * Recupera tutti gli eventi con dati di manifestazione e location
  * @return array Lista eventi ordinati per data e ora
  */
-function getAllEventi(PDO $pdo): array
+function getAllEventi(PDO $pdo, bool $soloFuturi = false): array
 {
-    return $pdo->query("
+    $where = $soloFuturi ? " WHERE e." . COL_EVENTI_DATA . " >= CURDATE()" : "";
+    $stmt = $pdo->prepare("
         SELECT e.*, m." . COL_MANIFESTAZIONI_NOME . " as ManifestazioneName, l." . COL_LOCATIONS_NOME . " as LocationName
         FROM " . TABLE_EVENTI . " e
         JOIN " . TABLE_MANIFESTAZIONI . " m ON e." . COL_EVENTI_ID_MANIFESTAZIONE . " = m." . COL_MANIFESTAZIONI_ID . "
         JOIN " . TABLE_LOCATIONS . " l ON e." . COL_EVENTI_ID_LOCATION . " = l." . COL_LOCATIONS_ID . "
+        $where
         ORDER BY e." . COL_EVENTI_DATA . ", e." . COL_EVENTI_ORA_INIZIO . "
-    ")->fetchAll();
+    ");
+    $stmt->execute();
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function getEventiPassati(PDO $pdo, ?int $idCreatore = null): array
+{
+    $sql = "SELECT e.*, m." . COL_MANIFESTAZIONI_NOME . " as ManifestazioneName, l." . COL_LOCATIONS_NOME . " as LocationName
+            FROM " . TABLE_EVENTI . " e
+            JOIN " . TABLE_MANIFESTAZIONI . " m ON e." . COL_EVENTI_ID_MANIFESTAZIONE . " = m." . COL_MANIFESTAZIONI_ID . "
+            JOIN " . TABLE_LOCATIONS . " l ON e." . COL_EVENTI_ID_LOCATION . " = l." . COL_LOCATIONS_ID . "
+            WHERE e." . COL_EVENTI_DATA . " < CURDATE()";
+    $params = [];
+    if ($idCreatore !== null) {
+        $sql .= " AND e." . COL_EVENTI_ID_CREATORE . " = ?";
+        $params[] = $idCreatore;
+    }
+    $sql .= " ORDER BY e." . COL_EVENTI_DATA . " DESC";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
 /**

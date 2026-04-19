@@ -76,4 +76,64 @@ $stats = $_SESSION['mod_stats'] ?? [];
             <p><i class="fas fa-times-circle text-muted"></i> Non puoi gestire gli utenti (solo Admin)</p>
         </div>
     </div>
+
+    <!-- Moderazione Recensioni (F8) -->
+    <div class="admin-section">
+        <h2><i class="fas fa-flag"></i> Moderazione Recensioni</h2>
+        <div style="margin-bottom:1rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <button class="btn btn-sm btn-secondary active" onclick="loadRecensioni('segnalata',this)">Segnalate</button>
+            <button class="btn btn-sm btn-secondary" onclick="loadRecensioni('nascosta',this)">Nascoste</button>
+            <button class="btn btn-sm btn-secondary" onclick="loadRecensioni('',this)">Tutte</button>
+        </div>
+        <div id="recensioniModPanel"><p class="no-data">Clicca un filtro per caricare le recensioni.</p></div>
+    </div>
+
+    <script>
+    async function loadRecensioni(stato, btn) {
+        document.querySelectorAll('.recensioni-filter-btn').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        const panel = document.getElementById('recensioniModPanel');
+        panel.innerHTML = '<p class="no-data"><i class="fas fa-spinner fa-spin"></i> Caricamento...</p>';
+        try {
+            const res = await fetch('index.php?action=get_recensioni_admin' + (stato ? '&stato=' + encodeURIComponent(stato) : ''));
+            const data = await res.json();
+            if (!data.recensioni || data.recensioni.length === 0) {
+                panel.innerHTML = '<p class="no-data">Nessuna recensione trovata.</p>';
+                return;
+            }
+            let html = '<div style="overflow-x:auto;"><table class="admin-table"><thead><tr><th>Autore</th><th>Evento</th><th>Voto</th><th>Commento</th><th>Stato</th><th>Azioni</th></tr></thead><tbody>';
+            data.recensioni.forEach(r => {
+                const statoColors = {segnalata:'#d97706',nascosta:'#991b1b',visibile:'#065f46'};
+                const color = statoColors[r.stato] || '#6b7280';
+                const btnAction = r.stato !== 'nascosta'
+                    ? `<button class="btn btn-xs btn-danger" onclick="moderaRecensione(${r.id},'hide_recensione')">Nascondi</button>`
+                    : `<button class="btn btn-xs btn-success" onclick="moderaRecensione(${r.id},'restore_recensione')">Ripristina</button>`;
+                html += `<tr>
+                    <td>${r.Nome || ''} ${r.Cognome || ''}</td>
+                    <td>${r.EventoNome || ''}</td>
+                    <td>${r.Valutazione || r.voto || '—'}/5</td>
+                    <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${r.Testo || r.testo || ''}</td>
+                    <td><span style="color:${color};font-weight:600;">${r.stato}</span></td>
+                    <td>${btnAction}</td>
+                </tr>`;
+            });
+            html += '</tbody></table></div>';
+            panel.innerHTML = html;
+        } catch(e) {
+            panel.innerHTML = '<p class="no-data">Errore nel caricamento.</p>';
+        }
+    }
+
+    async function moderaRecensione(id, action) {
+        const fd = new FormData();
+        fd.append('id', id);
+        fd.append('csrf_token', window.EventsMaster?.csrfToken || '');
+        fd.append('action', action);
+        try {
+            const res = await fetch('index.php', { method: 'POST', body: fd });
+            await res.json();
+        } catch(e) {}
+        loadRecensioni('', null);
+    }
+    </script>
 </div>
