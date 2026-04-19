@@ -22,7 +22,8 @@ function getRecensioniByEvento(PDO $pdo, int $idEvento): array
         FROM " . TABLE_RECENSIONI . " r
         JOIN " . TABLE_UTENTI . " u ON r." . COL_RECENSIONI_ID_UTENTE . " = u." . COL_UTENTI_ID . "
         WHERE r." . COL_RECENSIONI_ID_EVENTO . " = ?
-        ORDER BY r." . COL_RECENSIONI_ID_EVENTO . "
+        AND r." . COL_RECENSIONI_STATO . " = '" . STATO_RECENSIONE_VISIBILE . "'
+        ORDER BY r." . COL_RECENSIONI_CREATED_AT . " DESC
     ");
     $stmt->execute([$idEvento]);
     return $stmt->fetchAll();
@@ -40,6 +41,7 @@ function getMediaVotiEvento(PDO $pdo, int $idEvento): ?float
         SELECT AVG(" . COL_RECENSIONI_VOTO . ") as media
         FROM " . TABLE_RECENSIONI . "
         WHERE " . COL_RECENSIONI_ID_EVENTO . " = ?
+        AND " . COL_RECENSIONI_STATO . " = '" . STATO_RECENSIONE_VISIBILE . "'
     ");
     $stmt->execute([$idEvento]);
     $result = $stmt->fetch();
@@ -203,6 +205,7 @@ function getRecensioniVisibili(PDO $pdo, int $idEvento): array
         JOIN " . TABLE_UTENTI . " u ON r." . COL_RECENSIONI_ID_UTENTE . " = u." . COL_UTENTI_ID . "
         JOIN " . TABLE_EVENTI . " e ON r." . COL_RECENSIONI_ID_EVENTO . " = e." . COL_EVENTI_ID . "
         WHERE r." . COL_RECENSIONI_ID_EVENTO . " = ?
+        AND r." . COL_RECENSIONI_STATO . " = '" . STATO_RECENSIONE_VISIBILE . "'
         AND DATEDIFF(CURDATE(), e." . COL_EVENTI_DATA . ") <= 14
         ORDER BY r." . COL_RECENSIONI_CREATED_AT . " DESC
     ");

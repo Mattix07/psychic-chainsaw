@@ -128,6 +128,10 @@ switch ($action) {
     case 'add_recensione':
     case 'update_recensione':
     case 'delete_recensione':
+    case 'hide_recensione':
+    case 'restore_recensione':
+    case 'flag_recensione':
+    case 'get_recensioni_admin':
         require_once 'controllers/PageController.php';
         require_once 'controllers/RecensioneController.php';
         handleRecensione($pdo, $action);

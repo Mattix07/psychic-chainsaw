@@ -224,6 +224,15 @@ if ($mediaVoti && !empty($mediaVoti['media'])) {
                         <?php if ($r['Messaggio']): ?>
                         <p class="recensione-testo"><?= nl2br(e($r['Messaggio'])) ?></p>
                         <?php endif; ?>
+                        <?php if (isLoggedIn() && (int)($_SESSION['user_id'] ?? 0) !== (int)$r['idUtente']): ?>
+                        <div style="text-align:right;margin-top:0.5rem;">
+                            <button class="btn btn-xs btn-secondary flag-rec-btn"
+                                    data-id="<?= (int)$r['id'] ?>"
+                                    style="font-size:0.75rem;padding:0.2rem 0.6rem;">
+                                <i class="fas fa-flag"></i> Segnala
+                            </button>
+                        </div>
+                        <?php endif; ?>
                     </div>
                     <?php endforeach; ?>
                 </div>
@@ -540,4 +549,26 @@ function showToast(message, type = 'info') {
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 }
+
+// F8: bottone "Segnala" recensione
+document.querySelectorAll('.flag-rec-btn').forEach(btn => {
+    btn.addEventListener('click', async function() {
+        if (!confirm('Segnalare questa recensione come inappropriata?')) return;
+        const id = this.dataset.id;
+        const fd = new FormData();
+        fd.append('id', id);
+        fd.append('csrf_token', window.EventsMaster?.csrfToken || '');
+        fd.append('action', 'flag_recensione');
+        try {
+            const res  = await fetch('index.php', { method: 'POST', body: fd });
+            const data = await res.json();
+            if (data.success) {
+                this.textContent = 'Segnalata';
+                this.disabled = true;
+                this.style.opacity = '0.5';
+                showToast('Recensione segnalata', 'success');
+            }
+        } catch(e) {}
+    });
+});
 </script>
