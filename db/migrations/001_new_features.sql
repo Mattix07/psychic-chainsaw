@@ -87,6 +87,13 @@ CREATE TABLE IF NOT EXISTS artista_claims (
     CONSTRAINT fk_claims_gestita_da      FOREIGN KEY (gestita_da)        REFERENCES utenti(id)          ON DELETE SET NULL
 );
 
+-- F13: immagini locations e manifestazioni
+ALTER TABLE locations
+    ADD COLUMN IF NOT EXISTS Immagine MEDIUMBLOB NULL COMMENT 'Immagine/foto della location';
+
+ALTER TABLE manifestazioni
+    ADD COLUMN IF NOT EXISTS Immagine MEDIUMBLOB NULL COMMENT 'Immagine/foto della manifestazione';
+
 -- F1: SVG piantina location
 ALTER TABLE locations
     ADD COLUMN IF NOT EXISTS svg_path TEXT NULL COMMENT 'SVG piantina location';

@@ -67,6 +67,7 @@ define('COL_LOCATIONS_CAPIENZA',    'Capienza');
 define('COL_LOCATIONS_LAT',         'Lat');
 define('COL_LOCATIONS_LNG',         'Lng');
 define('COL_LOCATIONS_ID_CREATORE', 'idCreatore');
+define('COL_LOCATIONS_IMMAGINE',    'Immagine');
 
 // ============================================================
 // COLONNE TABELLA SETTORI
@@ -95,6 +96,7 @@ define('COL_MANIFESTAZIONI_DESCRIZIONE',  'Descrizione');
 define('COL_MANIFESTAZIONI_DATA_INIZIO',  'DataInizio');
 define('COL_MANIFESTAZIONI_DATA_FINE',    'DataFine');
 define('COL_MANIFESTAZIONI_ID_CREATORE',  'idCreatore');
+define('COL_MANIFESTAZIONI_IMMAGINE',     'Immagine');
 
 // ============================================================
 // COLONNE TABELLA EVENTI
