@@ -147,6 +147,11 @@ $pageTitle = $seoTitle ? e($seoTitle) . ' | ' . $appName : $appName . ' - Biglie
                             <a href="index.php?action=promoter_dashboard" class="dropdown-item dropdown-item-promoter">
                                 <i class="fas fa-bullhorn"></i> I miei eventi
                             </a>
+                        <?php elseif (isset($_SESSION['user_ruolo']) && $_SESSION['user_ruolo'] === 'artista'): ?>
+                            <div class="dropdown-divider"></div>
+                            <a href="index.php?action=artista_dashboard" class="dropdown-item dropdown-item-artista">
+                                <i class="fas fa-music"></i> Dashboard Artista
+                            </a>
                         <?php endif; ?>
                         <div class="dropdown-divider"></div>
                         <a href="index.php?action=cambia_password" class="dropdown-item">

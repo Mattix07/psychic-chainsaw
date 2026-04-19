@@ -332,12 +332,6 @@ switch ($action) {
         exit; // API JSON
         break;
 
-    case 'delete_recensione':
-        require_once 'controllers/AdminController.php';
-        deleteRecensioneApi($pdo);
-        exit; // API JSON
-        break;
-
     case 'verify_account':
         require_once 'controllers/AdminController.php';
         verifyAccountApi($pdo);
@@ -353,12 +347,6 @@ switch ($action) {
     // ==========================================
     // COLLABORAZIONE EVENTI
     // ==========================================
-    case 'invite_collaborator':
-        require_once 'controllers/CollaborazioneController.php';
-        inviteCollaboratorApi($pdo);
-        exit; // API JSON
-        break;
-
     case 'accept_collaboration':
         require_once 'controllers/CollaborazioneController.php';
         acceptCollaborationApi($pdo);
@@ -395,6 +383,57 @@ switch ($action) {
         deleteAvatarApi($pdo);
         exit; // API JSON
         break;
+
+    // ==========================================
+    // ARTISTA
+    // ==========================================
+    case 'artista_profile':
+        require_once 'controllers/ArtistaController.php';
+        showArtistaProfile($pdo);
+        break;
+
+    case 'artista_dashboard':
+        require_once 'controllers/ArtistaController.php';
+        showArtistaDashboard($pdo);
+        break;
+
+    case 'update_artista_profile':
+        require_once 'controllers/ArtistaController.php';
+        updateArtistaProfile($pdo);
+        break;
+
+    case 'claim_artista':
+        require_once 'controllers/ArtistaController.php';
+        claimArtistaAction($pdo);
+        break;
+
+    case 'approve_claim':
+        require_once 'controllers/ArtistaController.php';
+        approveClaimAction($pdo);
+        exit;
+
+    case 'reject_claim':
+        require_once 'controllers/ArtistaController.php';
+        rejectClaimAction($pdo);
+        exit;
+
+    case 'get_claims_admin':
+        require_once 'controllers/ArtistaController.php';
+        getClaimsAdminApi($pdo);
+        exit;
+
+    case 'get_artista_foto':
+        require_once 'controllers/ArtistaController.php';
+        $id = (int)($_GET['id'] ?? 0);
+        $row = table($pdo, TABLE_INTRATTENITORI)->where(COL_INTRATTENITORI_ID, $id)->first();
+        if ($row && !empty($row['foto'])) {
+            header('Content-Type: image/jpeg');
+            header('Cache-Control: public, max-age=86400');
+            echo $row['foto'];
+        } else {
+            http_response_code(404);
+        }
+        exit;
 
     // ==========================================
     // DASHBOARD PROMOTER E MODERATORE

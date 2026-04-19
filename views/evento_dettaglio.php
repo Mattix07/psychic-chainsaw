@@ -182,12 +182,21 @@ if ($mediaVoti && !empty($mediaVoti['media'])) {
             <h2><i class="fas fa-users"></i> Artisti & Intrattenitori</h2>
             <div class="intrattenitori-grid">
                 <?php foreach ($intrattenitori as $i): ?>
-                <div class="intrattenitore-card">
+                <?php $hasProfile = !empty($i['idUtente']); ?>
+                <div class="intrattenitore-card <?= $hasProfile ? 'has-profile' : '' ?>">
                     <div class="intrattenitore-avatar">
-                        <i class="fas fa-user"></i>
+                        <?php if ($hasProfile && !empty($i['foto'])): ?>
+                            <img src="index.php?action=get_artista_foto&id=<?= (int)$i['id'] ?>" alt="<?= e($i['Nome']) ?>">
+                        <?php else: ?>
+                            <i class="fas fa-user"></i>
+                        <?php endif; ?>
                     </div>
                     <div class="intrattenitore-info">
-                        <h4><?= e($i['Nome']) ?></h4>
+                        <?php if ($hasProfile): ?>
+                            <h4><a href="index.php?action=artista_profile&id=<?= (int)$i['id'] ?>"><?= e($i['Nome']) ?></a></h4>
+                        <?php else: ?>
+                            <h4><?= e($i['Nome']) ?></h4>
+                        <?php endif; ?>
                         <span class="mestiere"><?= e($i['Categoria'] ?? '') ?></span>
                         <span class="orario"><i class="far fa-clock"></i> <?= formatTime($i['OraI']) ?><?= $i['OraF'] ? ' - ' . formatTime($i['OraF']) : '' ?></span>
                     </div>

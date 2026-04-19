@@ -259,6 +259,7 @@ define('COL_BIGLIETTI_DOC_VERIFICA_STATO',    'documento_verifica_stato');
 // F15: artista/intrattenitori
 define('TABLE_ARTISTA_CLAIMS',              'artista_claims');
 define('COL_INTRATTENITORI_ID',             'id');
+define('COL_INTRATTENITORI_NOME',           'Nome');
 define('COL_INTRATTENITORI_ID_UTENTE',      'idUtente');
 define('COL_INTRATTENITORI_BIO',            'bio');
 define('COL_INTRATTENITORI_FOTO',           'foto');
@@ -268,6 +269,9 @@ define('COL_CLAIMS_ID_UTENTE',              'idUtente');
 define('COL_CLAIMS_ID_INTRATTENITORE',      'idIntrattenitore');
 define('COL_CLAIMS_STATO',                  'stato');
 define('COL_CLAIMS_MESSAGGIO',              'messaggio');
+define('COL_CLAIMS_CREATED_AT',             'created_at');
+define('COL_CLAIMS_GESTITA_DA',             'gestita_da');
+define('COL_CLAIMS_GESTITA_AT',             'gestita_at');
 
 // F1: SVG location
 define('COL_LOCATIONS_SVG_PATH',         'svg_path');

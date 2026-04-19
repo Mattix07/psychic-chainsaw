@@ -64,6 +64,7 @@ define('DEFAULT_PAYMENT_METHOD', 'Carta di credito');
 // Questi sono alias per il codice che usa ROLE_*
 
 if (!defined('ROLE_USER')) define('ROLE_USER', RUOLO_USER);
+if (!defined('ROLE_ARTISTA')) define('ROLE_ARTISTA', RUOLO_ARTISTA);
 if (!defined('ROLE_PROMOTER')) define('ROLE_PROMOTER', RUOLO_PROMOTER);
 if (!defined('ROLE_MOD')) define('ROLE_MOD', RUOLO_MOD);
 if (!defined('ROLE_ADMIN')) define('ROLE_ADMIN', RUOLO_ADMIN);

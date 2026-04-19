@@ -296,6 +296,26 @@ function isMod(?int $userId = null): bool
 }
 
 /**
+ * Verifica se l'utente ha il ruolo artista
+ */
+function isArtista(?int $userId = null): bool
+{
+    $id = $userId ?? ($_SESSION['user_id'] ?? null);
+    if (!$id) return false;
+    return ($_SESSION['user_ruolo'] ?? null) === RUOLO_ARTISTA || ($userId !== null && hasRole(RUOLO_ARTISTA, $userId));
+}
+
+/**
+ * Recupera il record intrattenitore collegato all'account utente
+ */
+function getIntrattenitoreByUtente(PDO $pdo, int $idUtente): ?array
+{
+    $stmt = $pdo->prepare("SELECT * FROM " . TABLE_INTRATTENITORI . " WHERE " . COL_INTRATTENITORI_ID_UTENTE . " = ?");
+    $stmt->execute([$idUtente]);
+    return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+}
+
+/**
  * Verifica se l'utente e un promoter (o superiore)
  * I promoter possono creare e gestire i propri eventi
  * @return bool True se promoter, mod o admin
@@ -322,7 +342,7 @@ function hasRole(string $requiredRole, ?int $userId = null): bool
     if (!$id) return false;
 
     $role = getUserRole($pdo, $id);
-    $hierarchy = [RUOLO_USER => 1, RUOLO_PROMOTER => 2, RUOLO_MOD => 3, RUOLO_ADMIN => 4];
+    $hierarchy = [RUOLO_USER => 1, RUOLO_ARTISTA => 2, RUOLO_PROMOTER => 3, RUOLO_MOD => 4, RUOLO_ADMIN => 5];
 
     return ($hierarchy[$role] ?? 0) >= ($hierarchy[$requiredRole] ?? 0);
 }

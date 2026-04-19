@@ -211,7 +211,7 @@ function deleteEvento(PDO $pdo, int $id): bool
 function getIntrattenitoriEvento(PDO $pdo, int $idEvento): array
 {
     $stmt = $pdo->prepare("
-        SELECT i.*, e." . COL_EVENTI_ORA_INIZIO . ", e." . COL_EVENTI_ORA_FINE . "
+        SELECT i.id, i.Nome, i.Categoria, i.idUtente, e." . COL_EVENTI_ORA_INIZIO . ", e." . COL_EVENTI_ORA_FINE . "
         FROM " . TABLE_INTRATTENITORE . " i
         JOIN " . TABLE_EVENTO_INTRATTENITORE . " es ON es.idIntrattenitore = i." . COL_INTRATTENITORE_ID . "
         JOIN " . TABLE_EVENTI . " e ON e." . COL_EVENTI_ID . " = es.idEvento
