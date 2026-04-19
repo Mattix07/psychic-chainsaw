@@ -380,6 +380,34 @@ $bigliettiPassati = getBigliettiUtentePassati($pdo, $_SESSION['user_id']);
                 <i class="fas fa-print"></i> Stampa Biglietto (PDF)
             </button>
         </div>
+
+        <!-- F11: Documento identità -->
+        <div id="documentoSection" style="padding: 0 2rem 2rem; display:none;">
+            <hr style="margin-bottom:1rem;">
+            <h4 style="margin-bottom:.75rem;"><i class="fas fa-id-card"></i> Documento d'identità</h4>
+            <div id="documentoPreview" style="margin-bottom:.75rem; display:none;">
+                <img id="documentoImg" src="" alt="Documento" style="max-width:100%; border-radius:8px; border:1px solid var(--border-color);">
+            </div>
+            <form id="documentoForm" enctype="multipart/form-data">
+                <?= csrfField() ?>
+                <input type="hidden" name="idBiglietto" id="docBigliettoId">
+                <div style="display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom:.5rem;">
+                    <select name="tipo" id="docTipo" class="form-control" style="flex:1; min-width:140px;">
+                        <option value="ci">Carta d'identità</option>
+                        <option value="passaporto">Passaporto</option>
+                        <option value="patente">Patente</option>
+                    </select>
+                    <label class="btn btn-secondary" style="cursor:pointer; margin:0;">
+                        <i class="fas fa-upload"></i> Scegli file
+                        <input type="file" name="documento" id="docFile" accept="image/jpeg,image/png" style="display:none;" onchange="previewDocumento(this)">
+                    </label>
+                </div>
+                <button type="button" id="docUploadBtn" class="btn btn-primary btn-sm" onclick="uploadDocumento()" style="display:none;">
+                    <i class="fas fa-save"></i> Salva documento
+                </button>
+                <small class="form-hint">Max 5MB, JPG/PNG. Visibile solo a te e allo staff.</small>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -462,8 +490,69 @@ function openTicketModal(ticket) {
         correctLevel: QRCode.CorrectLevel.M
     });
 
+    // Sezione documento (solo biglietti acquistati)
+    const docSection = document.getElementById('documentoSection');
+    document.getElementById('docBigliettoId').value = ticket.id;
+    document.getElementById('docUploadBtn').style.display = 'none';
+    document.getElementById('documentoPreview').style.display = 'none';
+
+    if (ticket.Stato === 'acquistato') {
+        docSection.style.display = 'block';
+        if (ticket.documento_foto) {
+            document.getElementById('documentoImg').src = 'index.php?action=get_documento_biglietto&idBiglietto=' + ticket.id;
+            document.getElementById('documentoPreview').style.display = 'block';
+        }
+        if (ticket.documento_tipo) {
+            document.getElementById('docTipo').value = ticket.documento_tipo;
+        }
+    } else {
+        docSection.style.display = 'none';
+    }
+
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
+}
+
+function previewDocumento(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            document.getElementById('documentoImg').src = e.target.result;
+            document.getElementById('documentoPreview').style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+        document.getElementById('docUploadBtn').style.display = 'inline-flex';
+    }
+}
+
+async function uploadDocumento() {
+    const form = document.getElementById('documentoForm');
+    const formData = new FormData(form);
+    formData.append('action', 'upload_documento_biglietto');
+
+    const btn = document.getElementById('docUploadBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Caricamento...';
+
+    try {
+        const res = await fetch('index.php?action=upload_documento_biglietto', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.success) {
+            btn.innerHTML = '<i class="fas fa-check"></i> Salvato!';
+            setTimeout(() => {
+                btn.innerHTML = '<i class="fas fa-save"></i> Salva documento';
+                btn.disabled = false;
+            }, 2000);
+        } else {
+            alert(data.error || 'Errore durante il caricamento');
+            btn.innerHTML = '<i class="fas fa-save"></i> Salva documento';
+            btn.disabled = false;
+        }
+    } catch (e) {
+        alert('Errore di rete');
+        btn.innerHTML = '<i class="fas fa-save"></i> Salva documento';
+        btn.disabled = false;
+    }
 }
 
 function closeTicketModal() {

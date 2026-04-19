@@ -246,7 +246,12 @@ function calcolaPrezzoFinale(PDO $pdo, int $idEvento, int $idTipo, int $idSettor
 function getBigliettiUtenteFuturi(PDO $pdo, int $idUtente): array
 {
     $stmt = $pdo->prepare("
-        SELECT DISTINCT b.*, e." . COL_EVENTI_NOME . " as EventoNome, e." . COL_EVENTI_DATA . ", e." . COL_EVENTI_ORA_INIZIO . ", e." . COL_EVENTI_ORA_FINE . ",
+        SELECT DISTINCT b.id, b." . COL_BIGLIETTI_ID_UTENTE . ", b." . COL_BIGLIETTI_ID_EVENTO . ",
+               b." . COL_BIGLIETTI_STATO . ", b." . COL_BIGLIETTI_NOME . ", b." . COL_BIGLIETTI_COGNOME . ",
+               b." . COL_BIGLIETTI_SESSO . ", b." . COL_BIGLIETTI_QRCODE . ",
+               b.documento_tipo,
+               (b.documento_foto IS NOT NULL AND LENGTH(b.documento_foto) > 0) AS documento_foto,
+               e." . COL_EVENTI_NOME . " as EventoNome, e." . COL_EVENTI_DATA . ", e." . COL_EVENTI_ORA_INIZIO . ", e." . COL_EVENTI_ORA_FINE . ",
                e." . COL_EVENTI_IMMAGINE . " as EventoImmagine,
                l." . COL_LOCATIONS_NOME . " as LocationName,
                t." . COL_TIPO_NOME . " as idClasse,
@@ -281,7 +286,12 @@ function getBigliettiUtenteFuturi(PDO $pdo, int $idUtente): array
 function getBigliettiUtentePassati(PDO $pdo, int $idUtente): array
 {
     $stmt = $pdo->prepare("
-        SELECT DISTINCT b.*, e." . COL_EVENTI_NOME . " as EventoNome, e." . COL_EVENTI_DATA . ", e." . COL_EVENTI_ORA_INIZIO . ",
+        SELECT DISTINCT b.id, b." . COL_BIGLIETTI_ID_UTENTE . ", b." . COL_BIGLIETTI_ID_EVENTO . ",
+               b." . COL_BIGLIETTI_STATO . ", b." . COL_BIGLIETTI_NOME . ", b." . COL_BIGLIETTI_COGNOME . ",
+               b." . COL_BIGLIETTI_SESSO . ", b." . COL_BIGLIETTI_QRCODE . ",
+               b.documento_tipo,
+               (b.documento_foto IS NOT NULL AND LENGTH(b.documento_foto) > 0) AS documento_foto,
+               e." . COL_EVENTI_NOME . " as EventoNome, e." . COL_EVENTI_DATA . ", e." . COL_EVENTI_ORA_INIZIO . ",
                e." . COL_EVENTI_IMMAGINE . " as EventoImmagine,
                l." . COL_LOCATIONS_NOME . " as LocationName,
                t." . COL_TIPO_NOME . " as idClasse,
