@@ -220,6 +220,29 @@ function adminCreateEvent(PDO $pdo): void
             exit;
         }
 
+        // F2: admin/mod devono assegnare un promoter; il promoter usa se stesso
+        $ruoloCorrente = $_SESSION['user_ruolo'] ?? RUOLO_USER;
+        if (in_array($ruoloCorrente, [RUOLO_ADMIN, RUOLO_MOD])) {
+            $idCreatore = (int) ($_POST['idCreatore'] ?? 0);
+            if ($idCreatore <= 0) {
+                setErrorMessage('Devi assegnare un promoter all\'evento');
+                header('Location: index.php?action=admin_create_event');
+                exit;
+            }
+            require_once __DIR__ . '/../models/Utente.php';
+            $promoter = table($pdo, TABLE_UTENTI)
+                ->where(COL_UTENTI_ID, $idCreatore)
+                ->where(COL_UTENTI_RUOLO, RUOLO_PROMOTER)
+                ->first();
+            if (!$promoter) {
+                setErrorMessage('Utente selezionato non è un promoter valido');
+                header('Location: index.php?action=admin_create_event');
+                exit;
+            }
+        } else {
+            $idCreatore = $_SESSION['user_id'];
+        }
+
         $data = [
             'Nome' => sanitize($_POST['nome']),
             'Data' => $_POST['data'],
@@ -230,7 +253,7 @@ function adminCreateEvent(PDO $pdo): void
             'idLocation' => (int) $_POST['location'],
             'idManifestazione' => (int) ($_POST['manifestazione'] ?? 0) ?: null,
             'Immagine' => sanitize($_POST['immagine'] ?? ''),
-            'idCreatore' => $_SESSION['user_id']
+            'idCreatore' => $idCreatore
         ];
 
         try {
@@ -255,10 +278,12 @@ function adminCreateEvent(PDO $pdo): void
     // GET: mostra form con dati per select
     require_once __DIR__ . '/../models/Location.php';
     require_once __DIR__ . '/../models/Manifestazione.php';
+    require_once __DIR__ . '/../models/Utente.php';
 
     unset($_SESSION['admin_evento']);
     $_SESSION['admin_locations'] = getAllLocations($pdo);
     $_SESSION['admin_manifestazioni'] = getAllManifestazioni($pdo);
+    $_SESSION['admin_promoters'] = getPromoters($pdo);
     setPage('admin/evento_form');
 }
 

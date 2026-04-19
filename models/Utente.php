@@ -231,6 +231,15 @@ function resetPasswordWithToken(PDO $pdo, string $token, string $newPassword): b
     return $stmt->execute([$hashedPassword, $user['id']]);
 }
 
+function getPromoters(PDO $pdo): array
+{
+    return table($pdo, TABLE_UTENTI)
+        ->select([COL_UTENTI_ID, COL_UTENTI_NOME, COL_UTENTI_COGNOME, COL_UTENTI_EMAIL])
+        ->where(COL_UTENTI_RUOLO, RUOLO_PROMOTER)
+        ->orderBy(COL_UTENTI_COGNOME)
+        ->get();
+}
+
 /**
  * Recupera il ruolo di un utente dal database
  * @return string Ruolo utente (default: ROLE_USER)

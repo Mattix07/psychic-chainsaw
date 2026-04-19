@@ -16,6 +16,7 @@
 $locations      = $_SESSION['admin_locations'] ?? [];
 $manifestazioni = $_SESSION['admin_manifestazioni'] ?? [];
 $evento         = $_SESSION['admin_evento'] ?? null;
+$promoters      = $_SESSION['admin_promoters'] ?? [];
 $collaboratori  = $_SESSION['admin_evento_collaboratori'] ?? [];
 $creatore       = $_SESSION['admin_evento_creatore'] ?? null;
 $isEdit         = !empty($evento);
@@ -47,6 +48,30 @@ if ($isEdit && !empty($evento['idLocation'])) {
             <?= csrfField() ?>
             <?php if ($isEdit): ?>
                 <input type="hidden" name="evento_id" value="<?= $evento['id'] ?>">
+            <?php endif; ?>
+
+            <?php if ((isAdmin() || isMod()) && !$isEdit): ?>
+            <div class="form-section">
+                <h3><i class="fas fa-user-tag"></i> Assegna a Promoter</h3>
+                <?php if (empty($promoters)): ?>
+                    <p class="form-hint" style="color:#d97706;">Nessun promoter disponibile. Crea prima un account promoter.</p>
+                <?php else: ?>
+                <div class="form-group">
+                    <label for="idCreatore">Promoter proprietario *</label>
+                    <select name="idCreatore" id="idCreatore" required>
+                        <option value="">— Seleziona promoter —</option>
+                        <?php foreach ($promoters as $p): ?>
+                            <option value="<?= (int)$p['id'] ?>">
+                                <?= e($p['Cognome'] . ' ' . $p['Nome']) ?> (<?= e($p['Email']) ?>)
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <small class="form-hint">L'evento sarà assegnato a questo promoter come proprietario.</small>
+                </div>
+                <?php endif; ?>
+            </div>
+            <?php elseif (!$isEdit): ?>
+                <input type="hidden" name="idCreatore" value="<?= (int)$_SESSION['user_id'] ?>">
             <?php endif; ?>
 
             <div class="form-section">
