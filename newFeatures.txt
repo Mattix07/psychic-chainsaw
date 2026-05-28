@@ -1,0 +1,550 @@
+================================================================================
+  EVENTSMASTER — TODO LIST NUOVE FUNZIONALITÀ
+================================================================================
+Legenda: [ ] da fare  [~] parzialmente fatto  [x] completato
+
+Priorità: [ALTA] blocca altre feature o riguarda dati/sicurezza
+          [MEDIA] migliora UX significativamente
+          [BASSA] nice-to-have, può aspettare
+
+
+================================================================================
+  1. MAPPA SVG INTERATTIVA PER SELEZIONE POSTO
+================================================================================
+Priorità: MEDIA
+
+Obiettivo: l'utente sceglie il proprio posto visivamente su una mappa SVG
+della location invece di scegliere solo il settore.
+
+[ ] 1.1  DB — aggiungere colonna `svg_path` (TEXT) alla tabella `locations`
+         per salvare il contenuto SVG o il path del file SVG della piantina
+[ ] 1.2  DB — aggiungere colonna `svg_seat_id` (VARCHAR) a `settore_biglietti`
+         per collegare ogni posto fisico all'elemento SVG corrispondente
+[ ] 1.3  Admin/Promoter — creare tool di editor SVG nel pannello admin:
+         [ ] 1.3a  upload o disegno della piantina della location
+         [ ] 1.3b  definizione delle zone (settori) sull'SVG con colori diversi
+         [ ] 1.3c  definizione dei singoli posti cliccabili (elementi <circle>
+                   o <rect> con id univoci tipo "A1", "A2", ...)
+         [ ] 1.3d  salvataggio associazione elemento SVG ↔ settore ↔ fila/posto
+[ ] 1.4  Frontend — nel dettaglio evento e nel checkout, mostrare la mappa SVG:
+         [ ] 1.4a  colorare i posti già occupati (rosso) e quelli liberi (verde)
+         [ ] 1.4b  highlight del settore al hover
+         [ ] 1.4c  click su posto → seleziona e aggiunge al carrello
+         [ ] 1.4d  aggiornare disponibilità in tempo reale via AJAX (cart_count)
+[ ] 1.5  Backend — CartController: modificare `addToCartApi` e `updateSettoreApi`
+         per accettare il `svg_seat_id` specifico invece del solo `idSettore`
+[ ] 1.6  Backend — verificare che il posto scelto non sia già occupato
+         (query su `settore_biglietti` + biglietti con stato != 'carrello' scaduto)
+[ ] 1.7  Fallback — se la location non ha SVG, mostrare la selezione a dropdown
+         come attualmente
+
+
+================================================================================
+  2. MOD/ADMIN CHE CREA EVENTO/LOCATION/MANIFESTAZIONE DEVE ASSEGNARE PROMOTER
+================================================================================
+Priorità: ALTA
+
+Obiettivo: ogni evento, location e manifestazione deve avere un promoter
+proprietario; se lo crea un admin/mod, deve scegliere a quale promoter assegnarlo.
+
+[ ] 2.1  DB — verificare che le colonne `idCreatore` in `eventi`, `locations`,
+         `manifestazioni` siano già presenti (già fatto secondo schema)
+[ ] 2.2  Backend — LocationController, ManifestazioneController, AdminController
+         (e EventoController per `create_evento`):
+         [ ] 2.2a  se l'utente è admin o mod, il campo `idCreatore` nel form
+                   diventa obbligatorio (select di promoter)
+         [ ] 2.2b  se l'utente è promoter, `idCreatore` = id dell'utente loggato
+                   (assegnazione automatica, campo nascosto)
+         [ ] 2.2c  validare che l'utente scelto abbia ruolo = 'promoter'
+[ ] 2.3  Frontend — nei form di creazione evento/location/manifestazione:
+         [ ] 2.3a  aggiungere campo select "Assegna a promoter" visibile solo
+                   ad admin e mod
+         [ ] 2.3b  lista dei promoter caricata via AJAX (già esiste
+                   `searchPromotersApi` in AdminController — riutilizzarla)
+[ ] 2.4  Frontend — dashboard admin/mod: mostrare il promoter proprietario
+         in ogni riga della lista eventi/locations/manifestazioni
+
+
+================================================================================
+  3. PROMOTER PRINCIPALE È QUELLO ALL'INDICE 0 NELLA LISTA COLLABORATORI
+================================================================================
+Priorità: ALTA (dipende da feature 2)
+
+Obiettivo: nella tabella `collaboratorieventi` il record con indice più basso
+(o un flag esplicito) identifica il promoter principale/proprietario.
+
+[ ] 3.1  DB — aggiungere colonna `is_owner` (TINYINT DEFAULT 0) a
+         `collaboratorieventi` per marcare esplicitamente il proprietario
+         (più robusto dell'index 0, che potrebbe cambiare con eliminazioni)
+[ ] 3.2  Backend — alla creazione di un evento da parte di un promoter,
+         inserire automaticamente un record in `collaboratorieventi` con
+         `idUtente` = promoter, `status` = 'accepted', `is_owner` = 1
+[ ] 3.3  Backend — quando admin/mod assegna a un promoter (feature 2),
+         creare il record con `is_owner` = 1
+[ ] 3.4  Backend — CollaborazioneController: esporre il flag `is_owner`
+         nell'API `get_collaborators`
+[ ] 3.5  Frontend — nella lista collaboratori di un evento, mostrare
+         il promoter proprietario con un'etichetta/badge "Proprietario"
+[ ] 3.6  Regola — il proprietario non può essere rimosso dai collaboratori
+         (blocco in `removeCollaboratorAction`)
+
+
+================================================================================
+  4. RIQUADRO CARRELLO CON BIGLIETTI RAGGRUPPATI PER TIPO
+================================================================================
+Priorità: MEDIA
+
+Obiettivo: nel carrello laterale e nella pagina checkout, i biglietti dello
+stesso evento sono raggruppati in un riquadro, e dentro sono divisi per tipo
+(es. "2× Standard", "1× Studente").
+
+[ ] 4.1  Frontend (script.js) — modificare la funzione che renderizza il carrello:
+         [ ] 4.1a  raggruppare i biglietti per `idEvento`
+         [ ] 4.1b  per ogni evento, creare un "card" principale con nome evento,
+                   data, location
+         [ ] 4.1c  dentro ogni card, raggruppare per tipo biglietto e mostrare
+                   il conteggio (es. "2× Standard — 40,00 €")
+         [ ] 4.1d  mantenere la possibilità di espandere per vedere/modificare
+                   i singoli biglietti (nome intestatario, settore, ecc.)
+[ ] 4.2  Frontend (checkout.php) — applicare la stessa struttura a riquadri
+         anche nella pagina di checkout
+[ ] 4.3  Backend (CartController `formatCartForJs`) — aggiungere al payload JSON
+         i campi necessari per il raggruppamento (già presenti: idEvento,
+         EventoNome, idClasse — verificare che siano tutti inclusi)
+
+
+================================================================================
+  5. NASCONDERE MOLTIPLICATORE SETTORE, MOSTRARE SOLO IL SURPLUS
+================================================================================
+Priorità: MEDIA
+
+Obiettivo: l'utente non vede "Moltiplicatore: 1.5×" ma vede
+"Settore Palco: +25,00 € rispetto alla Platea" o semplicemente il prezzo finale.
+
+[ ] 5.1  Backend (CartController `getSettoriApi`) — modificare la risposta:
+         [ ] 5.1a  non restituire il campo `moltiplicatore` grezzo
+         [ ] 5.1b  aggiungere il `prezzoFinale` calcolato per ogni settore
+                   (usando `calcolaPrezzoBiglietto` con il prezzo base dell'evento)
+         [ ] 5.1c  aggiungere il `surplus` = prezzoFinale - prezzoBase
+         (l'API riceve già `idEvento` quindi può caricare il prezzo base)
+[ ] 5.2  Frontend (script.js) — nel selettore settore mostrare:
+         "Palco — 45,00 €" oppure "Palco (+25,00 € rispetto alla Platea)"
+         senza mai mostrare "1.5×" all'utente
+[ ] 5.3  Frontend — verificare che anche nel riquadro carrello (feature 4)
+         non compaia il moltiplicatore ma solo il prezzo finale per biglietto
+
+
+================================================================================
+  6. IMPEDIRE ACQUISTO DI EVENTO PASSATO
+================================================================================
+Priorità: ALTA
+
+Obiettivo: non permettere di aggiungere al carrello o acquistare biglietti
+per eventi la cui data è già trascorsa.
+
+[ ] 6.1  Backend (CartController `addToCartApi`) — dopo aver recuperato l'evento,
+         verificare che `Data >= CURDATE()`. Se passato → errore JSON
+         "Evento già concluso, acquisto non disponibile"
+[ ] 6.2  Backend (BigliettoController `acquistaFromServerCart` e
+         `acquistaFromLocalCart`) — verificare la data di ogni evento prima
+         del commit della transazione (doppio controllo di sicurezza)
+[ ] 6.3  Frontend (evento_dettaglio.php) — nascondere/disabilitare il bottone
+         "Aggiungi al carrello" se la data evento è passata, sostituendolo con
+         "Evento concluso"
+[ ] 6.4  Frontend (eventi_lista.php, home.php) — aggiungere un badge visivo
+         "Concluso" sulle card degli eventi passati
+[ ] 6.5  Backend (CartController) — al login, durante il merge carrello guest→DB,
+         scartare i biglietti di eventi già passati
+
+
+================================================================================
+  7. EVENTI PASSATI: SOLO BLOCCO ACQUISTO, NON ELIMINAZIONE
+================================================================================
+Priorità: MEDIA
+
+Obiettivo: gli eventi passati non vengono eliminati dal sistema dopo due
+settimane. Rimangono visibili per storico ordini e recensioni, ma scompaiono
+dalle dashboard operative e non sono acquistabili.
+
+[ ] 7.1  DB — aggiungere colonna `archiviato` (TINYINT DEFAULT 0) a `eventi`
+         (alternativa: usare la data direttamente nelle query, senza colonna extra)
+[ ] 7.2  Backend (EventoModel `getAllEventi`) — aggiungere filtro opzionale per
+         mostrare solo eventi futuri nelle pagine pubbliche
+[ ] 7.3  Backend (AdminController/PromoterDashboard) — nelle dashboard operativi
+         mostrare solo eventi con `Data >= CURDATE()` (o con flag `archiviato=0`)
+[ ] 7.4  Frontend — aggiungere sezione "Archivio eventi passati" separata nelle
+         dashboard, accessibile ma distinta dagli eventi attivi
+[ ] 7.5  Backend — rimuovere qualsiasi logica di eliminazione automatica basata
+         su timer/cron (se presente)
+[ ] 7.6  Backend — gli eventi passati restano visibili in:
+         - storico ordini utente (`miei_ordini`, `view_ordine`)
+         - pagina del biglietto (`view_biglietto`)
+         - recensioni già scritte
+
+
+================================================================================
+  8. MODERAZIONE RECENSIONI NELLE DASHBOARD
+================================================================================
+Priorità: MEDIA
+
+Obiettivo: admin e mod possono vedere tutte le recensioni, approvarle,
+nasconderle o eliminarle. Possibilità di segnalare recensioni inappropriate.
+
+[ ] 8.1  DB — aggiungere colonna `stato` (ENUM: 'visibile','nascosta','segnalata')
+         DEFAULT 'visibile' alla tabella `recensioni`
+[ ] 8.2  DB — aggiungere colonna `moderata_da` (INT FK utenti.id, nullable)
+         e `moderata_at` (DATETIME) per tracciare chi ha moderato
+[ ] 8.3  Backend (RecensioneController / AdminController) — nuove API:
+         [ ] 8.3a  `hide_recensione` — nasconde una recensione (mod/admin)
+         [ ] 8.3b  `restore_recensione` — ripristina una recensione nascosta
+         [ ] 8.3c  `flag_recensione` — utente segnala recensione inappropriata
+         [ ] 8.3d  `get_recensioni_admin` — lista tutte le recensioni con stato
+                   e filtri (tutte / visibili / nascoste / segnalate)
+[ ] 8.4  Frontend — sezione "Moderazione recensioni" nelle dashboard mod/admin:
+         [ ] 8.4a  tabella con tutte le recensioni (autore, evento, voto,
+                   commento, stato, data)
+         [ ] 8.4b  filtri per stato (segnalate per priorità, poi tutte)
+         [ ] 8.4c  azioni rapide: Nascondi / Ripristina / Elimina
+[ ] 8.5  Frontend (evento_dettaglio.php) — aggiungere bottone "Segnala"
+         accanto a ogni recensione (per utenti loggati)
+[ ] 8.6  Backend — le recensioni con stato 'nascosta' non vengono mostrate
+         agli utenti normali (filtro nelle query pubbliche di `getRecensioniByEvento`)
+[ ] 8.7  Backend — notifica al mod/admin quando arriva una nuova segnalazione
+         (inserimento in tabella `notifiche`)
+
+
+================================================================================
+  9. APP "BLIBBER" — VALIDAZIONE BIGLIETTI DA STAFF
+================================================================================
+Priorità: BASSA
+
+Obiettivo: applicazione separata (web o mobile) usata dallo staff all'ingresso
+per scannerizzare i QR code e marcare i biglietti come usati.
+
+[ ] 9.1  Backend — creare endpoint API dedicato `validate_ticket_api`:
+         [ ] 9.1a  autenticazione via token API (non sessione) — più adatta
+                   ad app mobile
+         [ ] 9.1b  input: codice QR (stringa)
+         [ ] 9.1c  output JSON: { valido: bool, intestatario, evento, sede,
+                   stato_precedente, messaggio }
+         [ ] 9.1d  se valido e stato='acquistato' → aggiorna stato a 'validato'
+         [ ] 9.1e  se già 'validato' → risponde "Biglietto già utilizzato"
+         [ ] 9.1f  se evento passato da più di 24h → risponde "Biglietto scaduto"
+[ ] 9.2  DB — aggiungere tabella `api_tokens` (id, idUtente, token, scadenza,
+         permessi) per autenticare lo staff senza condividere credenziali
+[ ] 9.3  Frontend (app Blibber — progetto separato):
+         [ ] 9.3a  schermata di login con token API
+         [ ] 9.3b  schermata scanner QR (via fotocamera o input manuale codice)
+         [ ] 9.3c  feedback visivo: verde = valido, rosso = non valido/già usato
+         [ ] 9.3d  mostrare foto documento (se implementata, feature 11) per
+                   verifica identità
+[ ] 9.4  Backend — log di ogni scansione (chi, quando, quale biglietto,
+         esito) per audit
+
+
+================================================================================
+  10. BIGLIETTI EVENTI PASSATI NON UTILIZZATI — STATO "NON USUFRUITO"
+================================================================================
+Priorità: MEDIA
+
+Obiettivo: se un biglietto ha stato 'acquistato' e la data dell'evento è
+passata, mostrare "Non usufruito" invece di "Da utilizzare". Solo informativo.
+
+[ ] 10.1 Frontend (miei_biglietti.php, view_biglietto.php) — aggiungere logica:
+         [ ] 10.1a  se biglietto.stato == 'acquistato' E evento.Data < oggi
+                    → mostrare badge/etichetta "Non usufruito" (colore neutro/grigio)
+         [ ] 10.1b  se biglietto.stato == 'acquistato' E evento.Data >= oggi
+                    → mostrare "Da utilizzare" (colore positivo)
+         [ ] 10.1c  se biglietto.stato == 'validato'
+                    → mostrare "Utilizzato" (colore verde)
+[ ] 10.2 Backend — la distinzione è solo presentazionale: NON aggiungere
+         un quarto stato al database. La logica va nel frontend/view.
+         (Nota: mantenere così per semplicità; se in futuro serve per statistiche
+         si può aggiungere un campo DB)
+[ ] 10.3 Frontend — nella dashboard admin/mod aggiungere colonna "Stato effettivo"
+         nella tabella biglietti con la stessa logica
+
+
+================================================================================
+  11. DOCUMENTO IDENTITÀ ALLEGATO AL BIGLIETTO
+================================================================================
+Priorità: BASSA
+
+Obiettivo: l'utente carica una foto del documento d'identità associata al
+biglietto. La foto viene inclusa nel QR code (o accessibile tramite esso) per
+permettere allo staff di verificare l'identità del possessore.
+
+[ ] 11.1 DB — aggiungere colonna `documento_foto` (LONGBLOB o VARCHAR path)
+         alla tabella `biglietti`
+[ ] 11.2 DB — aggiungere colonna `documento_tipo` (ENUM: 'ci','passaporto',
+         'patente') alla tabella `biglietti`
+[ ] 11.3 Backend — nuovo endpoint `upload_documento_biglietto`:
+         [ ] 11.3a  autenticazione: solo il proprietario del biglietto
+         [ ] 11.3b  validazione file: solo immagini (jpg/png), max 5MB
+         [ ] 11.3c  verifica che il biglietto sia in stato 'acquistato'
+                    (non nel carrello, non già validato)
+         [ ] 11.3d  salvataggio sicuro (non nella webroot, accessibile solo
+                    tramite endpoint autenticato)
+[ ] 11.4 Backend — modificare la generazione del QR code:
+         [ ] 11.4a  il QR code contiene solo il codice univoco del biglietto
+                    (già così — non cambiare)
+         [ ] 11.4b  l'app Blibber (feature 9) usa il codice per fare una
+                    richiesta API che ritorna anche la foto del documento
+[ ] 11.5 Frontend (checkout.php o view_biglietto.php) — aggiungere sezione
+         "Carica documento d'identità":
+         [ ] 11.5a  upload foto fronte documento
+         [ ] 11.5b  selezione tipo documento
+         [ ] 11.5c  anteprima e possibilità di sostituire
+[ ] 11.6 Sicurezza — la foto del documento è accessibile SOLO:
+         [ ] 11.6a  al proprietario del biglietto (view_biglietto)
+         [ ] 11.6b  allo staff autenticato tramite app Blibber (feature 9)
+         NON deve essere inclusa nel QR code come dato base64 (troppo grande
+         e non sicuro)
+
+
+================================================================================
+  12. SISTEMA DI VERIFICA VALIDITÀ DOCUMENTO DI IDENTITÀ
+================================================================================
+Priorità: BASSA (dipende da feature 11)
+
+Obiettivo: verificare automaticamente che il documento caricato sia autentico
+e leggibile (es. con OCR o servizio esterno).
+
+[ ] 12.1 Definire il livello di verifica desiderato:
+         [ ] 12.1a  LIVELLO BASE: solo controllo che la foto sia leggibile
+                    e contenga testo (OCR locale con Tesseract)
+         [ ] 12.1b  LIVELLO AVANZATO: integrazione con API di verifica
+                    documenti (es. Onfido, Jumio, iDenfy — servizi a pagamento)
+[ ] 12.2 LIVELLO BASE — se si sceglie OCR locale:
+         [ ] 12.2a  installare Tesseract OCR sul server
+         [ ] 12.2b  creare script PHP che chiama Tesseract sul file caricato
+         [ ] 12.2c  estrarre nome, cognome, data di nascita dal documento
+         [ ] 12.2d  confrontare con i dati del biglietto (Nome, Cognome)
+         [ ] 12.2e  segnare il biglietto come "documento verificato" se match
+[ ] 12.3 LIVELLO AVANZATO — se si sceglie API esterna:
+         [ ] 12.3a  scegliere e registrarsi al servizio di verifica
+         [ ] 12.3b  creare wrapper PHP per le chiamate API
+         [ ] 12.3c  gestire i webhook di risposta (la verifica è asincrona)
+         [ ] 12.3d  aggiornare lo stato del documento nel DB quando arriva
+                    la risposta
+[ ] 12.4 DB — aggiungere colonne a `biglietti`:
+         `documento_verificato` (TINYINT DEFAULT 0)
+         `documento_verifica_stato` (ENUM: 'pending','ok','fallita','manuale')
+         `documento_verifica_at` (DATETIME)
+[ ] 12.5 Frontend — mostrare lo stato della verifica nel profilo utente
+         e nella view del biglietto (badge: "Documento verificato ✓" /
+         "Verifica in corso" / "Verifica fallita — ricarica documento")
+[ ] 12.6 Backend (app Blibber, feature 9) — lo staff vede se il documento
+         è verificato e può procedere con o senza verifica manuale
+
+
+================================================================================
+  13. DUMP DATABASE CON IMMAGINI DI EVENTI, LOCATION E MANIFESTAZIONI
+================================================================================
+Priorità: ALTA
+
+Obiettivo: rigenerare il dump SQL (`db/ddl_migliorato.sql`) includendo dati
+di test realistici con immagini vere per eventi, location e manifestazioni
+(attualmente la colonna `Immagine` MEDIUMBLOB è NULL per tutti i record).
+
+[ ] 13.1 Raccolta immagini di test:
+         [ ] 13.1a  raccogliere immagini per i 22 eventi (una per categoria:
+                    concerti, teatro, sport, comedy, cinema, famiglia)
+         [ ] 13.1b  raccogliere immagini per le 15 location
+         [ ] 13.1c  raccogliere immagini per le 5 manifestazioni
+         [ ] 13.1d  raccogliere avatar per i 4 utenti di test
+         Formato: jpg/png, dimensione consigliata 800×450px per eventi,
+         400×400px per location e manifestazioni
+[ ] 13.2 Script di import immagini:
+         [ ] 13.2a  creare script PHP `db/import_images.php` che:
+                    - legge i file immagine da una cartella `db/assets/`
+                    - li converte in BLOB
+                    - fa UPDATE sulla tabella corretta
+         [ ] 13.2b  in alternativa: creare script Python/Node se più comodo
+                    per generare le INSERT con i BLOB già inline nel SQL
+[ ] 13.3 Rigenerare il dump completo:
+         [ ] 13.3a  eseguire `mysqldump` con le opzioni corrette:
+                    `mysqldump --hex-blob --complete-insert 5cit_eventsmaster > db/dump_con_immagini.sql`
+         [ ] 13.3b  verificare che le INSERT includano i dati BLOB correttamente
+         [ ] 13.3c  testare il ripristino su database pulito
+[ ] 13.4 Aggiornare `ddl_migliorato.sql`:
+         [ ] 13.4a  separare struttura (DDL puro, senza dati) da dati di test
+         [ ] 13.4b  creare file separati:
+                    `db/schema.sql`      — solo CREATE TABLE
+                    `db/seed_data.sql`   — dati di test senza immagini
+                    `db/seed_images.sql` — solo gli UPDATE con le immagini
+                    (così il seed base rimane leggibile senza i BLOB)
+[ ] 13.5 Aggiornare la documentazione del progetto (README.md) con le
+         istruzioni per ripristinare il DB con o senza immagini
+
+
+================================================================================
+  14. AVATAR UTENTE — RENDERE FUNZIONANTE L'UPLOAD IN PROFILO
+================================================================================
+Priorità: ALTA
+
+Obiettivo: la colonna `Avatar` (MEDIUMBLOB) esiste già in `utenti` e
+`AvatarController.php` è già implementato, ma la view `profilo.php` mostra
+solo le iniziali invece della foto. Rendere l'upload e la visualizzazione
+completamente funzionanti.
+
+[ ] 14.1 Diagnosi — verificare perché l'avatar non appare già:
+         [ ] 14.1a  controllare se `views/profilo.php` chiama l'endpoint
+                    `get_avatar` o mostra solo le iniziali
+         [ ] 14.1b  verificare che il form di upload in profilo esista
+                    (attualmente potrebbe mancare del tutto)
+         [ ] 14.1c  verificare che `index.php` abbia i case per `upload_avatar`,
+                    `get_avatar`, `delete_avatar` (ci sono, ma con `exit`)
+[ ] 14.2 Frontend (views/profilo.php) — aggiungere sezione avatar:
+         [ ] 14.2a  mostrare la foto profilo corrente (tag <img> che punta a
+                    `index.php?action=get_avatar&id=USER_ID`) se esiste,
+                    altrimenti mostrare le iniziali come ora
+         [ ] 14.2b  pulsante/area di click per caricare nuova foto
+         [ ] 14.2c  input file nascosto (`accept="image/jpeg,image/png,image/gif"`)
+         [ ] 14.2d  anteprima immediata dell'immagine selezionata (JS, FileReader)
+         [ ] 14.2e  pulsante "Salva foto" che chiama `upload_avatar` via AJAX
+         [ ] 14.2f  pulsante "Rimuovi foto" che chiama `delete_avatar` via AJAX
+         [ ] 14.2g  feedback visivo: spinner durante upload, toast di conferma
+[ ] 14.3 Frontend (views/layouts/main.php) — header e dropdown utente:
+         [ ] 14.3a  sostituire il div con le iniziali con un <img> se l'utente
+                    ha un avatar (`index.php?action=get_avatar&id=USER_ID`)
+         [ ] 14.3b  fallback alle iniziali se nessun avatar caricato
+         [ ] 14.3c  gestire il refresh dell'avatar dopo l'upload senza ricaricare
+                    la pagina intera (aggiornare l'src dell'img con timestamp)
+[ ] 14.4 Backend (AvatarController.php) — già funzionante, piccoli fix:
+         [ ] 14.4a  verificare che `jsonResponse` non sia in conflitto con
+                    la funzione omonima in CartController (entrambi la definiscono)
+                    → spostare in helpers.php o aggiungere `if (!function_exists)`
+         [ ] 14.4b  verificare che `apiError` e `apiSuccess` siano definite
+                    (potrebbero mancare in alcuni contesti di caricamento)
+[ ] 14.5 Dump — aggiungere avatar di test per i 4 utenti nel seed (vedi F13)
+
+
+================================================================================
+  15. RUOLO ARTISTA — NUOVO LIVELLO DI ACCOUNT
+================================================================================
+Priorità: MEDIA
+
+Obiettivo: aggiungere il ruolo 'artista' nel sistema. Un artista è un utente
+che si può collegare a un record della tabella `intrattenitori`, ha una
+pagina profilo pubblica e può essere associato agli eventi. Nella gerarchia
+si colloca tra user e promoter (può fare tutto ciò che fa un user, in più
+ha una pagina pubblica e può gestire il proprio profilo da artista).
+
+Gerarchia aggiornata: user (1) < artista (2) < promoter (3) < mod (4) < admin (5)
+
+[ ] 15.1 DB — modificare la tabella `utenti`:
+         [ ] 15.1a  aggiungere 'artista' all'ENUM `ruolo`:
+                    `ALTER TABLE utenti MODIFY ruolo ENUM('admin','mod','promoter','artista','user') DEFAULT 'user'`
+[ ] 15.2 DB — collegare utente-artista a intrattenitori:
+         [ ] 15.2a  aggiungere colonna `idUtente` (INT nullable, FK utenti.id)
+                    alla tabella `intrattenitori`
+         [ ] 15.2b  aggiungere colonna `bio` (TEXT) a `intrattenitori`
+         [ ] 15.2c  aggiungere colonna `foto` (MEDIUMBLOB) a `intrattenitori`
+         [ ] 15.2d  aggiungere colonna `social_links` (JSON) a `intrattenitori`
+                    per Instagram, Spotify, YouTube, ecc.
+         [ ] 15.2e  aggiungere UNIQUE KEY su `idUtente` (un account = un artista)
+[ ] 15.3 Config (database_schema.php) — aggiungere costante:
+         `define('RUOLO_ARTISTA', 'artista');`
+[ ] 15.4 Config (app_config.php) — aggiornare la gerarchia:
+         aggiornare l'array `$hierarchy` in `hasRole()` e aggiungere
+         `define('ROLE_ARTISTA', RUOLO_ARTISTA)`
+[ ] 15.5 Model (Utente.php) — aggiornare:
+         [ ] 15.5a  `isArtista(?int $userId = null): bool` — nuova funzione
+         [ ] 15.5b  aggiornare `hasRole()` con il nuovo peso (2)
+         [ ] 15.5c  aggiornare `setUserRole()` per accettare 'artista'
+         [ ] 15.5d  `getIntratteniitoreByUtente(PDO $pdo, int $idUtente): ?array`
+                    — recupera il record intrattenitore collegato all'account
+[ ] 15.6 Backend — nuovi endpoint in index.php:
+         [ ] 15.6a  `artista_profile` — pagina pubblica dell'artista
+         [ ] 15.6b  `update_artista_profile` — modifica bio, foto, social (POST)
+         [ ] 15.6c  `claim_artista` — un utente richiede di essere collegato
+                    a un record `intrattenitori` esistente (richiede approvazione admin)
+[ ] 15.7 Controller — nuovo `ArtistaController.php`:
+         [ ] 15.7a  `showArtistaProfile(PDO $pdo)` — view pubblica artista
+                    con bio, foto, eventi passati e futuri a cui partecipa
+         [ ] 15.7b  `updateArtistaProfile(PDO $pdo)` — salva bio, foto, social
+         [ ] 15.7c  `claimArtistaAction(PDO $pdo)` — richiesta di collegamento
+                    (inserisce in una tabella `artista_claims` in attesa di approvazione)
+[ ] 15.8 Frontend — nuove view:
+         [ ] 15.8a  `views/artista_profilo.php` — pagina pubblica dell'artista:
+                    foto, nome, bio, social links, lista eventi passati/futuri
+         [ ] 15.8b  `views/admin/artista_dashboard.php` — dashboard per artista loggato:
+                    i propri eventi, statistiche biglietti venduti, link modifica profilo
+         [ ] 15.8c  Aggiornare `views/layouts/main.php` — aggiungere link
+                    "Dashboard Artista" nel dropdown se `isArtista()`
+[ ] 15.9 Frontend (evento_dettaglio.php) — rendere cliccabili i nomi degli
+         intrattenitori che hanno un account artista collegato:
+         link a `index.php?action=artista_profile&id=INTRATTENITORE_ID`
+[ ] 15.10 Admin — gestione richieste di claim:
+         [ ] 15.10a  sezione nella dashboard admin "Richieste artista" con
+                     elenco richieste pending: utente richiedente, intrattenitore
+                     scelto, data richiesta
+         [ ] 15.10b  azioni: Approva (collega idUtente a intrattenitori e cambia
+                     ruolo a 'artista') / Rifiuta
+[ ] 15.11 DB — nuova tabella `artista_claims`:
+         ```
+         id INT PK AUTO_INCREMENT
+         idUtente INT FK utenti.id
+         idIntrattenitore INT FK intrattenitori.id
+         stato ENUM('pending','approvata','rifiutata') DEFAULT 'pending'
+         messaggio TEXT  -- motivazione della richiesta
+         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+         gestita_da INT FK utenti.id (nullable)
+         gestita_at DATETIME
+         ```
+[ ] 15.12 Dump — aggiungere dati di test:
+         [ ] 15.12a  assegnare ruolo 'artista' a uno dei 4 utenti di test
+         [ ] 15.12b  collegarlo a uno degli intrattenitori esistenti
+         [ ] 15.12c  aggiungere bio e foto di test all'intrattenitore
+
+
+================================================================================
+  NOTE GENERALI E DIPENDENZE
+================================================================================
+
+Ordine consigliato di implementazione:
+  1. Feature 6  (blocco acquisto eventi passati)   — ALTA, standalone
+  2. Feature 7  (archivio eventi)                  — ALTA, dipende da 6
+  3. Feature 2  (assegnazione promoter)             — ALTA, standalone
+  4. Feature 3  (promoter principale)               — ALTA, dipende da 2
+  5. Feature 14 (avatar profilo funzionante)        — ALTA, standalone
+  6. Feature 13 (dump con immagini)                 — ALTA, dipende da 14
+  7. Feature 10 (stato "non usufruito")             — MEDIA, dipende da 6
+  8. Feature 5  (nascondere moltiplicatore)         — MEDIA, standalone
+  9. Feature 4  (raggruppamento biglietti carrello) — MEDIA, standalone
+ 10. Feature 8  (moderazione recensioni)            — MEDIA, standalone
+ 11. Feature 15 (ruolo artista)                     — MEDIA, standalone
+ 12. Feature 11 (documento identità)                — BASSA, standalone
+ 13. Feature 12 (verifica documento)                — BASSA, dipende da 11
+ 14. Feature 1  (mappa SVG)                         — MEDIA, dipende da struttura DB
+ 15. Feature 9  (app Blibber)                       — BASSA, dipende da 11
+
+File principali coinvolti per ciascuna feature:
+  F1:  views/admin/location_form.php, CartController.php, script.js
+  F2:  controllers/AdminController.php, LocationController.php,
+       ManifestazioneController.php, EventoController.php,
+       views/admin/evento_form.php, views/admin/location_form.php
+  F3:  controllers/CollaborazioneController.php, models/collaborazione,
+       views/admin/evento_form.php
+  F4:  public/script.js, views/checkout.php
+  F5:  controllers/CartController.php, public/script.js
+  F6:  controllers/CartController.php, controllers/BigliettoController.php,
+       views/evento_dettaglio.php, views/eventi_lista.php
+  F7:  models/Evento.php, controllers/AdminController.php,
+       views/admin/dashboard.php, views/admin/promoter_dashboard.php
+  F8:  controllers/RecensioneController.php, controllers/AdminController.php,
+       views/admin/mod_dashboard.php, views/evento_dettaglio.php
+  F9:  nuovo progetto separato + nuovo endpoint API in index.php
+  F10: views/miei_biglietti.php, views/ordine_dettaglio.php
+  F11: controllers/BigliettoController.php (nuovo endpoint),
+       views/checkout.php, views/miei_biglietti.php
+  F12: nuovo service PHP + config/.env (chiavi API)
+  F13: db/schema.sql, db/seed_data.sql, db/seed_images.sql, db/import_images.php
+  F14: views/profilo.php, views/layouts/main.php, controllers/AvatarController.php,
+       config/helpers.php
+  F15: controllers/ArtistaController.php (nuovo), models/Utente.php,
+       config/database_schema.php, config/app_config.php,
+       views/artista_profilo.php (nuova), views/admin/artista_dashboard.php (nuova),
+       views/layouts/main.php, views/evento_dettaglio.php,
+       db/ddl_migliorato.sql (ALTER TABLE)
